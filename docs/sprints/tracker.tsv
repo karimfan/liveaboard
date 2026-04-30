@@ -1,2 +1,3 @@
 sprint_id	title	status	created_at	updated_at
 001	Rewrite Sprint Tooling from Python to Go	planned	2026-03-27T23:10:40Z	2026-03-27T23:10:40Z
+003	Auth + Organization Foundation	planned	2026-04-30T03:40:28Z	2026-04-30T03:40:28Z
