@@ -47,6 +47,11 @@ func (s *Server) Router() http.Handler {
 		})
 	})
 
+	// Static SPA + fallback. Anything not under /api falls through here.
+	// In dev, the browser hits Vite directly so this only matters for the
+	// production binary.
+	r.Handle("/*", SPAHandler())
+
 	return r
 }
 

@@ -7,13 +7,15 @@
 *.out
 coverage.txt
 
-# Local environment
+# Local environment — secrets
 .env
 .env.local
+web/.env.local
 
 # Frontend
 web/node_modules/
 web/dist/
+!web/dist/.keep
 web/.vite/
 web/tsconfig.tsbuildinfo
 
