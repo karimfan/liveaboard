@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Go build artifacts
+/bin/
+*.test
+*.out
+coverage.txt
+
+# Local environment
+.env
+.env.local
+
+# Frontend
+web/node_modules/
+web/dist/
+web/.vite/
+web/tsconfig.tsbuildinfo
+
+# Editor noise
+.idea/
+.vscode/
+
+# Tooling
+.gstack/
