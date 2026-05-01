@@ -26,10 +26,12 @@ import (
 	"github.com/karimfan/liveaboard/internal/store"
 )
 
+// Defaults used when a Service is constructed without explicit values
+// (e.g., legacy callers). Production wiring sets these from config.
 const (
-	SessionDuration      = 14 * 24 * time.Hour
-	VerificationDuration = 24 * time.Hour
-	BcryptCost           = 12
+	DefaultSessionDuration      = 14 * 24 * time.Hour
+	DefaultVerificationDuration = 24 * time.Hour
+	DefaultBcryptCost           = 12
 )
 
 // ErrInvalidCredentials is returned for any login failure, regardless of cause.
@@ -49,10 +51,21 @@ type Service struct {
 	Store *store.Pool
 	Log   *slog.Logger
 	Now   func() time.Time
+
+	BcryptCost           int
+	SessionDuration      time.Duration
+	VerificationDuration time.Duration
 }
 
 func New(s *store.Pool, log *slog.Logger) *Service {
-	return &Service{Store: s, Log: log, Now: time.Now}
+	return &Service{
+		Store:                s,
+		Log:                  log,
+		Now:                  time.Now,
+		BcryptCost:           DefaultBcryptCost,
+		SessionDuration:      DefaultSessionDuration,
+		VerificationDuration: DefaultVerificationDuration,
+	}
 }
 
 type SignupInput struct {
@@ -86,7 +99,7 @@ func (s *Service) Signup(ctx context.Context, in SignupInput) (*SignupResult, er
 		return nil, err
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), BcryptCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), s.BcryptCost)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
@@ -100,7 +113,7 @@ func (s *Service) Signup(ctx context.Context, in SignupInput) (*SignupResult, er
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.Store.CreateEmailVerification(ctx, user.ID, tokenHash, s.Now().Add(VerificationDuration)); err != nil {
+	if _, err := s.Store.CreateEmailVerification(ctx, user.ID, tokenHash, s.Now().Add(s.VerificationDuration)); err != nil {
 		return nil, err
 	}
 	s.Log.Info("issued email verification token (dev: logged instead of emailed)",
@@ -152,7 +165,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (*LoginResu
 	if err != nil {
 		return nil, err
 	}
-	expiresAt := s.Now().Add(SessionDuration)
+	expiresAt := s.Now().Add(s.SessionDuration)
 	if _, err := s.Store.CreateSession(ctx, user.ID, tokenHash, expiresAt); err != nil {
 		return nil, err
 	}
@@ -191,12 +204,13 @@ func (s *Service) ResolveSession(ctx context.Context, rawToken string) (*store.U
 
 // --- helpers ---
 
-// dummyHash is a precomputed bcrypt hash of "x" used to keep timing constant
-// when an email is not found. Generated at init.
+// dummyHash is a precomputed bcrypt hash used to keep timing roughly
+// constant when an email is not found. Generated at init at the default
+// cost; the precise cost doesn't matter for the timing-equalization goal.
 var dummyHash []byte
 
 func init() {
-	h, err := bcrypt.GenerateFromPassword([]byte("placeholder"), BcryptCost)
+	h, err := bcrypt.GenerateFromPassword([]byte("placeholder"), DefaultBcryptCost)
 	if err != nil {
 		panic(err)
 	}

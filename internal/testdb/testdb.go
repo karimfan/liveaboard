@@ -1,24 +1,34 @@
 // Package testdb provides a shared helper for tests that need a live
-// Postgres connection. Callers skip if LIVEABOARD_TEST_DATABASE_URL is unset
-// so the test suite stays runnable without a database.
+// Postgres connection. It loads test-mode config (config/test.env +
+// .env.local + process env) so the test database URL is sourced via the
+// same loader used by the application. Tests skip cleanly when the URL
+// resolves to empty.
 package testdb
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/karimfan/liveaboard/internal/config"
 	"github.com/karimfan/liveaboard/internal/store"
 )
 
 // Pool returns a freshly-migrated, freshly-truncated *store.Pool.
 func Pool(t *testing.T) *store.Pool {
 	t.Helper()
-	dsn := os.Getenv("LIVEABOARD_TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("LIVEABOARD_TEST_DATABASE_URL not set")
+	cfg, err := config.LoadForTest()
+	if err != nil {
+		// Required-field error means the test DSN isn't set anywhere.
+		// Treat as skip rather than fail so the suite remains runnable
+		// without a Postgres.
+		t.Skipf("test config not available (set LIVEABOARD_DATABASE_URL or use config/test.env): %v", err)
 	}
+	dsn := cfg.DatabaseURL
+	if dsn == "" {
+		t.Skip("test database URL is empty")
+	}
+
 	ctx := context.Background()
 	// Hold a Postgres advisory lock for the lifetime of the test. This
 	// serializes all DB-touching tests across packages that share the test
@@ -39,6 +49,7 @@ func Pool(t *testing.T) *store.Pool {
 	if err := store.Migrate(ctx, dsn); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
+
 	p, err := store.Open(ctx, dsn)
 	if err != nil {
 		t.Fatalf("open: %v", err)
