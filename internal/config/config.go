@@ -35,10 +35,24 @@ type Config struct {
 	SessionDuration      time.Duration `env:"LIVEABOARD_SESSION_DURATION" default:"336h"`
 	VerificationDuration time.Duration `env:"LIVEABOARD_VERIFICATION_DURATION" default:"24h"`
 
+	// Clerk identity provider keys. These are not `required` at the loader
+	// level so tests using the stub provider don't need to supply them.
+	// The Clerk provider's constructor validates that ClerkSecretKey is
+	// non-empty; the webhook handler validates ClerkWebhookSecret. In
+	// production those validations happen at startup, before the listener
+	// binds.
+	ClerkPublishableKey string `env:"CLERK_PUBLISHABLE_KEY"`
+	ClerkSecretKey      string `env:"CLERK_SECRET_KEY" secret:"true"`
+	ClerkWebhookSecret  string `env:"CLERK_WEBHOOK_SECRET" secret:"true"`
+
 	// VITE_API_BASE is part of the schema only so the loader catches typos
 	// in mode files. The Go runtime never reads it; the Makefile copies
 	// VITE_* keys into web/.env.local for Vite to consume.
 	ViteAPIBase string `env:"VITE_API_BASE" default:"/api"`
+
+	// VITE_CLERK_PUBLISHABLE_KEY: same as ClerkPublishableKey, exposed to
+	// the frontend by the Makefile when it generates web/.env.local.
+	ViteClerkPublishableKey string `env:"VITE_CLERK_PUBLISHABLE_KEY"`
 
 	// metas holds per-field provenance information; populated by the loader,
 	// consumed by validate() and String(). Not part of the public schema.
@@ -170,6 +184,13 @@ func (c *Config) validate() error {
 		}
 		for _, m := range c.metas {
 			if !m.secret {
+				continue
+			}
+			// An empty optional secret is fine at the loader layer; the
+			// constructor that needs the value (e.g., NewClerkProvider)
+			// validates presence at startup. Required secrets that lack a
+			// value are caught earlier by required-field enforcement.
+			if m.finalText == "" {
 				continue
 			}
 			if m.source != srcProcess {
