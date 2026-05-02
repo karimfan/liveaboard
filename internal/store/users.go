@@ -26,6 +26,9 @@ type User struct {
 	IsActive        bool
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	// ClerkUserID links this row to its Clerk user. Nullable during the
+	// Sprint 005 cutover; promoted to NOT NULL by migration 0003.
+	ClerkUserID *string
 }
 
 type Organization struct {
@@ -58,15 +61,11 @@ func (p *Pool) CreateOrgAndAdmin(ctx context.Context, orgName, email, fullName s
 	}
 
 	user := &User{}
-	err = tx.QueryRow(ctx, `
+	err = scanUser(tx.QueryRow(ctx, `
 		INSERT INTO users (organization_id, email, password_hash, full_name, role)
 		VALUES ($1, $2, $3, $4, 'org_admin')
-		RETURNING id, organization_id, email, password_hash, full_name, role, email_verified_at, is_active, created_at, updated_at
-	`, org.ID, email, passwordHash, fullName).Scan(
-		&user.ID, &user.OrganizationID, &user.Email, &user.PasswordHash,
-		&user.FullName, &user.Role, &user.EmailVerifiedAt, &user.IsActive,
-		&user.CreatedAt, &user.UpdatedAt,
-	)
+		RETURNING `+userColumns+`
+	`, org.ID, email, passwordHash, fullName), user)
 	if err != nil {
 		if isUniqueViolation(err, "users_email_key") {
 			return nil, nil, ErrEmailTaken
@@ -80,16 +79,27 @@ func (p *Pool) CreateOrgAndAdmin(ctx context.Context, orgName, email, fullName s
 	return org, user, nil
 }
 
+// userColumns is the canonical SELECT projection for users. Every scan
+// helper in this file uses it so a column addition only needs to update
+// this constant and the matching Scan() call.
+const userColumns = `id, organization_id, email, password_hash, full_name, role,
+	email_verified_at, is_active, created_at, updated_at, clerk_user_id`
+
+func scanUser(row interface {
+	Scan(dest ...any) error
+}, u *User) error {
+	return row.Scan(
+		&u.ID, &u.OrganizationID, &u.Email, &u.PasswordHash,
+		&u.FullName, &u.Role, &u.EmailVerifiedAt, &u.IsActive,
+		&u.CreatedAt, &u.UpdatedAt, &u.ClerkUserID,
+	)
+}
+
 func (p *Pool) UserByEmail(ctx context.Context, email string) (*User, error) {
 	user := &User{}
-	err := p.QueryRow(ctx, `
-		SELECT id, organization_id, email, password_hash, full_name, role, email_verified_at, is_active, created_at, updated_at
-		FROM users WHERE email = $1
-	`, email).Scan(
-		&user.ID, &user.OrganizationID, &user.Email, &user.PasswordHash,
-		&user.FullName, &user.Role, &user.EmailVerifiedAt, &user.IsActive,
-		&user.CreatedAt, &user.UpdatedAt,
-	)
+	err := scanUser(p.QueryRow(ctx, `
+		SELECT `+userColumns+` FROM users WHERE email = $1
+	`, email), user)
 	if isNoRows(err) {
 		return nil, ErrNotFound
 	}
@@ -101,14 +111,9 @@ func (p *Pool) UserByEmail(ctx context.Context, email string) (*User, error) {
 
 func (p *Pool) UserByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	user := &User{}
-	err := p.QueryRow(ctx, `
-		SELECT id, organization_id, email, password_hash, full_name, role, email_verified_at, is_active, created_at, updated_at
-		FROM users WHERE id = $1
-	`, id).Scan(
-		&user.ID, &user.OrganizationID, &user.Email, &user.PasswordHash,
-		&user.FullName, &user.Role, &user.EmailVerifiedAt, &user.IsActive,
-		&user.CreatedAt, &user.UpdatedAt,
-	)
+	err := scanUser(p.QueryRow(ctx, `
+		SELECT `+userColumns+` FROM users WHERE id = $1
+	`, id), user)
 	if isNoRows(err) {
 		return nil, ErrNotFound
 	}
@@ -117,6 +122,83 @@ func (p *Pool) UserByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	}
 	return user, nil
 }
+
+// UserByClerkID looks up a user by Clerk user id. Returns ErrNotFound if
+// no user has been linked to that provider id (e.g., the webhook hasn't
+// landed yet).
+func (p *Pool) UserByClerkID(ctx context.Context, clerkUserID string) (*User, error) {
+	user := &User{}
+	err := scanUser(p.QueryRow(ctx, `
+		SELECT `+userColumns+` FROM users WHERE clerk_user_id = $1
+	`, clerkUserID), user)
+	if isNoRows(err) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+// CreateExternalUser inserts a user that already exists on the provider
+// side (i.e., has a clerk_user_id). The role argument must be one of
+// RoleOrgAdmin / RoleSiteDirector / RoleCrew.
+//
+// The user is created as email-verified — Clerk has already verified the
+// email by the time this row is written.
+func (p *Pool) CreateExternalUser(
+	ctx context.Context,
+	orgID uuid.UUID,
+	clerkUserID, email, fullName, role string,
+) (*User, error) {
+	user := &User{}
+	err := scanUser(p.QueryRow(ctx, `
+		INSERT INTO users (organization_id, clerk_user_id, email, full_name, role, email_verified_at)
+		VALUES ($1, $2, $3, $4, $5, now())
+		RETURNING `+userColumns+`
+	`, orgID, clerkUserID, email, fullName, role), user)
+	if err != nil {
+		if isUniqueViolation(err, "users_email_key") {
+			return nil, ErrEmailTaken
+		}
+		if isUniqueViolation(err, "users_clerk_user_id_key") {
+			return nil, ErrUserClerkIDTaken
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
+// UpdateExternalUser keeps a user row in sync with provider events
+// (user.updated webhook). Only mutable identity fields are touched —
+// app-level role lives in users.role and is never overwritten by a
+// provider event.
+func (p *Pool) UpdateExternalUser(
+	ctx context.Context,
+	clerkUserID, email, fullName string,
+) error {
+	_, err := p.Exec(ctx, `
+		UPDATE users
+		SET email = $2, full_name = $3, updated_at = now()
+		WHERE clerk_user_id = $1
+	`, clerkUserID, email, fullName)
+	return err
+}
+
+// DeactivateUser flips users.is_active to false. The provider-side
+// membership removal is the caller's responsibility.
+func (p *Pool) DeactivateUser(ctx context.Context, userID uuid.UUID) error {
+	_, err := p.Exec(ctx, `
+		UPDATE users
+		SET is_active = false, updated_at = now()
+		WHERE id = $1
+	`, userID)
+	return err
+}
+
+// ErrUserClerkIDTaken indicates a uniqueness conflict on users.clerk_user_id.
+// Webhook handlers and signup-complete should treat it as idempotent.
+var ErrUserClerkIDTaken = errors.New("store: user already linked to that clerk_user_id")
 
 func (p *Pool) MarkEmailVerified(ctx context.Context, userID uuid.UUID, at time.Time) error {
 	_, err := p.Exec(ctx, `UPDATE users SET email_verified_at = $1, updated_at = now() WHERE id = $2`, at, userID)
