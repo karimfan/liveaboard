@@ -30,11 +30,8 @@ func TestCreateExternalOrgAndAdmin(t *testing.T) {
 	if user.Role != store.RoleOrgAdmin {
 		t.Errorf("user.Role = %q, want %q", user.Role, store.RoleOrgAdmin)
 	}
-	if user.ClerkUserID == nil || *user.ClerkUserID != "user_clerk_1" {
-		t.Errorf("user.ClerkUserID = %v", user.ClerkUserID)
-	}
-	if user.EmailVerifiedAt == nil {
-		t.Errorf("user.EmailVerifiedAt should be set (Clerk verified)")
+	if user.ClerkUserID != "user_clerk_1" {
+		t.Errorf("user.ClerkUserID = %q", user.ClerkUserID)
 	}
 }
 
@@ -99,8 +96,8 @@ func TestCreateExternalUser(t *testing.T) {
 	if site.Role != store.RoleSiteDirector {
 		t.Errorf("Role = %q", site.Role)
 	}
-	if site.ClerkUserID == nil || *site.ClerkUserID != "user_b" {
-		t.Errorf("ClerkUserID = %v", site.ClerkUserID)
+	if site.ClerkUserID != "user_b" {
+		t.Errorf("ClerkUserID = %q", site.ClerkUserID)
 	}
 }
 

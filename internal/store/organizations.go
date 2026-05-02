@@ -10,13 +10,11 @@ import (
 // Returns ErrNotFound if no org has been linked to that provider id.
 func (p *Pool) OrganizationByClerkID(ctx context.Context, clerkOrgID string) (*Organization, error) {
 	org := &Organization{}
-	var clerk *string
 	err := p.QueryRow(ctx, `
 		SELECT id, name, currency, created_at, updated_at
 		FROM organizations
 		WHERE clerk_org_id = $1
 	`, clerkOrgID).Scan(&org.ID, &org.Name, &org.Currency, &org.CreatedAt, &org.UpdatedAt)
-	_ = clerk
 	if isNoRows(err) {
 		return nil, ErrNotFound
 	}
@@ -87,15 +85,11 @@ func (p *Pool) CreateExternalOrgAndAdmin(
 	}
 
 	user := &User{}
-	if err := tx.QueryRow(ctx, `
-		INSERT INTO users (organization_id, email, full_name, role, clerk_user_id, email_verified_at)
-		VALUES ($1, $2, $3, 'org_admin', $4, now())
-		RETURNING id, organization_id, email, full_name, role, email_verified_at, is_active, created_at, updated_at, clerk_user_id
-	`, org.ID, email, fullName, clerkUserID).Scan(
-		&user.ID, &user.OrganizationID, &user.Email,
-		&user.FullName, &user.Role, &user.EmailVerifiedAt, &user.IsActive,
-		&user.CreatedAt, &user.UpdatedAt, &user.ClerkUserID,
-	); err != nil {
+	if err := scanUser(tx.QueryRow(ctx, `
+		INSERT INTO users (organization_id, email, full_name, role, clerk_user_id)
+		VALUES ($1, $2, $3, 'org_admin', $4)
+		RETURNING `+userColumns+`
+	`, org.ID, email, fullName, clerkUserID), user); err != nil {
 		if isUniqueViolation(err, "users_email_key") {
 			return nil, nil, ErrEmailTaken
 		}

@@ -51,16 +51,41 @@ func main() {
 	}
 	defer pool.Close()
 
-	authSvc := auth.New(pool, log)
-	authSvc.BcryptCost = cfg.BcryptCost
-	authSvc.SessionDuration = cfg.SessionDuration
-	authSvc.VerificationDuration = cfg.VerificationDuration
+	provider, err := auth.NewClerkProvider(cfg.ClerkSecretKey, "")
+	if err != nil {
+		log.Error("init clerk provider", "err", err)
+		os.Exit(1)
+	}
+
+	exchange := &auth.Exchanger{
+		Provider:     provider,
+		Store:        pool,
+		Log:          log,
+		SessionTTL:   cfg.SessionDuration,
+		CookieSecure: cfg.CookieSecure,
+	}
+	session := &auth.SessionMiddleware{
+		Store: pool,
+		Log:   log,
+	}
+	admin := &auth.AdminHandlers{
+		Provider: provider,
+		Store:    pool,
+		Log:      log,
+	}
+	webhook, err := auth.NewWebhookReceiver(provider, pool, log, cfg.ClerkWebhookSecret)
+	if err != nil {
+		log.Error("init webhook receiver", "err", err)
+		os.Exit(1)
+	}
 
 	srv := &httpapi.Server{
-		Auth:   authSvc,
-		Org:    org.New(pool),
-		Log:    log,
-		Secure: cfg.CookieSecure,
+		Org:      org.New(pool),
+		Log:      log,
+		Exchange: exchange,
+		Session:  session,
+		Admin:    admin,
+		Webhook:  webhook,
 	}
 
 	httpServer := &http.Server{

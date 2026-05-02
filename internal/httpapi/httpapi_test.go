@@ -2,33 +2,66 @@ package httpapi_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
+	"time"
 
 	"github.com/karimfan/liveaboard/internal/auth"
 	"github.com/karimfan/liveaboard/internal/httpapi"
 	"github.com/karimfan/liveaboard/internal/org"
+	"github.com/karimfan/liveaboard/internal/store"
 	"github.com/karimfan/liveaboard/internal/testdb"
 )
 
-func newTestServer(t *testing.T) *httptest.Server {
+// Test harness: builds an httptest.Server wired to a StubProvider so the
+// HTTP integration tests run fully offline. The webhook handler is
+// constructed with a fixed test secret; tests that exercise webhooks
+// sign with the same secret.
+const testWebhookSecret = "whsec_C2FVsBE8+CIqwLrHLMyD6gtVsh5TfEKJ"
+
+type harness struct {
+	server *httptest.Server
+	pool   *store.Pool
+	stub   *auth.StubProvider
+}
+
+func newHarness(t *testing.T) *harness {
 	t.Helper()
-	p := testdb.Pool(t)
+	pool := testdb.Pool(t)
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	stub := auth.NewStubProvider()
+
+	exchanger := &auth.Exchanger{
+		Provider:     stub,
+		Store:        pool,
+		Log:          log,
+		SessionTTL:   time.Hour,
+		CookieSecure: false,
+	}
+	session := &auth.SessionMiddleware{Store: pool, Log: log}
+	admin := &auth.AdminHandlers{Provider: stub, Store: pool, Log: log}
+	wh, err := auth.NewWebhookReceiver(stub, pool, log, testWebhookSecret)
+	if err != nil {
+		t.Fatalf("NewWebhookReceiver: %v", err)
+	}
+
 	srv := &httpapi.Server{
-		Auth: auth.New(p, log),
-		Org:  org.New(p),
-		Log:  log,
+		Org:      org.New(pool),
+		Log:      log,
+		Exchange: exchanger,
+		Session:  session,
+		Admin:    admin,
+		Webhook:  wh,
 	}
 	ts := httptest.NewServer(srv.Router())
 	t.Cleanup(ts.Close)
-	return ts
+	return &harness{server: ts, pool: pool, stub: stub}
 }
 
 func doJSON(t *testing.T, c *http.Client, method, url string, body any, cookies ...*http.Cookie) (*http.Response, map[string]any) {
@@ -62,137 +95,239 @@ func doJSON(t *testing.T, c *http.Client, method, url string, body any, cookies 
 	return resp, out
 }
 
-func TestSignupVerifyLoginDashboardLogoutFlow(t *testing.T) {
-	ts := newTestServer(t)
+func bearer(t *testing.T, c *http.Client, url, jwt string, body any) (*http.Response, map[string]any) {
+	t.Helper()
+	var buf bytes.Buffer
+	if body != nil {
+		if err := json.NewEncoder(&buf).Encode(body); err != nil {
+			t.Fatal(err)
+		}
+	}
+	req, err := http.NewRequest("POST", url, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+jwt)
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	out := map[string]any{}
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &out)
+	}
+	return resp, out
+}
+
+// TestEndToEndSignupExchangeMeOrgLogout drives the full happy path
+// against the real chi router: stub-provider signup -> /api/signup-complete
+// -> cookie set -> /api/me -> /api/organization -> /api/logout -> 401.
+func TestEndToEndSignupExchangeMeOrgLogout(t *testing.T) {
+	h := newHarness(t)
 	c := &http.Client{}
 
-	// 1. signup
-	resp, body := doJSON(t, c, "POST", ts.URL+"/api/signup", map[string]any{
-		"email":             "owner@acme.test",
-		"password":          "Password1",
-		"full_name":         "Acme Owner",
+	// Pretend the user just completed Clerk SignUp.
+	pUser := h.stub.NewUser("owner@acme.test", "Acme Owner")
+	jwt, _ := h.stub.NewSession(pUser.ID, "", time.Hour)
+
+	// 1. /api/signup-complete: creates the local org + user + sets cookie.
+	resp, body := bearer(t, c, h.server.URL+"/api/signup-complete", jwt, map[string]any{
 		"organization_name": "Acme Diving",
 	})
 	if resp.StatusCode != 200 {
-		t.Fatalf("signup status: %d body=%v", resp.StatusCode, body)
-	}
-	token, _ := body["verification_token"].(string)
-	if token == "" {
-		t.Fatal("missing verification_token")
-	}
-
-	// 2. verify-email
-	resp, body = doJSON(t, c, "POST", ts.URL+"/api/verify-email", map[string]any{"token": token})
-	if resp.StatusCode != 200 {
-		t.Fatalf("verify status: %d body=%v", resp.StatusCode, body)
-	}
-
-	// 3. login
-	resp, body = doJSON(t, c, "POST", ts.URL+"/api/login", map[string]any{
-		"email":    "owner@acme.test",
-		"password": "Password1",
-	})
-	if resp.StatusCode != 200 {
-		t.Fatalf("login status: %d body=%v", resp.StatusCode, body)
+		t.Fatalf("signup-complete: %d %v", resp.StatusCode, body)
 	}
 	var sessionCookie *http.Cookie
 	for _, ck := range resp.Cookies() {
-		if ck.Name == "lb_session" {
+		if ck.Name == auth.SessionCookieName {
 			sessionCookie = ck
 		}
 	}
-	if sessionCookie == nil || sessionCookie.Value == "" {
-		t.Fatal("login did not set lb_session cookie")
+	if sessionCookie == nil {
+		t.Fatalf("expected lb_session cookie")
 	}
 	if !sessionCookie.HttpOnly {
-		t.Fatal("session cookie not HttpOnly")
+		t.Errorf("session cookie not HttpOnly")
 	}
 
-	// 4. /api/organization with cookie
-	resp, body = doJSON(t, c, "GET", ts.URL+"/api/organization", nil, sessionCookie)
+	// 2. /api/me with cookie.
+	resp, body = doJSON(t, c, "GET", h.server.URL+"/api/me", nil, sessionCookie)
 	if resp.StatusCode != 200 {
-		t.Fatalf("organization status: %d body=%v", resp.StatusCode, body)
-	}
-	if body["name"] != "Acme Diving" {
-		t.Fatalf("org name = %v", body["name"])
-	}
-	stats, ok := body["stats"].(map[string]any)
-	if !ok {
-		t.Fatalf("missing stats: %v", body)
-	}
-	for _, key := range []string{"boats", "active_trips", "total_guests"} {
-		if v, _ := stats[key].(float64); v != 0 {
-			t.Errorf("stats.%s = %v, want 0", key, v)
-		}
-	}
-
-	// 5. /api/me with cookie
-	resp, body = doJSON(t, c, "GET", ts.URL+"/api/me", nil, sessionCookie)
-	if resp.StatusCode != 200 {
-		t.Fatalf("me status: %d body=%v", resp.StatusCode, body)
+		t.Fatalf("me: %d %v", resp.StatusCode, body)
 	}
 	if body["email"] != "owner@acme.test" || body["role"] != "org_admin" {
-		t.Fatalf("me body = %v", body)
+		t.Fatalf("me body: %v", body)
 	}
 
-	// 6. logout
-	resp, _ = doJSON(t, c, "POST", ts.URL+"/api/logout", nil, sessionCookie)
+	// 3. /api/organization with cookie.
+	resp, body = doJSON(t, c, "GET", h.server.URL+"/api/organization", nil, sessionCookie)
 	if resp.StatusCode != 200 {
-		t.Fatalf("logout status: %d", resp.StatusCode)
+		t.Fatalf("organization: %d %v", resp.StatusCode, body)
+	}
+	if body["name"] != "Acme Diving" {
+		t.Fatalf("org name: %v", body["name"])
 	}
 
-	// 7. /api/organization with old cookie -> 401
-	resp, _ = doJSON(t, c, "GET", ts.URL+"/api/organization", nil, sessionCookie)
-	if resp.StatusCode != 401 {
-		t.Fatalf("post-logout status: %d, want 401", resp.StatusCode)
+	// 4. /api/logout.
+	resp, _ = doJSON(t, c, "POST", h.server.URL+"/api/logout", nil, sessionCookie)
+	if resp.StatusCode != 200 {
+		t.Fatalf("logout: %d", resp.StatusCode)
 	}
-}
 
-func TestLoginInvalidCredentialsIsGeneric(t *testing.T) {
-	ts := newTestServer(t)
-	c := &http.Client{}
-	resp, body := doJSON(t, c, "POST", ts.URL+"/api/login", map[string]any{
-		"email":    "nobody@nowhere.test",
-		"password": "Password1",
-	})
+	// 5. /api/me with the now-revoked cookie -> 401.
+	resp, _ = doJSON(t, c, "GET", h.server.URL+"/api/me", nil, sessionCookie)
 	if resp.StatusCode != 401 {
-		t.Fatalf("status: %d", resp.StatusCode)
-	}
-	msg, _ := body["message"].(string)
-	if !strings.Contains(msg, "invalid email or password") {
-		t.Fatalf("message: %q", msg)
+		t.Fatalf("post-logout me status: %d, want 401", resp.StatusCode)
 	}
 }
 
 func TestOrganizationRequiresSession(t *testing.T) {
-	ts := newTestServer(t)
+	h := newHarness(t)
 	c := &http.Client{}
-	resp, _ := doJSON(t, c, "GET", ts.URL+"/api/organization", nil)
+	resp, _ := doJSON(t, c, "GET", h.server.URL+"/api/organization", nil)
 	if resp.StatusCode != 401 {
 		t.Fatalf("status: %d", resp.StatusCode)
 	}
 }
 
-func TestSignupDuplicateEmailReturns200(t *testing.T) {
-	// Non-enumerating: a duplicate signup must not reveal the email is taken.
-	// Implementation choice: respond 200 ok-shape, send no verification token
-	// (since none was actually issued).
-	ts := newTestServer(t)
+func TestExchangeWithoutLocalUserIs401(t *testing.T) {
+	h := newHarness(t)
 	c := &http.Client{}
-	body := map[string]any{
-		"email":             "owner@acme.test",
-		"password":          "Password1",
-		"full_name":         "Acme Owner",
-		"organization_name": "Acme Diving",
+	pUser := h.stub.NewUser("nobody@x.test", "Nobody")
+	jwt, _ := h.stub.NewSession(pUser.ID, "", time.Hour)
+
+	resp, body := bearer(t, c, h.server.URL+"/api/auth/exchange", jwt, nil)
+	if resp.StatusCode != 401 {
+		t.Fatalf("status: %d body: %v", resp.StatusCode, body)
 	}
-	if resp, _ := doJSON(t, c, "POST", ts.URL+"/api/signup", body); resp.StatusCode != 200 {
-		t.Fatalf("first status: %d", resp.StatusCode)
+	if body["error"] != "membership_pending" {
+		t.Errorf("error code: %v", body["error"])
 	}
-	resp, out := doJSON(t, c, "POST", ts.URL+"/api/signup", body)
+}
+
+func TestInviteRequiresOrgAdmin(t *testing.T) {
+	h := newHarness(t)
+	c := &http.Client{}
+
+	// Bootstrap an admin via signup-complete.
+	adminPUser := h.stub.NewUser("admin@x.test", "Admin")
+	adminJWT, _ := h.stub.NewSession(adminPUser.ID, "", time.Hour)
+	resp, _ := bearer(t, c, h.server.URL+"/api/signup-complete", adminJWT, map[string]any{
+		"organization_name": "Org",
+	})
 	if resp.StatusCode != 200 {
-		t.Fatalf("dup status: %d body=%v", resp.StatusCode, out)
+		t.Fatalf("setup admin: %d", resp.StatusCode)
 	}
-	if _, ok := out["verification_token"]; ok {
-		t.Fatalf("duplicate signup leaked verification_token: %v", out)
+	adminCookie := pickCookieFrom(resp.Cookies(), auth.SessionCookieName)
+
+	// Admin can invite.
+	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/invitations", map[string]any{
+		"email": "site@x.test",
+		"role":  "site_director",
+	}, adminCookie)
+	if resp.StatusCode != 200 {
+		t.Fatalf("invite admin path: %d %v", resp.StatusCode, body)
 	}
+
+	// Now create a non-admin user (site director) and verify they get 403.
+	adminUser, err := h.pool.UserByClerkID(context.Background(), adminPUser.ID)
+	if err != nil {
+		t.Fatalf("UserByClerkID admin: %v", err)
+	}
+	directorPUser := h.stub.NewUser("dir@x.test", "Director")
+	if _, err := h.pool.CreateExternalUser(context.Background(),
+		adminUser.OrganizationID, directorPUser.ID, "dir@x.test", "Director", store.RoleSiteDirector); err != nil {
+		t.Fatalf("CreateExternalUser director: %v", err)
+	}
+	dirJWT, _ := h.stub.NewSession(directorPUser.ID, "", time.Hour)
+	// Director exchanges to get a cookie.
+	resp, _ = bearer(t, c, h.server.URL+"/api/auth/exchange", dirJWT, nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("director exchange: %d", resp.StatusCode)
+	}
+	dirCookie := pickCookieFrom(resp.Cookies(), auth.SessionCookieName)
+
+	resp, body = doJSON(t, c, "POST", h.server.URL+"/api/invitations", map[string]any{
+		"email": "another@x.test",
+		"role":  "site_director",
+	}, dirCookie)
+	if resp.StatusCode != 403 {
+		t.Fatalf("director invite: %d %v want 403", resp.StatusCode, body)
+	}
+}
+
+func TestDeactivateUserPath(t *testing.T) {
+	h := newHarness(t)
+	c := &http.Client{}
+
+	adminPUser := h.stub.NewUser("admin@x.test", "Admin")
+	adminJWT, _ := h.stub.NewSession(adminPUser.ID, "", time.Hour)
+	resp, _ := bearer(t, c, h.server.URL+"/api/signup-complete", adminJWT, map[string]any{
+		"organization_name": "Org",
+	})
+	if resp.StatusCode != 200 {
+		t.Fatalf("setup admin: %d", resp.StatusCode)
+	}
+	adminCookie := pickCookieFrom(resp.Cookies(), auth.SessionCookieName)
+
+	adminUser, err := h.pool.UserByClerkID(context.Background(), adminPUser.ID)
+	if err != nil {
+		t.Fatalf("UserByClerkID admin: %v", err)
+	}
+	// Create a target user in the same org.
+	targetPUser := h.stub.NewUser("target@x.test", "Target")
+	target, err := h.pool.CreateExternalUser(context.Background(),
+		adminUser.OrganizationID, targetPUser.ID, "target@x.test", "Target", store.RoleSiteDirector)
+	if err != nil {
+		t.Fatalf("CreateExternalUser target: %v", err)
+	}
+
+	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/users/"+target.ID.String()+"/deactivate", nil, adminCookie)
+	if resp.StatusCode != 200 {
+		t.Fatalf("deactivate: %d %v", resp.StatusCode, body)
+	}
+
+	got, err := h.pool.UserByID(context.Background(), target.ID)
+	if err != nil {
+		t.Fatalf("UserByID: %v", err)
+	}
+	if got.IsActive {
+		t.Errorf("target should be deactivated")
+	}
+}
+
+func TestSelfDeactivationForbidden(t *testing.T) {
+	h := newHarness(t)
+	c := &http.Client{}
+
+	adminPUser := h.stub.NewUser("admin@x.test", "Admin")
+	adminJWT, _ := h.stub.NewSession(adminPUser.ID, "", time.Hour)
+	resp, _ := bearer(t, c, h.server.URL+"/api/signup-complete", adminJWT, map[string]any{
+		"organization_name": "Org",
+	})
+	if resp.StatusCode != 200 {
+		t.Fatalf("setup admin: %d", resp.StatusCode)
+	}
+	adminCookie := pickCookieFrom(resp.Cookies(), auth.SessionCookieName)
+	admin, err := h.pool.UserByClerkID(context.Background(), adminPUser.ID)
+	if err != nil {
+		t.Fatalf("UserByClerkID: %v", err)
+	}
+
+	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/users/"+admin.ID.String()+"/deactivate", nil, adminCookie)
+	if resp.StatusCode != 403 {
+		t.Fatalf("self-deactivate: %d %v want 403", resp.StatusCode, body)
+	}
+}
+
+func pickCookieFrom(cs []*http.Cookie, name string) *http.Cookie {
+	for _, c := range cs {
+		if c.Name == name {
+			return c
+		}
+	}
+	return nil
 }

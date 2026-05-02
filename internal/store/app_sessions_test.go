@@ -14,9 +14,9 @@ func TestAppSessionRoundTrip(t *testing.T) {
 	ctx := context.Background()
 
 	// Bootstrap an org + user via the legacy helper (fine — Sprint 003 still works).
-	_, user, err := p.CreateOrgAndAdmin(ctx, "Acme", "owner@acme.test", "Owner", []byte("$2a$04$placeholder"))
+	_, user, err := p.CreateExternalOrgAndAdmin(ctx, "Acme", "org_clerk_app_test", "user_clerk_app_test", "owner@acme.test", "Owner")
 	if err != nil {
-		t.Fatalf("CreateOrgAndAdmin: %v", err)
+		t.Fatalf("CreateExternalOrgAndAdmin: %v", err)
 	}
 
 	tokenHash := sha256.Sum256([]byte("dev-token"))
@@ -41,9 +41,9 @@ func TestAppSessionRoundTrip(t *testing.T) {
 func TestAppSessionExpiredIsNotFound(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()
-	_, user, err := p.CreateOrgAndAdmin(ctx, "Acme", "owner@acme.test", "Owner", []byte("$2a$04$placeholder"))
+	_, user, err := p.CreateExternalOrgAndAdmin(ctx, "Acme", "org_clerk_app_test", "user_clerk_app_test", "owner@acme.test", "Owner")
 	if err != nil {
-		t.Fatalf("CreateOrgAndAdmin: %v", err)
+		t.Fatalf("CreateExternalOrgAndAdmin: %v", err)
 	}
 
 	tokenHash := sha256.Sum256([]byte("expired-token"))
@@ -58,9 +58,9 @@ func TestAppSessionExpiredIsNotFound(t *testing.T) {
 func TestAppSessionDeleteByClerkSessionID(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()
-	_, user, err := p.CreateOrgAndAdmin(ctx, "Acme", "owner@acme.test", "Owner", []byte("$2a$04$placeholder"))
+	_, user, err := p.CreateExternalOrgAndAdmin(ctx, "Acme", "org_clerk_app_test", "user_clerk_app_test", "owner@acme.test", "Owner")
 	if err != nil {
-		t.Fatalf("CreateOrgAndAdmin: %v", err)
+		t.Fatalf("CreateExternalOrgAndAdmin: %v", err)
 	}
 
 	h1 := sha256.Sum256([]byte("t1"))
@@ -87,9 +87,9 @@ func TestAppSessionDeleteByClerkSessionID(t *testing.T) {
 func TestAppSessionDeleteForUser(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()
-	_, user, err := p.CreateOrgAndAdmin(ctx, "Acme", "owner@acme.test", "Owner", []byte("$2a$04$placeholder"))
+	_, user, err := p.CreateExternalOrgAndAdmin(ctx, "Acme", "org_clerk_app_test", "user_clerk_app_test", "owner@acme.test", "Owner")
 	if err != nil {
-		t.Fatalf("CreateOrgAndAdmin: %v", err)
+		t.Fatalf("CreateExternalOrgAndAdmin: %v", err)
 	}
 
 	h := sha256.Sum256([]byte("only-token"))

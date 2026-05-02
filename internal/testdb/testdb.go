@@ -60,8 +60,6 @@ func Pool(t *testing.T) *store.Pool {
 			app_sessions,
 			webhook_events,
 			auth_sync_cursors,
-			email_verifications,
-			sessions,
 			users,
 			organizations
 		RESTART IDENTITY CASCADE
