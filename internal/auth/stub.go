@@ -48,6 +48,16 @@ func NewStubProvider() *StubProvider {
 // deterministic timestamps or expired-token paths.
 func (s *StubProvider) SetClock(now func() time.Time) { s.now = now }
 
+// OverrideUser replaces the stored ProviderUser entry. Lets tests model
+// "the user updated their email/name in Clerk" without recreating the
+// session.
+func (s *StubProvider) OverrideUser(u *ProviderUser) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	cp := *u
+	s.users[u.ID] = &cp
+}
+
 // NewUser inserts a user into the stub and returns it.
 func (s *StubProvider) NewUser(email, fullName string) *ProviderUser {
 	s.mu.Lock()
