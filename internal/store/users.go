@@ -12,7 +12,6 @@ import (
 const (
 	RoleOrgAdmin     = "org_admin"
 	RoleSiteDirector = "site_director"
-	RoleCrew         = "crew"
 )
 
 type User struct {
@@ -142,7 +141,7 @@ func (p *Pool) UserByClerkID(ctx context.Context, clerkUserID string) (*User, er
 
 // CreateExternalUser inserts a user that already exists on the provider
 // side (i.e., has a clerk_user_id). The role argument must be one of
-// RoleOrgAdmin / RoleSiteDirector / RoleCrew.
+// RoleOrgAdmin / RoleSiteDirector.
 //
 // The user is created as email-verified — Clerk has already verified the
 // email by the time this row is written.

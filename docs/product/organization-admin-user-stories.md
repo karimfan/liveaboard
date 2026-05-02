@@ -63,7 +63,7 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 
 The following are explicitly out of scope for the Organization Admin backlog:
 
-- Live ledger entry / mid-trip consumption flows (Site Director, Crew).
+- Live ledger entry / mid-trip consumption flows (Site Director).
 - Mid-trip manifest operations (Site Director).
 - Trip start / complete lifecycle transitions (Site Director).
 - Guest self-service portal.

@@ -102,8 +102,8 @@ type Provider interface {
 
 	// InviteToOrganization sends an invitation email via the provider.
 	// Returns the invitation id, used for resend/revoke. The role string
-	// is the provider-side role slug (e.g., "org_admin", "site_director",
-	// "crew" — matching our app roles).
+	// is the provider-side role slug (e.g., "org_admin",
+	// "site_director" — matching our app roles).
 	InviteToOrganization(ctx context.Context, orgID, email, role string) (*ProviderInvitation, error)
 
 	// ResendInvitation resends the email for an existing invitation.
@@ -128,5 +128,4 @@ type Provider interface {
 const (
 	RoleOrgAdmin     = "org_admin"
 	RoleSiteDirector = "site_director"
-	RoleCrew         = "crew"
 )

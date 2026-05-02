@@ -11,7 +11,6 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 | Organization Owner | Org-wide | Read-only oversight: financial, operational, reporting. |
 | Organization Admin | Org-wide | Configure the org: fleet, catalog, pricing, trip planning, user management. |
 | Site Director | Single trip | Run one trip end-to-end: manifest, consumption, onboard ops. |
-| Crew | Single trip | Record guest consumption and assist Site Director. |
 | Guest | Self only | View own tab, dive schedule, trip details. (Future.) |
 
 ---
@@ -48,7 +47,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 **Does not own:**
 - Starting or completing active trips (Site Director).
 - Mid-trip manifest changes — adding/removing/reassigning guests once a trip is `active` (Site Director).
-- Recording guest consumption / ledger entries (Site Director, Crew).
+- Recording guest consumption / ledger entries (Site Director).
 - Owner-tier financial controls (Owner).
 - Advanced role administration (multi-admin, custom roles) — deferred.
 
@@ -63,7 +62,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 **Owns:**
 - Mid-trip manifest operations: add/remove/reassign guests once the trip is `active`.
 - Trip lifecycle transitions: start (`planned` → `active`), complete (`active` → `completed`).
-- Guest consumption / ledger entries — direct or via Crew.
+- Guest consumption / ledger entries.
 - Onboard operational coordination for the duration of the trip.
 
 **Does not own:**
@@ -73,24 +72,6 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - User invitation or role management (Org Admin).
 
 **Boundary with Org Admin:** Site Director takes the trip from a configured shell with an initial manifest and runs it. They cannot create trips, add boats, or change catalog items.
-
-**Boundary with Crew:** Crew can record consumption on the Site Director's behalf. Site Director is accountable for trip-level decisions (who is onboard, who pays for what).
-
----
-
-## Crew
-
-**Scope:** A single trip, restricted operational actions.
-
-**Owns:**
-- Recording guest consumption (ledger entries) on behalf of guests.
-
-**Does not own:**
-- Manifest mutations (Site Director).
-- Trip lifecycle transitions (Site Director).
-- Catalog / pricing / fleet (Org Admin).
-
-Crew is a thin persona for MVP. Most stories will be Site Director stories; Crew stories appear only where the operational pattern demands it.
 
 ---
 
@@ -122,7 +103,7 @@ For features that could belong to multiple personas, the table below records the
 | Complete trip (`active` → `completed`) | Site Director | Org Admin cannot. |
 | Cancel trip (`planned` only) | Org Admin | Site Director cannot. |
 | Catalog item add/edit/deactivate | Org Admin | |
-| Record consumption / ledger entries | Site Director / Crew | |
+| Record consumption / ledger entries | Site Director | |
 | Invite Site Director | Org Admin | MVP user-mgmt subset. |
 | Deactivate user | Org Admin | MVP user-mgmt subset. |
 | Setup completeness dashboard | Org Admin | What is misconfigured. |

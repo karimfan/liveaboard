@@ -85,7 +85,7 @@ Cost is favorable for our scale but is **not** the deciding factor. The decision
 | Invitation lifecycle | ✅ | — |
 | User identity (email, full_name) | ✅ source | ✅ mirror |
 | Organization identity (name) | ✅ source | ✅ mirror |
-| App-level role (`org_admin`/`site_director`/`crew`) | mirror only | ✅ **authoritative** |
+| App-level role (`org_admin`/`site_director`) | mirror only | ✅ **authoritative** |
 | Domain data (boats, trips, ledger) | — | ✅ |
 
 `users.role` is authoritative for application authorization. Clerk's organization role is mirrored for the hosted UI's display purposes only; backend handlers never trust a Clerk role claim.
@@ -127,7 +127,7 @@ CREATE TABLE auth_sync_cursors (
 ```
 
 ```sql
--- 0003_auth_provider_cleanup.sql   (Phase 6 — after end-to-end validation)
+-- 0004_auth_provider_cleanup.sql   (Phase 6 — after end-to-end validation)
 
 ALTER TABLE users          ALTER COLUMN clerk_user_id  SET NOT NULL;
 ALTER TABLE organizations  ALTER COLUMN clerk_org_id   SET NOT NULL;
@@ -289,7 +289,7 @@ The SPA's auth contract is unchanged at the API layer: same-origin cookies, `/ap
 Backend:
 - [ ] `POST /api/webhooks/clerk`: svix signature verification, idempotency via `webhook_events`, dispatch by event type.
 - [ ] Handlers for: `user.created`, `user.updated`, `user.deleted`, `organization.created`, `organization.updated`, `organization.deleted`, `organizationMembership.created`, `organizationMembership.updated`, `organizationMembership.deleted`.
-- [ ] Map Clerk org role → our `users.role` (`admin` → `org_admin`, `director` → `site_director`, `member` → `crew`).
+- [ ] Map Clerk org role → our `users.role` (`admin` → `org_admin`, `director` → `site_director`). Crew is not a role in this product.
 - [ ] `POST /api/invitations`, `POST /api/invitations/{id}/resend`, `POST /api/users/{id}/deactivate` (calls into the Provider).
 - [ ] Tests with replayed webhook fixtures (signature pass + replay idempotency).
 
@@ -302,13 +302,13 @@ Frontend:
 - [ ] Apply DESIGN.md tokens to Clerk components via `appearance` prop.
 - [ ] Delete `VerifyEmail.tsx`.
 
-### Phase 6: Cleanup migration 0003 + delete dead code + docs (~20%)
+### Phase 6: Cleanup migration 0004 + delete dead code + docs (~20%)
 
-**Files:** `internal/store/migrations/0003_auth_provider_cleanup.sql`, `internal/auth/auth.go` (DELETE), `internal/auth/auth_test.go` (DELETE), `internal/store/sessions.go` (DELETE), `internal/store/email_verifications.go` (DELETE), `docs/auth.md`, `docs/decisions/0001-auth-provider.md`, `RUNNING.md`, `.env.example`, `config/{dev,test,production}.env`, `Makefile`.
+**Files:** `internal/store/migrations/0004_auth_provider_cleanup.sql`, `internal/auth/auth.go` (DELETE), `internal/auth/auth_test.go` (DELETE), `internal/store/sessions.go` (DELETE), `internal/store/email_verifications.go` (DELETE), `docs/auth.md`, `docs/decisions/0001-auth-provider.md`, `RUNNING.md`, `.env.example`, `config/{dev,test,production}.env`, `Makefile`.
 
 **Tasks:**
-- [ ] Run end-to-end manual smoke against the dev Clerk instance (signup → invite → accept → login → deactivate → 401). Block 0003 until it passes.
-- [ ] Apply migration `0003`: drop `password_hash`, `email_verified_at`, `sessions`, `email_verifications`; promote linkage columns to NOT NULL.
+- [ ] Run end-to-end manual smoke against the dev Clerk instance (signup → invite → accept → login → deactivate → 401). Block 0004 until it passes.
+- [ ] Apply migration `0004`: drop `password_hash`, `email_verified_at`, `sessions`, `email_verifications`; promote linkage columns to NOT NULL.
 - [ ] Delete `internal/auth/auth.go`, `internal/auth/auth_test.go`, `internal/store/sessions.go`, `internal/store/email_verifications.go`.
 - [ ] `git grep "bcrypt"` returns nothing in `internal/`.
 - [ ] Add Clerk config keys to `.env.example` and the three `config/*.env` files (publishable key only — secrets stay env-only).
@@ -339,7 +339,8 @@ Frontend:
 | `internal/auth/auth.go` | Delete | Sprint 003 service superseded. |
 | `internal/auth/auth_test.go` | Delete | Superseded. |
 | `internal/store/migrations/0002_auth_provider_clerk_link.sql` | Create | Add linkage; nullable old columns; `app_sessions`, `webhook_events`, `auth_sync_cursors`. |
-| `internal/store/migrations/0003_auth_provider_cleanup.sql` | Create | Drop dead local auth state; promote linkage to NOT NULL. |
+| `internal/store/migrations/0003_drop_crew_role.sql` | Create | Drop crew from the role check constraint (product no longer uses Crew). |
+| `internal/store/migrations/0004_auth_provider_cleanup.sql` | Create | Drop dead local auth state; promote linkage to NOT NULL. |
 | `internal/store/app_sessions.go` | Create | Cookie-session bridge repo. |
 | `internal/store/organizations.go` | Create | Split from users.go; Clerk-linked ops. |
 | `internal/store/users.go` | Modify | Add `clerk_user_id`; `UpsertExternalUser`, `DeactivateUser`. |
@@ -372,7 +373,7 @@ Frontend:
 
 - [ ] ADR `docs/decisions/0001-auth-provider.md` exists and lists the chosen provider, rejected alternates, and the escape-hatch procedure.
 - [ ] `internal/auth.Provider` interface exists with `clerk.go` and `stub.go` implementations; `git grep "bcrypt"` returns nothing in `internal/`.
-- [ ] Migration `0002` runs cleanly on a fresh `liveaboard` and `liveaboard_test`; migration `0003` runs cleanly only after Phase 6 manual smoke passes.
+- [ ] Migration `0002` runs cleanly on a fresh `liveaboard` and `liveaboard_test`; migration `0004` runs cleanly only after Phase 6 manual smoke passes.
 - [ ] `internal/auth/auth.go`, `internal/auth/auth_test.go`, `internal/store/sessions.go`, `internal/store/email_verifications.go` are deleted.
 - [ ] `users.clerk_user_id` and `organizations.clerk_org_id` are NOT NULL UNIQUE after `0003`.
 - [ ] `app_sessions` is the only sessions table; `lb_session` cookie is the only auth token the SPA sees.
