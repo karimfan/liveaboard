@@ -3,17 +3,24 @@ import { appConfig } from "./config";
 export type ApiError = { error: string; message: string };
 
 function url(path: string): string {
-  // path is always like "/signup", "/login", etc.
+  // path is always like "/me", "/login", etc.
   // appConfig.apiBase is "/api" (same-origin) or an absolute URL.
   return `${appConfig.apiBase}${path}`;
 }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function call<T>(method: string, path: string, body?: unknown, jwt?: string): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (jwt) {
+    headers["Authorization"] = `Bearer ${jwt}`;
+  }
   const resp = await fetch(url(path), {
     method,
     credentials: "include",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const text = await resp.text();
   const parsed = text ? (JSON.parse(text) as unknown) : null;
@@ -25,17 +32,19 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 }
 
 export const api = {
-  signup: (input: {
-    email: string;
-    password: string;
-    full_name: string;
-    organization_name: string;
-  }) => call<{ ok: true; verification_token?: string }>("POST", "/signup", input),
+  // Phase 5/6 auth orchestration. The SPA calls these once after Clerk
+  // SignIn / SignUp; the Bearer JWT is used only by these two endpoints,
+  // which mint the lb_session cookie. Every other endpoint is cookie-auth.
+  signupComplete: (jwt: string, organizationName: string, fullName?: string) =>
+    call<{ ok: true; organization_id: string; user_id: string }>(
+      "POST",
+      "/signup-complete",
+      { organization_name: organizationName, full_name: fullName },
+      jwt,
+    ),
 
-  verifyEmail: (token: string) => call<{ ok: true }>("POST", "/verify-email", { token }),
-
-  login: (email: string, password: string) =>
-    call<{ ok: true }>("POST", "/login", { email, password }),
+  exchange: (jwt: string) =>
+    call<{ ok: true }>("POST", "/auth/exchange", {}, jwt),
 
   logout: () => call<{ ok: true }>("POST", "/logout"),
 
@@ -56,4 +65,17 @@ export const api = {
       created_at: string;
       stats: { boats: number; active_trips: number; total_guests: number };
     }>("GET", "/organization"),
+
+  // Org-admin endpoints.
+  invite: (email: string, role: string) =>
+    call<{
+      ok: true;
+      invitation: { id: string; email: string; role: string; status: string };
+    }>("POST", "/invitations", { email, role }),
+
+  resendInvite: (id: string) =>
+    call<{ ok: true }>("POST", `/invitations/${encodeURIComponent(id)}/resend`),
+
+  deactivateUser: (userId: string) =>
+    call<{ ok: true }>("POST", `/users/${encodeURIComponent(userId)}/deactivate`),
 };

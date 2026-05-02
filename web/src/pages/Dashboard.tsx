@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useClerk } from "@clerk/clerk-react";
 
 import { api } from "../lib/api";
 
@@ -19,6 +20,7 @@ type Me = {
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const { signOut } = useClerk();
   const [org, setOrg] = useState<Org | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +35,14 @@ export function Dashboard() {
   }, []);
 
   async function logout() {
-    await api.logout();
-    navigate("/login");
+    try {
+      await api.logout();
+    } finally {
+      // Always tear down Clerk's session too, even if the backend call
+      // failed — otherwise the next visit would silently re-exchange.
+      await signOut();
+      navigate("/login");
+    }
   }
 
   if (error) return <div className="dashboard"><div className="error">{error}</div></div>;
