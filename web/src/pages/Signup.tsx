@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { SignedIn, SignedOut, SignUp, useAuth, useUser } from "@clerk/clerk-react";
 
 import { api, type ApiError } from "../lib/api";
@@ -21,9 +21,6 @@ export function Signup() {
         <SignedOut>
           <h1 className="auth-wordmark">Liveaboard</h1>
           <SignUp routing="path" path="/signup" signInUrl="/login" />
-          <p className="muted auth-aside">
-            Already have an account? <Link to="/login">Log in</Link>
-          </p>
         </SignedOut>
         <SignedIn>
           <FinishSignup />

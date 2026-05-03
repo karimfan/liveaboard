@@ -101,7 +101,7 @@ h3 { font-size: var(--fs-xl); }
 
 .auth-stack {
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -119,13 +119,8 @@ h3 { font-size: var(--fs-xl); }
   font-size: var(--fs-xl);
   letter-spacing: -0.01em;
   color: var(--c-900);
-  margin: 0 0 var(--sp-md);
-  text-align: left;
-}
-
-.auth-aside {
-  text-align: center;
   margin: 0;
+  text-align: left;
 }
 
 .auth-card {

@@ -43,15 +43,12 @@ export const clerkAppearance: Appearance = {
       border: "none",
       backgroundColor: "transparent",
     },
-    headerTitle: {
-      fontFamily: '"General Sans", "DM Sans", system-ui, sans-serif',
-      fontSize: "1.5rem",
-      letterSpacing: "-0.01em",
-    },
-    headerSubtitle: {
-      fontSize: "0.875rem",
-      color: "#78716c",
-    },
+    // Our auth pages render a "Liveaboard" wordmark above the Clerk
+    // component; suppressing Clerk's own header keeps a single visual
+    // hierarchy and avoids "Liveaboard / Sign in to Liveaboard" stacking.
+    header: { display: "none" },
+    headerTitle: { display: "none" },
+    headerSubtitle: { display: "none" },
     formButtonPrimary: {
       fontFamily: '"DM Sans", system-ui, sans-serif',
       fontSize: "0.875rem",
@@ -72,7 +69,10 @@ export const clerkAppearance: Appearance = {
       borderRadius: "8px",
       border: "1px solid #e3e0dd",
     },
-    footer: { display: "none" },
-    footerAction: { display: "none" },
+    // Keep Clerk's footer link ("New here? Create an organization" /
+    // "Already have an account? Log in") — it provides the cross-nav
+    // between login and signup pages and is themed against our amber
+    // accent via the colorPrimary variable above.
+    footerActionLink: { color: "#e5853b" },
   },
 };

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { SignedIn, SignedOut, SignIn, useAuth } from "@clerk/clerk-react";
 
 import { api } from "../lib/api";
@@ -19,9 +19,6 @@ export function Login() {
         <SignedOut>
           <h1 className="auth-wordmark">Liveaboard</h1>
           <SignIn routing="path" path="/login" signUpUrl="/signup" />
-          <p className="muted auth-aside">
-            New here? <Link to="/signup">Create an organization</Link>
-          </p>
         </SignedOut>
         <SignedIn>
           <Bridge />
