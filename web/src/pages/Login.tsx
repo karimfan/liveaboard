@@ -8,22 +8,25 @@ import { api } from "../lib/api";
  * Login renders Clerk's <SignIn /> component for unsigned-in users.
  * Once Clerk authenticates, the inner <Bridge /> exchanges the JWT for
  * an lb_session cookie and navigates to the dashboard.
+ *
+ * The wordmark above is our chrome; Clerk's component renders without
+ * its own card thanks to the appearance overrides in clerkAppearance.ts.
  */
 export function Login() {
   return (
     <div className="auth-shell">
-      <SignedOut>
-        <div className="auth-card">
-          <h1>Log in</h1>
+      <div className="auth-stack">
+        <SignedOut>
+          <h1 className="auth-wordmark">Liveaboard</h1>
           <SignIn routing="path" path="/login" signUpUrl="/signup" />
-          <p className="muted" style={{ marginTop: 16, textAlign: "center" }}>
+          <p className="muted auth-aside">
             New here? <Link to="/signup">Create an organization</Link>
           </p>
-        </div>
-      </SignedOut>
-      <SignedIn>
-        <Bridge />
-      </SignedIn>
+        </SignedOut>
+        <SignedIn>
+          <Bridge />
+        </SignedIn>
+      </div>
     </div>
   );
 }
@@ -41,8 +44,6 @@ function Bridge() {
         await api.exchange(jwt);
         if (!cancelled) navigate("/");
       } catch (err) {
-        // membership_pending -> push to signup; everything else falls
-        // through to the RequireSession-driven flow on next render.
         const e = err as { error?: string };
         if (!cancelled && e.error === "membership_pending") {
           navigate("/signup");

@@ -99,6 +99,35 @@ h3 { font-size: var(--fs-xl); }
   padding: var(--sp-lg);
 }
 
+.auth-stack {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-md);
+  background: white;
+  border: 1px solid var(--c-200);
+  border-radius: var(--r-lg);
+  padding: var(--sp-xl);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.auth-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-xl);
+  letter-spacing: -0.01em;
+  color: var(--c-900);
+  margin: 0 0 var(--sp-md);
+  text-align: left;
+}
+
+.auth-aside {
+  text-align: center;
+  margin: 0;
+}
+
 .auth-card {
   width: 100%;
   max-width: 420px;

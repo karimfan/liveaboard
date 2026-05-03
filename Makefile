@@ -45,3 +45,8 @@ fmt:
 .PHONY: clean
 clean:
 	rm -rf bin web/dist/assets web/dist/index.html web/.env.local
+
+## dev-reset: Wipe Clerk users+orgs and truncate local users/orgs/sessions.
+.PHONY: dev-reset
+dev-reset:
+	./scripts/dev-reset.sh

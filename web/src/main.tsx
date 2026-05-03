@@ -11,11 +11,13 @@ import { Signup } from "./pages/Signup";
 import { Dashboard } from "./pages/Dashboard";
 import { RequireSession } from "./lib/RequireSession";
 import { appConfig } from "./lib/config";
+import { clerkAppearance } from "./lib/clerkAppearance";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ClerkProvider
       publishableKey={appConfig.clerkPublishableKey}
+      appearance={clerkAppearance}
       // Tell Clerk where to send the browser after the hosted flows
       // complete; both routes are within our SPA and handle the next
       // step (org bootstrap or session exchange) themselves.

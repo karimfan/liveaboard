@@ -7,9 +7,8 @@ import { api, type ApiError } from "../lib/api";
 /**
  * Signup is a two-phase flow:
  *
- *   1. <SignedOut>: render Clerk's <SignUp /> component. Clerk handles
- *      email + password (or social) credential collection and email
- *      verification on its own hosted UI.
+ *   1. <SignedOut>: render Clerk's <SignUp /> component (chromeless via
+ *      appearance overrides; our wordmark provides the page chrome).
  *
  *   2. <SignedIn>: the user has a Clerk identity but no org yet. Show
  *      our org-name form, POST /api/signup-complete with the Clerk JWT,
@@ -18,21 +17,18 @@ import { api, type ApiError } from "../lib/api";
 export function Signup() {
   return (
     <div className="auth-shell">
-      <SignedOut>
-        <div className="auth-card">
-          <h1>Create your organization</h1>
-          <p className="muted" style={{ marginBottom: 24 }}>
-            You'll be the first Organization Admin.
-          </p>
+      <div className="auth-stack">
+        <SignedOut>
+          <h1 className="auth-wordmark">Liveaboard</h1>
           <SignUp routing="path" path="/signup" signInUrl="/login" />
-          <p className="muted" style={{ marginTop: 16, textAlign: "center" }}>
+          <p className="muted auth-aside">
             Already have an account? <Link to="/login">Log in</Link>
           </p>
-        </div>
-      </SignedOut>
-      <SignedIn>
-        <FinishSignup />
-      </SignedIn>
+        </SignedOut>
+        <SignedIn>
+          <FinishSignup />
+        </SignedIn>
+      </div>
     </div>
   );
 }
@@ -69,7 +65,7 @@ function FinishSignup() {
   return (
     <form className="auth-card" onSubmit={onSubmit}>
       <h1>Name your organization</h1>
-      <p className="muted" style={{ marginBottom: 24 }}>
+      <p className="muted" style={{ marginBottom: "var(--sp-lg)" }}>
         You're signed in as {user?.primaryEmailAddress?.emailAddress}. Pick a
         name for your organization to finish setup.
       </p>
