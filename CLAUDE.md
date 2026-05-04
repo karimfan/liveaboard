@@ -57,3 +57,15 @@ In QA mode, flag any code that doesn't match DESIGN.md.
 - `go vet` and linter must pass (backend)
 - Code must be formatted (`gofmt` for Go, `prettier` for TypeScript)
 - Each commit should be focused — no unrelated changes
+
+## Branching
+
+- **Work directly on `main`.** Do not create feature branches
+  (`sprint-NNN-*`, etc.). Each sprint or task lands as a series of
+  focused commits on `main`.
+- **Do not open pull requests** unless the user explicitly asks for
+  one. Commits go straight to `origin/main`.
+- All other Development Rules above still apply per commit (tests
+  pass, gofmt clean, go vet clean, focused changes).
+- The historical `sprint-NNN-*` branches that exist on origin are
+  archives only; do not base new work on them.
