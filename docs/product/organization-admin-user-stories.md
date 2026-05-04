@@ -50,7 +50,7 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 | MVP user management | Minimal subset only: invite Site Director, deactivate user, assign trip leadership. Advanced role admin deferred. | Site Director workflows depend on the ability to invite and assign — full deferral would block the next implementation sprints. |
 | Catalog pricing | Org-level flat per-item pricing for MVP. Per-boat / per-trip overrides captured as `Could` follow-ups. | Simplest pricing model that supports a real first release. |
 | Manifest ownership | Org Admin prepares the initial manifest pre-departure. Mid-trip manifest mutations belong to Site Director. | Matches `personas.md` and the README. |
-| Cabin model | Cabins defined inline when adding a boat. Multi-berth cabins are represented as separately assignable units (e.g., Cabin 1A, Cabin 1B). | Each berth is the assignable unit for guest cabin assignment. |
+| Cabin model | Cabin layouts are not modeled. A boat has a single capacity number; the manifest is a flat list of guests (no spatial assignment). | Simplifies the model. Per-cabin assignment can be revisited as a `Could` follow-up if operators ask for it. |
 | Trip lifecycle | Org Admin creates, configures, cancels (planned only), and monitors trips. Site Director performs `planned → active` and `active → completed` transitions. | Reflects who is on the boat at the moment of the transition. |
 | Soft deletion | Boats, trips, catalog items, and users are deactivated/archived rather than hard-deleted. | Preserves historical trip and ledger integrity. |
 | Reporting (Org Admin) | Setup completeness and operational status are `Must`. Revenue summaries are `Should`. Cross-trip analytics deferred (post-MVP). | Matches persona boundaries. |
@@ -225,22 +225,24 @@ Notes: Multi-currency support and FX conversion are out of scope.
 
 ---
 
-## Group 3: Fleet Management — Boats & Cabins
+## Group 3: Fleet Management — Boats
+
+> Cabin layouts are not modeled. A boat is name + description + image
+> + capacity (single number) + source linkage. Spatial cabin
+> assignment on the manifest is deferred (post-MVP).
 
 ### US-3.1: Add a boat to the fleet
 
-> As an Organization Admin, I want to add a new boat with its cabin layout so that I can run trips on it.
+> As an Organization Admin, I want to add a new boat so that I can run trips on it.
 
 Priority: Must
 Area: Fleet
 Depends on: US-2.1
 
 Acceptance Criteria:
-- [ ] Admin provides boat name (required) and description (optional).
-- [ ] Admin defines at least one cabin; each cabin has a name and a berth count.
-- [ ] Multi-berth cabins are persisted as separately assignable units (e.g., 1A, 1B).
+- [ ] Admin provides boat name (required), description (optional), and capacity (required, total guest seats).
 - [ ] Boat name is unique within the organization.
-- [ ] Boat appears in the fleet list with total berth capacity.
+- [ ] Boat appears in the fleet list.
 
 ### US-3.2: View fleet
 
@@ -251,34 +253,32 @@ Area: Fleet
 Depends on: US-3.1
 
 Acceptance Criteria:
-- [ ] List shows boat name, number of cabins, total berth capacity, and number of active/upcoming trips.
+- [ ] List shows boat name, capacity, and number of active/upcoming trips.
 - [ ] Sorted alphabetically by name; only active (non-archived) boats by default.
 
-### US-3.3: View boat details and cabins
+### US-3.3: View boat details
 
-> As an Organization Admin, I want to see a specific boat's details including cabin layout.
+> As an Organization Admin, I want to see a specific boat's details.
 
 Priority: Must
 Area: Fleet
 Depends on: US-3.2
 
 Acceptance Criteria:
-- [ ] Detail view shows name, description, full cabin/berth list, and total capacity.
+- [ ] Detail view shows name, description, capacity, and image.
 - [ ] Lists upcoming and past trips for this boat.
 
 ### US-3.4: Update boat details
 
-> As an Organization Admin, I want to update a boat's name, description, or cabin layout so that information stays accurate.
+> As an Organization Admin, I want to update a boat's name, description, or capacity so that information stays accurate.
 
 Priority: Must
 Area: Fleet
 Depends on: US-3.3
 
 Acceptance Criteria:
-- [ ] Admin can edit name and description.
-- [ ] Admin can add cabins/berths.
-- [ ] Admin can rename cabins/berths.
-- [ ] Admin can remove cabins/berths only if they are not referenced by any active or upcoming trip's manifest.
+- [ ] Admin can edit name, description, and capacity.
+- [ ] Capacity cannot be reduced below the highest guest count of any active or upcoming trip on this boat.
 - [ ] Updated boat name remains unique within the organization.
 
 ### US-3.5: Archive a boat
@@ -314,7 +314,7 @@ Acceptance Criteria:
 - [ ] Start date must be in the future; end date must be after start date.
 - [ ] Trips on the same boat cannot have overlapping date ranges.
 - [ ] Trip is created in `planned` status.
-- [ ] Trip snapshots the boat's current cabin layout as its available cabins.
+- [ ] Trip inherits the boat's current capacity as its guest cap.
 
 ### US-4.2: View all trips
 
@@ -339,8 +339,8 @@ Depends on: US-4.2
 
 Acceptance Criteria:
 - [ ] Shows name, boat, dates, status, assigned Site Director.
-- [ ] Shows cabin occupancy: which cabins/berths are assigned, which are empty.
-- [ ] Shows the manifest with cabin assignments.
+- [ ] Shows guest count and remaining capacity.
+- [ ] Shows the manifest (flat list of guests).
 - [ ] Shows revenue summary (charges, settled, outstanding) — read-only.
 
 ### US-4.4: Update trip details
@@ -359,7 +359,7 @@ Acceptance Criteria:
 
 ### US-4.5: Prepare initial manifest — add a guest (pre-departure)
 
-> As an Organization Admin, I want to add guests to a planned trip and assign them to cabins so that the manifest is ready before departure.
+> As an Organization Admin, I want to add guests to a planned trip so that the manifest is ready before departure.
 
 Priority: Must
 Area: Trips
@@ -368,15 +368,14 @@ Depends on: US-4.1
 Acceptance Criteria:
 - [ ] Available only while trip status is `planned`.
 - [ ] Admin provides guest name (required) and email (optional).
-- [ ] Admin assigns the guest to an available berth (e.g., Cabin 1A).
-- [ ] A berth cannot be assigned to more than one guest at a time.
-- [ ] Guest count and occupancy % update on the trip view.
+- [ ] Manifest size cannot exceed the boat's capacity.
+- [ ] Guest count and remaining capacity update on the trip view.
 
-Notes: Mid-trip add/remove/reassign once the trip is `active` is Site Director scope.
+Notes: Mid-trip add/remove once the trip is `active` is Site Director scope. Spatial cabin assignment is deferred — the manifest is a flat list of guests.
 
 ### US-4.6: Prepare initial manifest — remove a guest (pre-departure)
 
-> As an Organization Admin, I want to remove a guest from a planned trip so that their berth is freed up.
+> As an Organization Admin, I want to remove a guest from a planned trip so the slot is freed up.
 
 Priority: Must
 Area: Trips
@@ -384,16 +383,18 @@ Depends on: US-4.5
 
 Acceptance Criteria:
 - [ ] Available only while trip status is `planned`.
-- [ ] Guest is removed from the manifest; their berth is released.
+- [ ] Guest is removed from the manifest.
 - [ ] Confirmation is required.
 
-### US-4.7: Prepare initial manifest — reassign cabin (pre-departure)
+### US-4.7: Reassign guest (pre-departure) — DEFERRED
 
-> As an Organization Admin, I want to move a guest to a different cabin/berth so that I can adjust the planned manifest.
+> As an Organization Admin, I want to move a guest to a different cabin so that I can adjust the planned manifest.
 
-Priority: Should
+Priority: Could (Deferred)
 Area: Trips
 Depends on: US-4.5
+
+Acceptance Criteria: Deferred (post-MVP). Cabin layouts are not modeled in MVP, so cabin reassignment has no spatial meaning. Captured here so it is not lost.
 
 Acceptance Criteria:
 - [ ] Available only while trip status is `planned`.
@@ -598,7 +599,7 @@ Area: Oversight
 Depends on: US-2.1
 
 Acceptance Criteria:
-- [ ] Dashboard surfaces: boats with no cabins, trips in `planned` with no Site Director assigned, trips in `planned` with empty manifests inside a configurable time-to-departure window, catalog items with no category, organization with no currency set.
+- [ ] Dashboard surfaces: boats below configured min stock for any catalog item, trips in `planned` with no Site Director assigned, trips in `planned` with empty manifests inside a configurable time-to-departure window, catalog items with no category, organization with no currency set.
 - [ ] Each item links to the screen where it can be fixed.
 
 ### US-7.2: Operational trip status view

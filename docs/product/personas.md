@@ -20,10 +20,11 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 
 **Owns:**
 - Organization profile and defaults (name, currency).
-- Fleet: boats and cabin layouts.
-- Catalog: items, categories, pricing.
+- Fleet: boats (name, image, source linkage). Cabin layouts are not modeled; capacity is a single number per boat.
+- Catalog: items, categories, pricing (org-level flat).
+- Per-boat inventory: how many of each catalog item each boat carries (quantity tracking).
 - Trip planning: create trip shell, set dates, assign Site Director, cancel planned trips.
-- Pre-departure manifest preparation: initial guest list and cabin assignments before the trip starts.
+- Pre-departure manifest preparation: initial guest list before the trip starts.
 - User management (MVP subset): invite Site Directors, deactivate users, assign trip leadership.
 - Reporting and oversight: setup completeness, operational trip status, revenue summaries, cross-trip analytics, financial reports.
 
@@ -49,7 +50,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Onboard operational coordination for the duration of the trip.
 
 **Does not own:**
-- Boat/cabin configuration (Org Admin).
+- Boat configuration (Org Admin).
 - Catalog/pricing (Org Admin).
 - Cross-trip or org-wide reporting (Org Admin).
 - User invitation or role management (Org Admin).
@@ -80,7 +81,7 @@ For features that could belong to multiple personas, the table below records the
 |---|---|---|
 | Create trip shell | Org Admin | Date/boat/name. Trip starts in `planned`. |
 | Assign Site Director to trip | Org Admin | Required before trip can be started. |
-| Pre-departure manifest (planned trips) | Org Admin | Initial guest list and cabin assignments. |
+| Pre-departure manifest (planned trips) | Org Admin | Initial guest list. |
 | Mid-trip manifest changes | Site Director | Add/remove/reassign once trip is `active`. |
 | Start trip (`planned` → `active`) | Site Director | Org Admin cannot. |
 | Complete trip (`active` → `completed`) | Site Director | Org Admin cannot. |
