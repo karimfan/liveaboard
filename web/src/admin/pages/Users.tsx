@@ -1,61 +1,71 @@
-import { users } from "../mock";
+import { useEffect, useState } from "react";
+
+import { adminApi, type AdminUser } from "../api";
 
 export function Users() {
+  const [users, setUsers] = useState<AdminUser[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    adminApi
+      .listUsers()
+      .then((res) => !cancelled && setUsers(res.users ?? []))
+      .catch((e) => !cancelled && setError(e?.message ?? "Failed to load users."));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <>
       <div className="admin-page-header">
         <div>
           <h1 className="admin-page-title">Users</h1>
           <div className="admin-page-subtitle">
-            Org Admins, Site Directors, and pending invitations.
+            Org Admins and Site Directors in your organization.
           </div>
         </div>
-        <button className="primary">+ Invite</button>
+        <button className="primary" disabled title="Coming next sprint">
+          + Invite
+        </button>
       </div>
 
-      <div className="filter-bar">
-        <select defaultValue="active">
-          <option value="active">Active</option>
-          <option value="pending">Pending invites</option>
-          <option value="deactivated">Deactivated</option>
-          <option value="all">All</option>
-        </select>
-        <input type="search" placeholder="Search name or email..." />
-        <div className="filter-bar__spacer" />
-      </div>
-
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-            <tr key={u.id} className="is-clickable">
-              <td>{u.fullName}</td>
-              <td>{u.email}</td>
-              <td>{u.role}</td>
-              <td>
-                {u.status === "active" ? (
-                  <span className="chip chip--active">Active</span>
-                ) : u.status === "pending invite" ? (
-                  <span className="chip chip--warn">Pending</span>
-                ) : (
-                  <span className="chip chip--archived">Deactivated</span>
-                )}
-              </td>
-              <td className="muted">
-                {u.status === "pending invite" ? `Invited ${u.invitedAt}` : ""}
-              </td>
+      {error && <div className="error">{error}</div>}
+      {!users ? (
+        <div className="muted">Loading…</div>
+      ) : users.length === 0 ? (
+        <div className="empty-state">
+          <h3>No users yet</h3>
+        </div>
+      ) : (
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map((u) => (
+              <tr key={u.id}>
+                <td>{u.full_name}</td>
+                <td>{u.email}</td>
+                <td>{u.role.replace("_", " ")}</td>
+                <td>
+                  {u.is_active ? (
+                    <span className="chip chip--active">Active</span>
+                  ) : (
+                    <span className="chip chip--archived">Deactivated</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </>
   );
 }

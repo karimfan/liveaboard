@@ -85,6 +85,7 @@ func main() {
 		Exchange: exchange,
 		Session:  session,
 		Admin:    admin,
+		AdminAPI: &httpapi.AdminHandlers{Store: pool},
 		Webhook:  webhook,
 	}
 

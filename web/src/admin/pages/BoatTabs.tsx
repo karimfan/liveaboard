@@ -1,15 +1,15 @@
 import { useOutletContext } from "react-router-dom";
 
-import type { Boat, InventoryRow, Trip } from "../mock";
+import type { Boat, Trip } from "../api";
 
-type Ctx = { boat: Boat; inventory: InventoryRow[]; trips: Trip[] };
+type Ctx = { boat: Boat; trips: Trip[] };
 
 function useBoatCtx(): Ctx {
   return useOutletContext<Ctx>();
 }
 
 export function BoatTrips() {
-  const { trips, boat } = useBoatCtx();
+  const { trips } = useBoatCtx();
   if (trips.length === 0) {
     return (
       <div className="empty-state">
@@ -25,101 +25,55 @@ export function BoatTrips() {
           <th>Dates</th>
           <th>Itinerary</th>
           <th>Director</th>
-          <th>Manifest</th>
-          <th>Status</th>
+          <th>Price</th>
+          <th>Availability</th>
         </tr>
       </thead>
       <tbody>
         {trips.map((t) => (
-          <tr key={t.id} className="is-clickable">
+          <tr key={t.id}>
             <td>
-              {t.startDate} → {t.endDate}
+              {t.start_date} → {t.end_date}
             </td>
             <td>{t.itinerary}</td>
-            <td>{t.director ?? <span className="chip chip--warn">Unassigned</span>}</td>
-            <td className="num">
-              {t.manifestFilled} / {t.manifestCapacity}
-            </td>
             <td>
-              <span
-                className={
-                  "chip " +
-                  (t.availability === "FULL"
-                    ? "chip--full"
-                    : "chip--available")
-                }
-              >
-                {t.availability}
-              </span>
+              {t.site_director_name ?? (
+                <span className="chip chip--warn">Unassigned</span>
+              )}
+            </td>
+            <td className="num">{t.price_text ?? "—"}</td>
+            <td>
+              {t.availability_text ? (
+                <span
+                  className={
+                    "chip " +
+                    (t.availability_text.toUpperCase().includes("FULL")
+                      ? "chip--full"
+                      : "chip--available")
+                  }
+                >
+                  {t.availability_text}
+                </span>
+              ) : (
+                <span className="muted">—</span>
+              )}
             </td>
           </tr>
         ))}
       </tbody>
-      {/* boat is captured for closure type-safety; render nothing extra */}
-      <tfoot style={{ display: "none" }}>{boat.name}</tfoot>
     </table>
   );
 }
 
 export function BoatInventory() {
-  const { inventory, boat } = useBoatCtx();
-  if (inventory.length === 0) {
-    return (
-      <div className="empty-state">
-        <h3>No stock entries yet</h3>
-        <p>
-          Add catalog items and set per-boat quantities to enable low-stock
-          alerts.
-        </p>
-        <p style={{ marginTop: "var(--sp-md)" }}>
-          <button className="primary">+ Add stock entry</button>
-        </p>
-      </div>
-    );
-  }
   return (
-    <>
-      <div className="filter-bar">
-        <input type="search" placeholder={`Search ${boat.name} inventory...`} />
-        <div className="filter-bar__spacer" />
-        <button className="primary">+ Add stock entry</button>
-      </div>
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Category</th>
-            <th>On hand</th>
-            <th>Min</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {inventory.map((row) => (
-            <tr key={row.itemId}>
-              <td>{row.itemName}</td>
-              <td>{row.category}</td>
-              <td className="num">
-                <input className="inline-num" defaultValue={row.onHand} />
-              </td>
-              <td className="num">
-                <input className="inline-num" defaultValue={row.minThreshold} />
-              </td>
-              <td>
-                {row.onHand < row.minThreshold ? (
-                  <span className="chip chip--low">low</span>
-                ) : (
-                  <span className="chip chip--ok">ok</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="muted" style={{ marginTop: "var(--sp-md)" }}>
-        Edits in this mockup are not persisted.
+    <div className="empty-state">
+      <h3>Inventory tracking coming next sprint</h3>
+      <p>
+        Per-boat stock quantities for each catalog item will live here.
+        Schema and CRUD ship in Sprint 009.
       </p>
-    </>
+    </div>
   );
 }
 

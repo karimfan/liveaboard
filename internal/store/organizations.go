@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // OrganizationByClerkID looks up an organization by its Clerk org id.
@@ -153,4 +155,24 @@ func (p *Pool) OrganizationByName(ctx context.Context, name string) (*Organizati
 	default:
 		return nil, ErrOrgAmbiguous
 	}
+}
+
+// UpdateOrganizationProfile updates the org's name and currency.
+// Returns the updated row. Tenant scoping is implicit (the caller
+// passes the org id from the authenticated session).
+func (p *Pool) UpdateOrganizationProfile(ctx context.Context, orgID uuid.UUID, name string, currency *string) (*Organization, error) {
+	org := &Organization{}
+	err := p.QueryRow(ctx, `
+		UPDATE organizations
+		SET name = $2, currency = $3, updated_at = now()
+		WHERE id = $1
+		RETURNING id, name, currency, created_at, updated_at
+	`, orgID, name, currency).Scan(&org.ID, &org.Name, &org.Currency, &org.CreatedAt, &org.UpdatedAt)
+	if isNoRows(err) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return org, nil
 }

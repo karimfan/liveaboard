@@ -14,21 +14,23 @@ export function Reports() {
         <div className="admin-card">
           <h2 className="admin-card__title">Setup completeness</h2>
           <p className="muted">
-            See <a href="/admin">Overview</a> for the live setup checklist
-            and per-step completion. A trend over time will land here as
-            data accumulates.
+            See <a href="/admin">Overview</a> for the live setup
+            checklist and per-step completion. A trend over time will
+            land here as data accumulates.
           </p>
         </div>
         <div className="admin-card">
           <h2 className="admin-card__title">Operational status</h2>
           <p className="muted">
-            Trips by status across the fleet. Coming with US-7.2.
+            Trips by status across the fleet (US-7.2). Coming with the
+            reporting sprint.
           </p>
         </div>
         <div className="admin-card">
           <h2 className="admin-card__title">Revenue per trip</h2>
           <p className="muted">
-            Per-trip charges, settled, and outstanding. Coming with US-7.3.
+            Per-trip charges, settled, and outstanding (US-7.3). Lands
+            once the ledger schema exists.
           </p>
         </div>
         <div className="admin-card">

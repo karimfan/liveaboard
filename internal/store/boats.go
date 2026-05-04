@@ -106,6 +106,32 @@ func (p *Pool) UpsertBoat(
 	return boat, nil
 }
 
+// BoatByID looks up a boat by uuid, scoped to org for tenant isolation.
+func (p *Pool) BoatByID(ctx context.Context, orgID, boatID uuid.UUID) (*Boat, error) {
+	boat := &Boat{}
+	err := scanBoat(p.QueryRow(ctx, `
+		SELECT `+boatColumns+`
+		FROM boats
+		WHERE id = $1 AND organization_id = $2
+	`, boatID, orgID), boat)
+	if isNoRows(err) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return boat, nil
+}
+
+// BoatCountForOrg returns the number of boats for an org.
+func (p *Pool) BoatCountForOrg(ctx context.Context, orgID uuid.UUID) (int, error) {
+	var n int
+	if err := p.QueryRow(ctx, `SELECT count(*) FROM boats WHERE organization_id = $1`, orgID).Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
 // BoatBySourceSlug looks up a boat by its (org, provider, slug) tuple.
 func (p *Pool) BoatBySourceSlug(
 	ctx context.Context,

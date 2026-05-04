@@ -1,14 +1,39 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import {
-  lowStock,
-  recentActivity,
-  setupCompletenessPct,
-  setupSteps,
-  trippsNeedingAttention,
-} from "../mock";
+import { adminApi, type Overview as OverviewT } from "../api";
+import { useMe } from "../useMe";
 
 export function Overview() {
+  const me = useMe();
+  const [data, setData] = useState<OverviewT | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Site Directors don't have access to the admin /overview endpoint.
+  // Their landing page renders a smaller variant.
+  const isAdmin = me.loaded && me.me?.role === "org_admin";
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    adminApi
+      .overview()
+      .then((d) => !cancelled && setData(d))
+      .catch((e) => !cancelled && setError(e?.message ?? "Failed to load."));
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
+
+  if (!me.loaded) return null;
+
+  if (!isAdmin) {
+    return <SiteDirectorOverview />;
+  }
+
+  if (error) return <div className="error">{error}</div>;
+  if (!data) return <div className="muted">Loading…</div>;
+
   return (
     <>
       <div className="admin-page-header">
@@ -23,11 +48,11 @@ export function Overview() {
       <div className="admin-grid">
         <div className="admin-card">
           <h2 className="admin-card__title">Setup completeness</h2>
-          <div className="setup-pct">{setupCompletenessPct}%</div>
+          <div className="setup-pct">{data.setup.pct}%</div>
           <ul className="setup-list">
-            {setupSteps.map((s) => (
+            {data.setup.steps.map((s) => (
               <li
-                key={s.label}
+                key={s.key}
                 className={"setup-list__item" + (s.done ? "" : " is-pending")}
               >
                 <span
@@ -49,49 +74,23 @@ export function Overview() {
 
         <div className="admin-card">
           <h2 className="admin-card__title">Trips needing attention</h2>
-          {trippsNeedingAttention.length === 0 ? (
-            <div className="alert-row__sub">All planned trips are on track.</div>
+          {data.trips_needing_attention.length === 0 ? (
+            <div className="alert-row__sub">
+              All planned trips in the next 90 days have a director assigned.
+            </div>
           ) : (
-            trippsNeedingAttention.map((t) => {
-              const reason = t.director === null
-                ? "No director assigned"
-                : `Manifest ${Math.round((t.manifestFilled / t.manifestCapacity) * 100)}% — below 50%`;
-              return (
-                <div key={t.id} className="alert-row">
-                  <div>
-                    <div className="alert-row__title">
-                      <Link to={`/admin/trips/${t.id}`}>
-                        {t.boatName} · {t.itinerary}
-                      </Link>
-                    </div>
-                    <div className="alert-row__sub">
-                      {t.startDate} → {t.endDate} · {reason}
-                    </div>
-                  </div>
-                  <Link to={`/admin/trips/${t.id}`}>
-                    <button>Open</button>
-                  </Link>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        <div className="admin-card">
-          <h2 className="admin-card__title">Low-stock alerts</h2>
-          {lowStock.length === 0 ? (
-            <div className="alert-row__sub">All boats above their stock thresholds.</div>
-          ) : (
-            lowStock.map((row) => (
-              <div key={row.boatId} className="alert-row">
+            data.trips_needing_attention.map((t) => (
+              <div key={t.id} className="alert-row">
                 <div>
-                  <div className="alert-row__title">{row.boatName}</div>
+                  <div className="alert-row__title">
+                    {t.boat_name} · {t.itinerary}
+                  </div>
                   <div className="alert-row__sub">
-                    {row.lowCount} {row.lowCount === 1 ? "item" : "items"} below threshold
+                    {t.start_date} → {t.end_date} · {t.reason}
                   </div>
                 </div>
-                <Link to={`/admin/fleet/${row.boatId === "boat_1" ? "gaia-love" : row.boatId === "boat_2" ? "blue-spirit" : "seahorse"}`}>
-                  <button className="ghost">Open inventory</button>
+                <Link to="/admin/trips">
+                  <button>Open</button>
                 </Link>
               </div>
             ))
@@ -99,16 +98,40 @@ export function Overview() {
         </div>
 
         <div className="admin-card">
-          <h2 className="admin-card__title">Recent activity</h2>
-          {recentActivity.map((entry, i) => (
-            <div key={i} className="alert-row">
-              <div>
-                <div className="alert-row__title">{entry.text}</div>
-              </div>
-              <div className="alert-row__sub">{entry.ts}</div>
-            </div>
-          ))}
+          <h2 className="admin-card__title">Low-stock alerts</h2>
+          <div className="alert-row__sub">
+            Per-boat inventory tracking arrives in Sprint 009. Once stock
+            levels are recorded, alerts will appear here.
+          </div>
         </div>
+
+        <div className="admin-card">
+          <h2 className="admin-card__title">Recent activity</h2>
+          <div className="alert-row__sub">
+            An activity log will land alongside reporting (US-7.x).
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function SiteDirectorOverview() {
+  return (
+    <>
+      <div className="admin-page-header">
+        <div>
+          <h1 className="admin-page-title">My trips</h1>
+          <div className="admin-page-subtitle">
+            Your assigned trips, current and upcoming.
+          </div>
+        </div>
+      </div>
+      <div className="admin-card">
+        <p className="muted">
+          Site Director views are coming together. Open <Link to="/admin/trips">Trips</Link> for
+          the trips you're assigned to.
+        </p>
       </div>
     </>
   );

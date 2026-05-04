@@ -26,6 +26,7 @@ type Server struct {
 	Exchange *auth.Exchanger
 	Session  *auth.SessionMiddleware
 	Admin    *auth.AdminHandlers
+	AdminAPI *AdminHandlers // Sprint 008 /api/admin/* surface
 	Webhook  *auth.WebhookReceiver
 }
 
@@ -55,12 +56,35 @@ func (s *Server) Router() http.Handler {
 			r.Get("/me", s.handleMe)
 			r.Get("/organization", s.handleOrganization)
 
-			// Org-admin-only routes.
+			// Org-admin-only routes (Sprint 005).
 			r.Group(func(r chi.Router) {
 				r.Use(auth.RequireOrgAdmin)
 				r.Post("/invitations", s.Admin.HandleInvite)
 				r.Post("/invitations/{id}/resend", s.handleResendInvite)
 				r.Post("/users/{id}/deactivate", s.handleDeactivateUser)
+			})
+
+			// Sprint 008 admin chrome surface. Most endpoints are
+			// admin-only; the trips list is open to any authenticated
+			// user but server-scoped to their assigned trips when the
+			// caller is a Site Director (see HandleListTrips).
+			r.Route("/admin", func(r chi.Router) {
+				r.Get("/trips", s.AdminAPI.HandleListTrips)
+
+				r.Group(func(r chi.Router) {
+					r.Use(auth.RequireOrgAdmin)
+					r.Get("/overview", s.AdminAPI.HandleOverview)
+					r.Get("/boats", s.AdminAPI.HandleListBoats)
+					r.Get("/boats/{id}", s.AdminAPI.HandleGetBoat)
+					r.Get("/boats/{id}/trips", s.AdminAPI.HandleListBoatTrips)
+					r.Patch("/trips/{id}", s.AdminAPI.HandleAssignDirector)
+					r.Get("/users", s.AdminAPI.HandleListUsers)
+				})
+			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.RequireOrgAdmin)
+				r.Patch("/organization", s.AdminAPI.HandlePatchOrganization)
 			})
 		})
 	})

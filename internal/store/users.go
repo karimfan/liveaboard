@@ -199,3 +199,39 @@ func contains(s, substr string) bool {
 	}
 	return false
 }
+
+// UsersForOrg returns every user in an org, ordered by full_name.
+// Used by the admin /api/admin/users endpoint.
+func (p *Pool) UsersForOrg(ctx context.Context, orgID uuid.UUID) ([]*User, error) {
+	rows, err := p.Query(ctx, `
+		SELECT `+userColumns+`
+		FROM users
+		WHERE organization_id = $1
+		ORDER BY full_name
+	`, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*User
+	for rows.Next() {
+		u := &User{}
+		if err := scanUser(rows, u); err != nil {
+			return nil, err
+		}
+		out = append(out, u)
+	}
+	return out, rows.Err()
+}
+
+// CountActiveUsersByRole counts active users in an org with a given role.
+// Used by the Overview's setup-completeness card.
+func (p *Pool) CountActiveUsersByRole(ctx context.Context, orgID uuid.UUID, role string) (int, error) {
+	var n int
+	if err := p.QueryRow(ctx,
+		`SELECT count(*) FROM users WHERE organization_id = $1 AND role = $2 AND is_active = true`,
+		orgID, role).Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}

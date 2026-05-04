@@ -57,6 +57,7 @@ func newHarness(t *testing.T) *harness {
 		Exchange: exchanger,
 		Session:  session,
 		Admin:    admin,
+		AdminAPI: &httpapi.AdminHandlers{Store: pool},
 		Webhook:  wh,
 	}
 	ts := httptest.NewServer(srv.Router())

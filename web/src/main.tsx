@@ -13,7 +13,8 @@ import { RequireSession } from "./lib/RequireSession";
 import { appConfig } from "./lib/config";
 import { clerkAppearance } from "./lib/clerkAppearance";
 
-import { AdminShell } from "./admin/Shell";
+import { AdminShell, RequireAdmin } from "./admin/Shell";
+import { MeProvider } from "./admin/useMe";
 import { Overview } from "./admin/pages/Overview";
 import { Fleet } from "./admin/pages/Fleet";
 import { BoatDetail } from "./admin/pages/BoatDetail";
@@ -29,9 +30,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ClerkProvider
       publishableKey={appConfig.clerkPublishableKey}
       appearance={clerkAppearance}
-      // Tell Clerk where to send the browser after the hosted flows
-      // complete; both routes are within our SPA and handle the next
-      // step (org bootstrap or session exchange) themselves.
       signInFallbackRedirectUrl="/"
       signUpFallbackRedirectUrl="/signup"
     >
@@ -47,27 +45,49 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               </RequireSession>
             }
           />
-          {/* Sprint 007 admin UX mockup. Hardcoded data; navigation is real. */}
           <Route
             path="/admin"
             element={
               <RequireSession>
-                <AdminShell />
+                <MeProvider>
+                  <AdminShell />
+                </MeProvider>
               </RequireSession>
             }
           >
+            {/* Both roles */}
             <Route index element={<Overview />} />
-            <Route path="organization" element={<Organization />} />
-            <Route path="fleet" element={<Fleet />} />
-            <Route path="fleet/:slug" element={<BoatDetail />}>
+            <Route path="trips" element={<Trips />} />
+
+            {/* Org-admin-only routes — RequireAdmin redirects directors to /admin */}
+            <Route
+              path="organization"
+              element={<RequireAdmin><Organization /></RequireAdmin>}
+            />
+            <Route
+              path="fleet"
+              element={<RequireAdmin><Fleet /></RequireAdmin>}
+            />
+            <Route
+              path="fleet/:id"
+              element={<RequireAdmin><BoatDetail /></RequireAdmin>}
+            >
               <Route index element={<BoatTrips />} />
               <Route path="inventory" element={<BoatInventory />} />
               <Route path="notes" element={<BoatNotes />} />
             </Route>
-            <Route path="catalog" element={<Catalog />} />
-            <Route path="trips" element={<Trips />} />
-            <Route path="users" element={<Users />} />
-            <Route path="reports" element={<Reports />} />
+            <Route
+              path="catalog"
+              element={<RequireAdmin><Catalog /></RequireAdmin>}
+            />
+            <Route
+              path="users"
+              element={<RequireAdmin><Users /></RequireAdmin>}
+            />
+            <Route
+              path="reports"
+              element={<RequireAdmin><Reports /></RequireAdmin>}
+            />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
