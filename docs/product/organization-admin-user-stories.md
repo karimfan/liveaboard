@@ -227,9 +227,11 @@ Notes: Multi-currency support and FX conversion are out of scope.
 
 ## Group 3: Fleet Management — Boats
 
-> Cabin layouts are not modeled. A boat is name + description + image
-> + capacity (single number) + source linkage. Spatial cabin
-> assignment on the manifest is deferred (post-MVP).
+> Cabin layouts are not modeled in the MVP. A boat is name +
+> description + image + capacity (single number) + source linkage.
+> Spatial cabin assignment on the manifest is deferred and will be
+> revisited in a future sprint dedicated to designing the cabin model
+> properly (it needs more thought than a quick add-in).
 
 ### US-3.1: Add a boat to the fleet
 
@@ -394,12 +396,7 @@ Priority: Could (Deferred)
 Area: Trips
 Depends on: US-4.5
 
-Acceptance Criteria: Deferred (post-MVP). Cabin layouts are not modeled in MVP, so cabin reassignment has no spatial meaning. Captured here so it is not lost.
-
-Acceptance Criteria:
-- [ ] Available only while trip status is `planned`.
-- [ ] Admin picks a new available berth.
-- [ ] Previous berth is released.
+Acceptance Criteria: Deferred. The cabin model will be designed properly in a dedicated future sprint; cabin reassignment becomes meaningful once the model exists. Captured here so it is not lost.
 
 ### US-4.8: Monitor trip lifecycle (read-only for active/completed)
 
