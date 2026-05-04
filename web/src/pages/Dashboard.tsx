@@ -74,7 +74,8 @@ export function Dashboard() {
       </div>
 
       <p className="muted" style={{ marginTop: 32 }}>
-        Fleet, catalog, and trip management arrive in upcoming sprints.
+        Fleet, catalog, and trip management arrive in upcoming sprints.{" "}
+        <a href="/admin">Open the admin UX mockup →</a>
       </p>
     </div>
   );
