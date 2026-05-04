@@ -5,6 +5,7 @@
 
 type AppConfig = {
   apiBase: string;
+  clerkPublishableKey: string;
 };
 
 function readRequired(key: string): string {
@@ -17,4 +18,5 @@ function readRequired(key: string): string {
 
 export const appConfig: AppConfig = {
   apiBase: readRequired("VITE_API_BASE"),
+  clerkPublishableKey: readRequired("VITE_CLERK_PUBLISHABLE_KEY"),
 };

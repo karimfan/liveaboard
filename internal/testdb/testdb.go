@@ -55,7 +55,15 @@ func Pool(t *testing.T) *store.Pool {
 		t.Fatalf("open: %v", err)
 	}
 	t.Cleanup(p.Close)
-	if _, err := p.Exec(ctx, `TRUNCATE TABLE email_verifications, sessions, users, organizations RESTART IDENTITY CASCADE`); err != nil {
+	if _, err := p.Exec(ctx, `
+		TRUNCATE TABLE
+			app_sessions,
+			webhook_events,
+			auth_sync_cursors,
+			users,
+			organizations
+		RESTART IDENTITY CASCADE
+	`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 	return p

@@ -53,7 +53,7 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 | Cabin model | Cabins defined inline when adding a boat. Multi-berth cabins are represented as separately assignable units (e.g., Cabin 1A, Cabin 1B). | Each berth is the assignable unit for guest cabin assignment. |
 | Trip lifecycle | Org Admin creates, configures, cancels (planned only), and monitors trips. Site Director performs `planned → active` and `active → completed` transitions. | Reflects who is on the boat at the moment of the transition. |
 | Soft deletion | Boats, trips, catalog items, and users are deactivated/archived rather than hard-deleted. | Preserves historical trip and ledger integrity. |
-| Reporting (Org Admin) | Setup completeness and operational status are `Must`. Revenue summaries are `Should`. Cross-trip analytics deferred to Owner. | Matches persona boundaries. |
+| Reporting (Org Admin) | Setup completeness and operational status are `Must`. Revenue summaries are `Should`. Cross-trip analytics deferred (post-MVP). | Matches persona boundaries. |
 | Inventory tracking | Deferred. Captured as `Could`. | Out of scope for first release. |
 | Trip booking fees | Out of scope. Catalog covers onboard consumption only. | |
 
@@ -63,13 +63,13 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 
 The following are explicitly out of scope for the Organization Admin backlog:
 
-- Live ledger entry / mid-trip consumption flows (Site Director, Crew).
+- Live ledger entry / mid-trip consumption flows (Site Director).
 - Mid-trip manifest operations (Site Director).
 - Trip start / complete lifecycle transitions (Site Director).
 - Guest self-service portal.
 - Cross-organization visibility of any kind.
 - Deep analytics and reporting beyond setup + operational status + per-trip revenue.
-- Owner-tier financial controls (billing, org deletion).
+- Billing and org-deletion controls (post-MVP).
 - Advanced role administration (multi-admin, custom roles, granular permissions).
 - Inventory tracking, per-boat/per-trip pricing overrides, trip booking fees.
 - Offline / sync.
@@ -634,7 +634,7 @@ Priority: Could
 Area: Oversight
 Depends on: US-7.3
 
-Acceptance Criteria: Deferred — likely Owner-persona territory. Captured here so it is not lost.
+Acceptance Criteria: Deferred (post-MVP). Captured here so it is not lost.
 
 ---
 

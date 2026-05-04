@@ -31,7 +31,12 @@ Open http://localhost:5173 after `make dev`.
 
 ## Sign-up flow (dev)
 
-Email is not actually sent — the verification token is logged to the backend output and also returned in the signup response. The signup page shows the token and a one-click "Continue" link.
+Authentication is provided by [Clerk](https://clerk.com). Before `make dev`
+will work end-to-end you need a Clerk dev instance and four env vars in
+`.env.local`. See [`docs/auth.md`](docs/auth.md) for the 8-step setup.
+
+After signup, the SPA collects the organization name, posts it to
+`POST /api/signup-complete`, and your local `lb_session` cookie is set.
 
 ## Configuration
 

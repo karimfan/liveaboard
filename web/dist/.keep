@@ -1,4 +1,1 @@
-This directory holds the Vite build output. The .keep file lets
-//go:embed all:dist (in ../embed.go) succeed even before `npm run build`
-has populated the directory. After `make build`, this directory contains
-index.html and assets/ that the production binary serves.
+Placeholder so //go:embed all:web/dist compiles before the first npm run build. Do not delete.

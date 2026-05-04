@@ -8,8 +8,7 @@ Within each trip, the platform must act as a real-time ledger of guest activity 
 
 The system serves the following user personas:
 
-- **Organization Owner**: Has org-wide visibility into reporting, analytics, and financial oversight across all boats and trips. May rarely touch day-to-day operations but needs full read access to everything within their organization.
-- **Organization Admin**: Manages org-wide operations including creating trips, managing the fleet (adding/removing boats), and configuring the item catalog and pricing.
+- **Organization Admin**: Manages org-wide operations including creating trips, managing the fleet (adding/removing boats), and configuring the item catalog and pricing. Also has org-wide visibility into reporting, analytics, and financial oversight across all boats and trips.
 - **Site Director**: Responsible for running a single trip. Manages the guest manifest, records guest consumption, and oversees all onboard operations for the duration of the trip.
 - **Guest** (future): Self-service view of their own running tab, dive schedule, and trip details. Low priority but accounted for in the data model.
 
