@@ -5,3 +5,4 @@ sprint_id	title	status	created_at	updated_at
 004	Build & Configuration System	planned	2026-04-30T22:44:34Z	2026-04-30T22:44:34Z
 005	Migrate Authentication to Clerk	planned	2026-05-01T21:25:07Z	2026-05-01T21:25:07Z
 006	Boat + Trip Scraper from liveaboard.com	planned	2026-05-04T00:25:24Z	2026-05-04T00:25:24Z
+007	Admin UX — Three Candidate Experiences	planned	2026-05-04T01:15:03Z	2026-05-04T01:15:03Z
