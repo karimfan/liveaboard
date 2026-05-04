@@ -57,6 +57,8 @@ func Pool(t *testing.T) *store.Pool {
 	t.Cleanup(p.Close)
 	if _, err := p.Exec(ctx, `
 		TRUNCATE TABLE
+			trips,
+			boats,
 			app_sessions,
 			webhook_events,
 			auth_sync_cursors,
