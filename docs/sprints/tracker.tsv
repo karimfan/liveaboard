@@ -8,3 +8,4 @@ sprint_id	title	status	created_at	updated_at
 007	Admin UX — Three Candidate Experiences	planned	2026-05-04T01:15:03Z	2026-05-04T01:15:03Z
 008	Admin Chrome — Real Data + RBAC	planned	2026-05-04T16:48:23Z	2026-05-04T16:48:23Z
 009	Custom Auth Stack — Replace Clerk; Email via Brevo	completed	2026-05-04T18:25:45Z	2026-05-04T18:59:58Z
+010	User Management — Cruise Director Rename, Rich Invitations, Director Landing Page	planned	2026-05-04T22:59:04Z	2026-05-04T22:59:04Z
