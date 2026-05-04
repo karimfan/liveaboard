@@ -257,8 +257,9 @@ func TestInviteRequiresOrgAdmin(t *testing.T) {
 
 	// Admin can invite.
 	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/invitations", map[string]any{
-		"email": "site@x.test",
-		"role":  "site_director",
+		"email":     "site@x.test",
+		"full_name": "Maya Sanchez",
+		"role":      "cruise_director",
 	}, adminCookie)
 	if resp.StatusCode != 201 {
 		t.Fatalf("admin invite: %d %v", resp.StatusCode, body)
@@ -271,9 +272,8 @@ func TestInviteRequiresOrgAdmin(t *testing.T) {
 	}
 	tok := tokenFromLink(t, link)
 	resp, body = doJSON(t, c, "POST", h.server.URL+"/api/invitations/accept", map[string]any{
-		"token":     tok,
-		"full_name": "Director",
-		"password":  "Sup3rStrong!",
+		"token":    tok,
+		"password": "Sup3rStrong!",
 	})
 	if resp.StatusCode != 200 {
 		t.Fatalf("accept: %d %v", resp.StatusCode, body)
@@ -285,8 +285,9 @@ func TestInviteRequiresOrgAdmin(t *testing.T) {
 
 	// Director CANNOT invite.
 	resp, body = doJSON(t, c, "POST", h.server.URL+"/api/invitations", map[string]any{
-		"email": "another@x.test",
-		"role":  "site_director",
+		"email":     "another@x.test",
+		"full_name": "Other",
+		"role":      "cruise_director",
 	}, dirCookie)
 	if resp.StatusCode != 403 {
 		t.Fatalf("director invite: %d %v want 403", resp.StatusCode, body)

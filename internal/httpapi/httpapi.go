@@ -65,6 +65,7 @@ func (s *Server) Router() http.Handler {
 			r.Get("/organization", s.handleOrganization)
 
 			// Account self-service.
+			r.Patch("/account/profile", s.handleUpdateProfile)
 			r.Post("/account/change-password", s.handleChangePassword)
 			r.Post("/account/request-email-change", s.handleRequestEmailChange)
 			r.Get("/account/pending-email-change", s.handlePendingEmailChange)
@@ -84,9 +85,17 @@ func (s *Server) Router() http.Handler {
 				r.Delete("/invitations/{id}", s.handleRevokeInvitation)
 			})
 
-			// Sprint 008 admin chrome surface — unchanged.
+			// Sprint 008 admin chrome surface; Sprint 010 adds the
+			// cruise-director-overview endpoint and renames the trip
+			// assignment handler.
 			r.Route("/admin", func(r chi.Router) {
 				r.Get("/trips", s.AdminAPI.HandleListTrips)
+
+				// Cruise-director-only landing payload (profile + stats
+				// + trips). The handler enforces the role itself; we
+				// mount it inside the authenticated group, not the
+				// admin-only group.
+				r.Get("/cruise-director-overview", s.handleCruiseDirectorOverview)
 
 				r.Group(func(r chi.Router) {
 					r.Use(auth.RequireOrgAdmin)
@@ -94,7 +103,7 @@ func (s *Server) Router() http.Handler {
 					r.Get("/boats", s.AdminAPI.HandleListBoats)
 					r.Get("/boats/{id}", s.AdminAPI.HandleGetBoat)
 					r.Get("/boats/{id}/trips", s.AdminAPI.HandleListBoatTrips)
-					r.Patch("/trips/{id}", s.AdminAPI.HandleAssignDirector)
+					r.Patch("/trips/{id}", s.AdminAPI.HandleAssignCruiseDirector)
 					r.Get("/users", s.AdminAPI.HandleListUsers)
 				})
 			})

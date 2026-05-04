@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	RoleOrgAdmin     = "org_admin"
-	RoleSiteDirector = "site_director"
+	RoleOrgAdmin       = "org_admin"
+	RoleCruiseDirector = "cruise_director"
 )
 
 type User struct {
@@ -20,6 +20,7 @@ type User struct {
 	Email           string
 	PasswordHash    []byte
 	FullName        string
+	Phone           *string
 	Role            string
 	EmailVerifiedAt *time.Time
 	IsActive        bool
@@ -40,7 +41,7 @@ type Organization struct {
 // (or — for non-enumerating signup — silently swallow it).
 var ErrEmailTaken = errors.New("store: email already in use")
 
-const userColumns = `id, organization_id, email, password_hash, full_name, role,
+const userColumns = `id, organization_id, email, password_hash, full_name, phone, role,
 	email_verified_at, is_active, created_at, updated_at`
 
 func scanUser(row interface {
@@ -48,7 +49,7 @@ func scanUser(row interface {
 }, u *User) error {
 	return row.Scan(
 		&u.ID, &u.OrganizationID, &u.Email, &u.PasswordHash,
-		&u.FullName, &u.Role, &u.EmailVerifiedAt, &u.IsActive,
+		&u.FullName, &u.Phone, &u.Role, &u.EmailVerifiedAt, &u.IsActive,
 		&u.CreatedAt, &u.UpdatedAt,
 	)
 }
@@ -123,19 +124,21 @@ func (p *Pool) CreateOrgAndAdmin(
 
 // CreateInvitedUser inserts a user that just accepted an invitation.
 // They are created as already-verified — clicking the invite link
-// proved possession of the email.
+// proved possession of the email. The admin captured full_name and
+// (optionally) phone at invite time, so we seed them here.
 func (p *Pool) CreateInvitedUser(
 	ctx context.Context,
 	orgID uuid.UUID,
 	email, fullName, role string,
+	phone *string,
 	passwordHash []byte,
 ) (*User, error) {
 	user := &User{}
 	err := scanUser(p.QueryRow(ctx, `
-		INSERT INTO users (organization_id, email, password_hash, full_name, role, email_verified_at)
-		VALUES ($1, $2, $3, $4, $5, now())
+		INSERT INTO users (organization_id, email, password_hash, full_name, phone, role, email_verified_at)
+		VALUES ($1, $2, $3, $4, $5, $6, now())
 		RETURNING `+userColumns+`
-	`, orgID, email, passwordHash, fullName, role), user)
+	`, orgID, email, passwordHash, fullName, phone, role), user)
 	if err != nil {
 		if isUniqueViolation(err, "users_email_key") {
 			return nil, ErrEmailTaken
@@ -143,6 +146,24 @@ func (p *Pool) CreateInvitedUser(
 		return nil, err
 	}
 	return user, nil
+}
+
+// UpdateUserProfile rewrites full_name + phone for the calling user.
+// Email and role are NOT touched here (those have their own dedicated
+// flows). Returns ErrNotFound if the user id doesn't exist.
+func (p *Pool) UpdateUserProfile(ctx context.Context, userID uuid.UUID, fullName string, phone *string) error {
+	tag, err := p.Exec(ctx, `
+		UPDATE users
+		   SET full_name = $2, phone = $3, updated_at = now()
+		 WHERE id = $1
+	`, userID, fullName, phone)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // MarkEmailVerified flips email_verified_at to the given time for the user.

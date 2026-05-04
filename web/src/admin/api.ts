@@ -31,7 +31,7 @@ export type SetupStep = {
 
 export type Overview = {
   setup: { pct: number; steps: SetupStep[] };
-  counts: { boats: number; trips: number; site_directors: number };
+  counts: { boats: number; trips: number; cruise_directors: number };
   trips_needing_attention: {
     id: string;
     boat_name: string;
@@ -63,15 +63,16 @@ export type Trip = {
   return_port: string | null;
   price_text: string | null;
   availability_text: string | null;
-  site_director_user_id: string | null;
-  site_director_name: string | null;
+  cruise_director_user_id: string | null;
+  cruise_director_name: string | null;
 };
 
 export type AdminUser = {
   id: string;
   email: string;
   full_name: string;
-  role: "org_admin" | "site_director";
+  phone: string | null;
+  role: "org_admin" | "cruise_director";
   is_active: boolean;
 };
 
@@ -96,9 +97,9 @@ export const adminApi = {
   listTrips: () =>
     call<{ trips: Trip[]; scope: "all" | "assigned_to_me" }>("GET", "/admin/trips"),
 
-  assignDirector: (tripId: string, siteDirectorUserId: string | null) =>
+  assignCruiseDirector: (tripId: string, cruiseDirectorUserId: string | null) =>
     call<{ ok: true }>("PATCH", `/admin/trips/${tripId}`, {
-      site_director_user_id: siteDirectorUserId,
+      cruise_director_user_id: cruiseDirectorUserId,
     }),
 
   listUsers: () => call<{ users: AdminUser[] }>("GET", "/admin/users"),

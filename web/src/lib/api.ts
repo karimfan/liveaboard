@@ -30,7 +30,8 @@ export type Me = {
   id: string;
   email: string;
   full_name: string;
-  role: string;
+  phone: string | null;
+  role: "org_admin" | "cruise_director";
   organization_id: string;
   email_verified: boolean;
 };
@@ -38,18 +39,42 @@ export type Me = {
 export type Invitation = {
   id: string;
   email: string;
+  full_name: string;
+  phone: string | null;
   role: string;
   expires_at: string;
 };
 
 export type InvitationLookup = {
   email: string;
+  full_name: string;
   role: string;
   organization_name: string;
   expires_at: string;
 };
 
 export type PendingEmailChange = { new_email: string; expires_at: string };
+
+export type CruiseDirectorOverview = {
+  profile: {
+    id: string;
+    full_name: string;
+    email: string;
+    phone: string | null;
+    role: string;
+    organization_name: string;
+  };
+  stats: { upcoming: number; active: number; past: number };
+  trips: Array<{
+    id: string;
+    boat_id: string;
+    boat_name: string;
+    itinerary: string;
+    start_date: string;
+    end_date: string;
+    status: "upcoming" | "active" | "past";
+  }>;
+};
 
 export const api = {
   // --- Public auth ---
@@ -114,8 +139,18 @@ export const api = {
   listInvitations: () =>
     call<{ invitations: Invitation[] }>("GET", "/invitations"),
 
-  invite: (email: string, role: string) =>
-    call<Invitation>("POST", "/invitations", { email, role }),
+  invite: (input: {
+    email: string;
+    full_name: string;
+    phone?: string;
+    role?: string;
+  }) =>
+    call<Invitation>("POST", "/invitations", {
+      email: input.email,
+      full_name: input.full_name,
+      phone: input.phone ?? "",
+      role: input.role ?? "cruise_director",
+    }),
 
   resendInvitation: (id: string) =>
     call<Invitation>("POST", `/invitations/${encodeURIComponent(id)}/resend`),
@@ -127,10 +162,15 @@ export const api = {
   lookupInvitation: (token: string) =>
     call<InvitationLookup>("GET", `/invitations/lookup?token=${encodeURIComponent(token)}`),
 
-  acceptInvitation: (token: string, fullName: string, password: string) =>
-    call<Me>("POST", "/invitations/accept", {
-      token,
-      full_name: fullName,
-      password,
-    }),
+  // Sprint 010: invitee no longer types a name — the admin captured it
+  // at invite time. The accept page only collects a password.
+  acceptInvitation: (token: string, password: string) =>
+    call<Me>("POST", "/invitations/accept", { token, password }),
+
+  // --- Profile (Sprint 010) ---
+  updateProfile: (input: { full_name: string; phone: string | null }) =>
+    call<Me>("PATCH", "/account/profile", input),
+
+  cruiseDirectorOverview: () =>
+    call<CruiseDirectorOverview>("GET", "/admin/cruise-director-overview"),
 };

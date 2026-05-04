@@ -12,6 +12,8 @@ type Invitation struct {
 	ID              uuid.UUID
 	OrganizationID  uuid.UUID
 	Email           string
+	FullName        string
+	Phone           *string
 	Role            string
 	InvitedByUserID uuid.UUID
 	ExpiresAt       time.Time
@@ -26,14 +28,14 @@ type Invitation struct {
 // another pending invitation already exists for (org, email).
 var ErrInvitationPending = errors.New("store: a pending invitation already exists for this email")
 
-const invitationColumns = `id, organization_id, email, role, invited_by_user_id,
+const invitationColumns = `id, organization_id, email, full_name, phone, role, invited_by_user_id,
 	expires_at, accepted_at, accepted_user_id, revoked_at, created_at, updated_at`
 
 func scanInvitation(row interface {
 	Scan(dest ...any) error
 }, inv *Invitation) error {
 	return row.Scan(
-		&inv.ID, &inv.OrganizationID, &inv.Email, &inv.Role, &inv.InvitedByUserID,
+		&inv.ID, &inv.OrganizationID, &inv.Email, &inv.FullName, &inv.Phone, &inv.Role, &inv.InvitedByUserID,
 		&inv.ExpiresAt, &inv.AcceptedAt, &inv.AcceptedUserID, &inv.RevokedAt,
 		&inv.CreatedAt, &inv.UpdatedAt,
 	)
@@ -41,19 +43,25 @@ func scanInvitation(row interface {
 
 // CreateInvitation inserts a new pending invitation. Returns
 // ErrInvitationPending if another pending one exists for (org, email).
+//
+// fullName is required by the new contract (Sprint 010); the admin
+// captures it at invite time so the accept page can greet by name and
+// the resulting user row inherits it.
 func (p *Pool) CreateInvitation(
 	ctx context.Context,
 	orgID, invitedByUserID uuid.UUID,
-	email, role string,
+	email, fullName string,
+	phone *string,
+	role string,
 	tokenHash []byte,
 	expiresAt time.Time,
 ) (*Invitation, error) {
 	inv := &Invitation{}
 	err := scanInvitation(p.QueryRow(ctx, `
-		INSERT INTO invitations (organization_id, email, role, invited_by_user_id, token_hash, expires_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO invitations (organization_id, email, full_name, phone, role, invited_by_user_id, token_hash, expires_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING `+invitationColumns,
-		orgID, email, role, invitedByUserID, tokenHash, expiresAt,
+		orgID, email, fullName, phone, role, invitedByUserID, tokenHash, expiresAt,
 	), inv)
 	if err != nil {
 		if isUniqueViolation(err, "invitations_pending_unique_idx") {

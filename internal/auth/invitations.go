@@ -14,19 +14,45 @@ import (
 	"github.com/karimfan/liveaboard/internal/store"
 )
 
-// Invite creates a pending invitation and emails it. role must be a
-// valid app-level role; today only "site_director" is permitted.
+// InviteInput is the payload an admin submits when adding a Cruise
+// Director (or, in the future, other roles). FullName is required so
+// the email can greet by name and the resulting user row inherits it
+// at acceptance time. Phone is optional; if non-empty it follows the
+// same propagation path.
+type InviteInput struct {
+	Email    string
+	FullName string
+	Phone    string
+	Role     string
+}
+
+// Invite creates a pending invitation and emails it. Role defaults to
+// cruise_director; that's the only allowed role today (CHECK
+// constraint enforces it at the DB layer).
 func (s *Service) Invite(
 	ctx context.Context,
 	orgID, inviterUserID uuid.UUID,
-	rawEmail, role string,
+	in InviteInput,
 ) (*store.Invitation, error) {
-	em := normalizeEmail(rawEmail)
+	em := normalizeEmail(in.Email)
 	if !looksLikeEmail(em) {
 		return nil, fmt.Errorf("%w: email", ErrInvalidInput)
 	}
-	if role != store.RoleSiteDirector {
-		return nil, fmt.Errorf("%w: role must be site_director", ErrInvalidInput)
+	fullName := strings.TrimSpace(in.FullName)
+	if fullName == "" {
+		return nil, fmt.Errorf("%w: full_name", ErrInvalidInput)
+	}
+	role := in.Role
+	if role == "" {
+		role = store.RoleCruiseDirector
+	}
+	if role != store.RoleCruiseDirector {
+		return nil, fmt.Errorf("%w: role must be cruise_director", ErrInvalidInput)
+	}
+	phone := strings.TrimSpace(in.Phone)
+	var phonePtr *string
+	if phone != "" {
+		phonePtr = &phone
 	}
 	// Reject if the email is already a user in this org.
 	if existing, err := s.Store.UserByEmail(ctx, em); err == nil {
@@ -44,7 +70,7 @@ func (s *Service) Invite(
 		return nil, err
 	}
 	expires := s.now().Add(s.InvitationDuration)
-	inv, err := s.Store.CreateInvitation(ctx, orgID, inviterUserID, em, role, tokenHash, expires)
+	inv, err := s.Store.CreateInvitation(ctx, orgID, inviterUserID, em, fullName, phonePtr, role, tokenHash, expires)
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +107,14 @@ func (s *Service) RevokeInvitation(ctx context.Context, orgID, invID uuid.UUID) 
 // LookupInvitation resolves a token to an invitation row + the org name.
 // Used by the accept page to render context. Returns ErrTokenInvalid for
 // expired / revoked / accepted tokens.
+//
+// Sprint 010: returns FullName so the SPA can greet the recipient by
+// name. Phone is intentionally NOT exposed here — only same-org
+// admins (and the user themselves once they accept) can see it.
 type InvitationView struct {
 	ID               uuid.UUID
 	Email            string
+	FullName         string
 	Role             string
 	OrganizationID   uuid.UUID
 	OrganizationName string
@@ -111,6 +142,7 @@ func (s *Service) LookupInvitation(ctx context.Context, rawToken string) (*Invit
 	return &InvitationView{
 		ID:               inv.ID,
 		Email:            inv.Email,
+		FullName:         inv.FullName,
 		Role:             inv.Role,
 		OrganizationID:   inv.OrganizationID,
 		OrganizationName: o.Name,
@@ -126,17 +158,13 @@ type AcceptInvitationResult struct {
 	ExpiresAt time.Time
 }
 
-// AcceptInvitation creates the user, marks the invitation accepted,
-// and mints a session — all in service-level pseudo-transaction
-// (the mark-accepted runs after user-create; if accept fails we leave
-// the user but the partial unique index prevents duplicate pending
-// invites).
-func (s *Service) AcceptInvitation(ctx context.Context, rawToken, fullName, password string) (*AcceptInvitationResult, error) {
+// AcceptInvitation creates the user from invitation metadata and mints
+// a session. Sprint 010: name + phone come from the invitation row
+// (the admin captured them at invite time), so the invitee only
+// supplies a password.
+func (s *Service) AcceptInvitation(ctx context.Context, rawToken, password string) (*AcceptInvitationResult, error) {
 	if rawToken == "" {
 		return nil, ErrTokenInvalid
-	}
-	if strings.TrimSpace(fullName) == "" {
-		return nil, fmt.Errorf("%w: full_name", ErrInvalidInput)
 	}
 	if err := ValidatePassword(password); err != nil {
 		return nil, err
@@ -155,7 +183,7 @@ func (s *Service) AcceptInvitation(ctx context.Context, rawToken, fullName, pass
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
-	u, err := s.Store.CreateInvitedUser(ctx, inv.OrganizationID, inv.Email, fullName, inv.Role, hash)
+	u, err := s.Store.CreateInvitedUser(ctx, inv.OrganizationID, inv.Email, inv.FullName, inv.Role, inv.Phone, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +217,7 @@ func (s *Service) sendInvitationEmail(ctx context.Context, inv *store.Invitation
 		AppName:          "Liveaboard",
 		OrganizationName: o.Name,
 		RecipientEmail:   inv.Email,
+		RecipientName:    inv.FullName,
 		InviterName:      inviter.FullName,
 		ActionURL:        link,
 		ExpiresAt:        inv.ExpiresAt,

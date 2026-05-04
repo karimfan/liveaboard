@@ -49,15 +49,19 @@ func TestCreateOrgAndAdminEmailConflict(t *testing.T) {
 func TestCreateInvitedUser(t *testing.T) {
 	p := testdb.Pool(t)
 	org, _ := testdb.SeedOrgWithAdmin(t, p, "A", "a@x.test", "Alice")
-	site := testdb.SeedSiteDirector(t, p, org.ID, "site@x.test", "Site Director")
-	if site.Role != store.RoleSiteDirector {
-		t.Errorf("Role = %q", site.Role)
+	phone := "+1 555 0142"
+	director := testdb.SeedCruiseDirector(t, p, org.ID, "site@x.test", "Maya Sanchez", &phone)
+	if director.Role != store.RoleCruiseDirector {
+		t.Errorf("Role = %q", director.Role)
 	}
-	if site.OrganizationID != org.ID {
-		t.Errorf("OrganizationID drift: %v", site.OrganizationID)
+	if director.OrganizationID != org.ID {
+		t.Errorf("OrganizationID drift: %v", director.OrganizationID)
 	}
-	if site.EmailVerifiedAt == nil {
+	if director.EmailVerifiedAt == nil {
 		t.Errorf("seeded directors should be verified")
+	}
+	if director.Phone == nil || *director.Phone != phone {
+		t.Errorf("Phone = %v want %q", director.Phone, phone)
 	}
 }
 

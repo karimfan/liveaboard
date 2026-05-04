@@ -15,9 +15,9 @@ const navItems: NavItem[] = [
 ];
 
 /**
- * AdminShell is the persistent chrome for the admin / Site Director
+ * AdminShell is the persistent chrome for the admin / Cruise Director
  * surface. The matched child route renders inside <Outlet />. Sidebar
- * items adjust by role: an Org Admin sees all 7; a Site Director sees
+ * items adjust by role: an Org Admin sees all 7; a Cruise Director sees
  * Overview + Trips only.
  */
 export function AdminShell() {

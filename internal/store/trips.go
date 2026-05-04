@@ -27,10 +27,10 @@ type Trip struct {
 	PriceText        *string
 	AvailabilityText *string
 
-	// SiteDirectorUserID is nullable: an unassigned trip is the default
+	// CruiseDirectorUserID is nullable: an unassigned trip is the default
 	// state. Sprint 008's Overview "trips needing attention" depends on
 	// detecting NULL here.
-	SiteDirectorUserID *uuid.UUID
+	CruiseDirectorUserID *uuid.UUID
 
 	SourceProvider     string
 	SourceTripKey      string
@@ -66,7 +66,7 @@ const tripColumns = `id, organization_id, boat_id,
 	start_date, end_date, itinerary,
 	departure_port, return_port,
 	price_text, availability_text,
-	site_director_user_id,
+	cruise_director_user_id,
 	source_provider, source_trip_key, source_url, source_last_synced_at,
 	created_at, updated_at`
 
@@ -78,7 +78,7 @@ func scanTrip(row interface {
 		&t.StartDate, &t.EndDate, &t.Itinerary,
 		&t.DeparturePort, &t.ReturnPort,
 		&t.PriceText, &t.AvailabilityText,
-		&t.SiteDirectorUserID,
+		&t.CruiseDirectorUserID,
 		&t.SourceProvider, &t.SourceTripKey, &t.SourceURL, &t.SourceLastSyncedAt,
 		&t.CreatedAt, &t.UpdatedAt,
 	)
@@ -238,14 +238,14 @@ func (p *Pool) TripsByOrgInRange(
 	return out, rows.Err()
 }
 
-// TripsForUser returns trips assigned to a specific user (Site Director),
+// TripsForUser returns trips assigned to a specific user (Cruise Director),
 // scoped to that user's organization. Used for the SD-scoped /api/admin/trips
 // response.
 func (p *Pool) TripsForUser(ctx context.Context, orgID, userID uuid.UUID) ([]*Trip, error) {
 	rows, err := p.Query(ctx, `
 		SELECT `+tripColumns+`
 		FROM trips
-		WHERE organization_id = $1 AND site_director_user_id = $2
+		WHERE organization_id = $1 AND cruise_director_user_id = $2
 		ORDER BY start_date
 	`, orgID, userID)
 	if err != nil {
@@ -264,13 +264,13 @@ func (p *Pool) TripsForUser(ctx context.Context, orgID, userID uuid.UUID) ([]*Tr
 	return out, rows.Err()
 }
 
-// AssignSiteDirector sets (or clears) the trip's assigned Site Director.
+// AssignCruiseDirector sets (or clears) the trip's assigned Cruise Director.
 // Pass uuid.Nil to clear the assignment. Tenant scoping: rejects updates
 // that would cross organizations.
-func (p *Pool) AssignSiteDirector(ctx context.Context, orgID, tripID uuid.UUID, directorUserID *uuid.UUID) error {
+func (p *Pool) AssignCruiseDirector(ctx context.Context, orgID, tripID uuid.UUID, directorUserID *uuid.UUID) error {
 	tag, err := p.Exec(ctx, `
 		UPDATE trips
-		SET site_director_user_id = $3, updated_at = now()
+		SET cruise_director_user_id = $3, updated_at = now()
 		WHERE id = $1 AND organization_id = $2
 	`, tripID, orgID, directorUserID)
 	if err != nil {
@@ -283,7 +283,7 @@ func (p *Pool) AssignSiteDirector(ctx context.Context, orgID, tripID uuid.UUID, 
 }
 
 // TripsNeedingAttention returns planned trips for an org with either
-// no site director assigned or a manifest fill ratio below 50%.
+// no cruise director assigned or a manifest fill ratio below 50%.
 // Manifest fill is not yet a real column; for now we treat
 // "needs attention" as "no director assigned and start_date in the
 // next 90 days".
@@ -293,7 +293,7 @@ func (p *Pool) TripsNeedingAttention(ctx context.Context, orgID uuid.UUID, today
 		FROM trips
 		WHERE organization_id = $1
 		  AND start_date BETWEEN $2 AND $2 + INTERVAL '90 days'
-		  AND site_director_user_id IS NULL
+		  AND cruise_director_user_id IS NULL
 		ORDER BY start_date
 		LIMIT 10
 	`, orgID, today)

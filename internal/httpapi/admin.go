@@ -17,7 +17,7 @@ import (
 
 // AdminHandlers serves /api/admin/* for the Sprint 008 admin chrome.
 // Most routes are mounted behind RequireOrgAdmin; the trips list is
-// mounted behind RequireSession because Site Directors hit the same
+// mounted behind RequireSession because Cruise Directors hit the same
 // URL but receive a server-scoped subset.
 type AdminHandlers struct {
 	Store *store.Pool
@@ -40,7 +40,7 @@ func (a *AdminHandlers) HandleOverview(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
-	directorCount, err := a.Store.CountActiveUsersByRole(ctx, u.OrganizationID, store.RoleSiteDirector)
+	directorCount, err := a.Store.CountActiveUsersByRole(ctx, u.OrganizationID, store.RoleCruiseDirector)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
@@ -65,7 +65,7 @@ func (a *AdminHandlers) HandleOverview(w http.ResponseWriter, r *http.Request) {
 	steps := []map[string]any{
 		{"key": "currency", "label": "Set organization currency", "done": currencySet, "hint": derefOrEmpty(org.Currency), "href": "/admin/organization"},
 		{"key": "boats", "label": "Add or import a boat", "done": boatCount > 0, "hint": pluralize(boatCount, "boat", "boats"), "href": "/admin/fleet"},
-		{"key": "directors", "label": "Invite a Site Director", "done": directorCount > 0, "hint": pluralize(directorCount, "active", "active"), "href": "/admin/users"},
+		{"key": "directors", "label": "Invite a Cruise Director", "done": directorCount > 0, "hint": pluralize(directorCount, "active", "active"), "href": "/admin/users"},
 		{"key": "trips", "label": "Create your first trip", "done": tripCount > 0, "hint": pluralize(tripCount, "trip", "trips"), "href": "/admin/trips"},
 	}
 	doneCount := 0
@@ -85,9 +85,9 @@ func (a *AdminHandlers) HandleOverview(w http.ResponseWriter, r *http.Request) {
 			"steps": steps,
 		},
 		"counts": map[string]any{
-			"boats":          boatCount,
-			"trips":          tripCount,
-			"site_directors": directorCount,
+			"boats":            boatCount,
+			"trips":            tripCount,
+			"cruise_directors": directorCount,
 		},
 		"trips_needing_attention": tripsToView(attention, boatNames),
 	})
@@ -160,7 +160,7 @@ func (a *AdminHandlers) HandleListBoatTrips(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, http.StatusOK, map[string]any{"trips": out})
 }
 
-// HandleListTrips returns trips for the org. Site Directors get their
+// HandleListTrips returns trips for the org. Cruise Directors get their
 // own assigned trips only; admins get all org trips.
 func (a *AdminHandlers) HandleListTrips(w http.ResponseWriter, r *http.Request) {
 	u := auth.UserFromContext(r.Context())
@@ -173,7 +173,7 @@ func (a *AdminHandlers) HandleListTrips(w http.ResponseWriter, r *http.Request) 
 		trips, err = a.Store.TripsByOrgInRange(ctx, u.OrganizationID,
 			time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC))
-	case store.RoleSiteDirector:
+	case store.RoleCruiseDirector:
 		trips, err = a.Store.TripsForUser(ctx, u.OrganizationID, u.ID)
 	default:
 		writeError(w, http.StatusForbidden, "forbidden", "role cannot list trips")
@@ -200,25 +200,26 @@ func (a *AdminHandlers) HandleListTrips(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, map[string]any{"trips": out, "scope": tripScopeFor(u.Role)})
 }
 
-// HandleAssignDirector PATCHes a trip's site_director_user_id. Pass
-// {"site_director_user_id": null} to clear, or a uuid string to assign.
-func (a *AdminHandlers) HandleAssignDirector(w http.ResponseWriter, r *http.Request) {
+// HandleAssignCruiseDirector PATCHes a trip's cruise_director_user_id.
+// Pass {"cruise_director_user_id": null} to clear, or a uuid string to
+// assign.
+func (a *AdminHandlers) HandleAssignCruiseDirector(w http.ResponseWriter, r *http.Request) {
 	u := auth.UserFromContext(r.Context())
 	tripID, ok := uuidParam(w, r, "id")
 	if !ok {
 		return
 	}
 	var in struct {
-		SiteDirectorUserID *string `json:"site_director_user_id"`
+		CruiseDirectorUserID *string `json:"cruise_director_user_id"`
 	}
 	if !readJSONInto(w, r, &in) {
 		return
 	}
 	var directorPtr *uuid.UUID
-	if in.SiteDirectorUserID != nil && *in.SiteDirectorUserID != "" {
-		id, err := uuid.Parse(*in.SiteDirectorUserID)
+	if in.CruiseDirectorUserID != nil && *in.CruiseDirectorUserID != "" {
+		id, err := uuid.Parse(*in.CruiseDirectorUserID)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "invalid_input", "site_director_user_id must be a uuid")
+			writeError(w, http.StatusBadRequest, "invalid_input", "cruise_director_user_id must be a uuid")
 			return
 		}
 		// Validate the candidate director belongs to this org.
@@ -233,7 +234,7 @@ func (a *AdminHandlers) HandleAssignDirector(w http.ResponseWriter, r *http.Requ
 		}
 		directorPtr = &id
 	}
-	if err := a.Store.AssignSiteDirector(r.Context(), u.OrganizationID, tripID, directorPtr); err != nil {
+	if err := a.Store.AssignCruiseDirector(r.Context(), u.OrganizationID, tripID, directorPtr); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not_found", "trip not found")
 			return
@@ -341,24 +342,24 @@ func boatView(b *store.Boat) map[string]any {
 
 func tripView(t *store.Trip, boatName string, directorNames map[uuid.UUID]string) map[string]any {
 	var directorName *string
-	if t.SiteDirectorUserID != nil {
-		if name, ok := directorNames[*t.SiteDirectorUserID]; ok {
+	if t.CruiseDirectorUserID != nil {
+		if name, ok := directorNames[*t.CruiseDirectorUserID]; ok {
 			directorName = &name
 		}
 	}
 	return map[string]any{
-		"id":                    t.ID,
-		"boat_id":               t.BoatID,
-		"boat_name":             boatName,
-		"start_date":            t.StartDate.Format("2006-01-02"),
-		"end_date":              t.EndDate.Format("2006-01-02"),
-		"itinerary":             t.Itinerary,
-		"departure_port":        t.DeparturePort,
-		"return_port":           t.ReturnPort,
-		"price_text":            t.PriceText,
-		"availability_text":     t.AvailabilityText,
-		"site_director_user_id": t.SiteDirectorUserID,
-		"site_director_name":    directorName,
+		"id":                      t.ID,
+		"boat_id":                 t.BoatID,
+		"boat_name":               boatName,
+		"start_date":              t.StartDate.Format("2006-01-02"),
+		"end_date":                t.EndDate.Format("2006-01-02"),
+		"itinerary":               t.Itinerary,
+		"departure_port":          t.DeparturePort,
+		"return_port":             t.ReturnPort,
+		"price_text":              t.PriceText,
+		"availability_text":       t.AvailabilityText,
+		"cruise_director_user_id": t.CruiseDirectorUserID,
+		"cruise_director_name":    directorName,
 	}
 }
 
@@ -367,6 +368,7 @@ func userView(u *store.User) map[string]any {
 		"id":        u.ID,
 		"email":     u.Email,
 		"full_name": u.FullName,
+		"phone":     u.Phone,
 		"role":      u.Role,
 		"is_active": u.IsActive,
 	}
@@ -398,7 +400,7 @@ func tripsToView(ts []*store.Trip, boatNames map[uuid.UUID]string) []map[string]
 }
 
 func tripScopeFor(role string) string {
-	if role == store.RoleSiteDirector {
+	if role == store.RoleCruiseDirector {
 		return "assigned_to_me"
 	}
 	return "all"

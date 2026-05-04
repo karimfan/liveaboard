@@ -77,7 +77,7 @@ export function Trips() {
                 <td>{t.boat_name}</td>
                 <td>{t.itinerary}</td>
                 <td>
-                  {t.site_director_name ?? (
+                  {t.cruise_director_name ?? (
                     <span className="chip chip--warn">Unassigned</span>
                   )}
                 </td>

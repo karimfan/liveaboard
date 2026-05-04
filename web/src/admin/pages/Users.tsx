@@ -51,11 +51,11 @@ export function Users() {
         <div>
           <h1 className="admin-page-title">Users</h1>
           <div className="admin-page-subtitle">
-            Org Admins and Site Directors in your organization.
+            Org Admins and Cruise Directors in your organization.
           </div>
         </div>
         <button className="primary" onClick={() => setShowInvite(true)}>
-          + Invite
+          + Invite Cruise Director
         </button>
       </div>
 
@@ -67,7 +67,9 @@ export function Users() {
           <table className="admin-table">
             <thead>
               <tr>
+                <th>Name</th>
                 <th>Email</th>
+                <th>Phone</th>
                 <th>Role</th>
                 <th>Expires</th>
                 <th>Actions</th>
@@ -76,7 +78,9 @@ export function Users() {
             <tbody>
               {invites.map((inv) => (
                 <tr key={inv.id}>
+                  <td>{inv.full_name}</td>
                   <td>{inv.email}</td>
+                  <td>{inv.phone ?? "—"}</td>
                   <td>{inv.role.replace("_", " ")}</td>
                   <td>{new Date(inv.expires_at).toLocaleString()}</td>
                   <td>
@@ -106,6 +110,7 @@ export function Users() {
             <tr>
               <th>Name</th>
               <th>Email</th>
+              <th>Phone</th>
               <th>Role</th>
               <th>Status</th>
             </tr>
@@ -115,6 +120,7 @@ export function Users() {
               <tr key={u.id}>
                 <td>{u.full_name}</td>
                 <td>{u.email}</td>
+                <td>{u.phone ?? "—"}</td>
                 <td>{u.role.replace("_", " ")}</td>
                 <td>
                   {u.is_active ? (
@@ -149,7 +155,9 @@ function InviteModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -158,7 +166,11 @@ function InviteModal({
     setError(null);
     setSubmitting(true);
     try {
-      await api.invite(email, "site_director");
+      await api.invite({
+        email,
+        full_name: fullName,
+        phone: phone.trim() || undefined,
+      });
       onCreated();
     } catch (err) {
       const apiErr = err as ApiError;
@@ -171,19 +183,50 @@ function InviteModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Invite a Site Director</h2>
+        <h2>Invite a Cruise Director</h2>
         <form onSubmit={onSubmit}>
           {error && <div className="error">{error}</div>}
+          <div className="field">
+            <label htmlFor="invname">Full name</label>
+            <input
+              id="invname"
+              type="text"
+              autoComplete="name"
+              autoFocus
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
+          </div>
           <div className="field">
             <label htmlFor="invemail">Email</label>
             <input
               id="invemail"
               type="email"
-              autoFocus
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+          </div>
+          <div className="field">
+            <label htmlFor="invphone">Phone (optional)</label>
+            <input
+              id="invphone"
+              type="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label>Role</label>
+            <div
+              className="muted"
+              style={{ padding: "8px 0", fontSize: 14 }}
+            >
+              Cruise Director
+            </div>
           </div>
           <div style={{ display: "flex", gap: "var(--sp-sm)", justifyContent: "flex-end" }}>
             <button type="button" className="ghost" onClick={onClose}>

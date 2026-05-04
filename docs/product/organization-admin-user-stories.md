@@ -47,11 +47,11 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| MVP user management | Minimal subset only: invite Site Director, deactivate user, assign trip leadership. Advanced role admin deferred. | Site Director workflows depend on the ability to invite and assign — full deferral would block the next implementation sprints. |
+| MVP user management | Minimal subset only: invite Cruise Director, deactivate user, assign trip leadership. Advanced role admin deferred. | Cruise Director workflows depend on the ability to invite and assign — full deferral would block the next implementation sprints. |
 | Catalog pricing | Org-level flat per-item pricing for MVP. Per-boat / per-trip overrides captured as `Could` follow-ups. | Simplest pricing model that supports a real first release. |
-| Manifest ownership | Org Admin prepares the initial manifest pre-departure. Mid-trip manifest mutations belong to Site Director. | Matches `personas.md` and the README. |
+| Manifest ownership | Org Admin prepares the initial manifest pre-departure. Mid-trip manifest mutations belong to Cruise Director. | Matches `personas.md` and the README. |
 | Cabin model | Cabin layouts are not modeled. A boat has a single capacity number; the manifest is a flat list of guests (no spatial assignment). | Simplifies the model. Per-cabin assignment can be revisited as a `Could` follow-up if operators ask for it. |
-| Trip lifecycle | Org Admin creates, configures, cancels (planned only), and monitors trips. Site Director performs `planned → active` and `active → completed` transitions. | Reflects who is on the boat at the moment of the transition. |
+| Trip lifecycle | Org Admin creates, configures, cancels (planned only), and monitors trips. Cruise Director performs `planned → active` and `active → completed` transitions. | Reflects who is on the boat at the moment of the transition. |
 | Soft deletion | Boats, trips, catalog items, and users are deactivated/archived rather than hard-deleted. | Preserves historical trip and ledger integrity. |
 | Reporting (Org Admin) | Setup completeness and operational status are `Must`. Revenue summaries are `Should`. Cross-trip analytics deferred (post-MVP). | Matches persona boundaries. |
 | Inventory tracking | Deferred. Captured as `Could`. | Out of scope for first release. |
@@ -63,9 +63,9 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 
 The following are explicitly out of scope for the Organization Admin backlog:
 
-- Live ledger entry / mid-trip consumption flows (Site Director).
-- Mid-trip manifest operations (Site Director).
-- Trip start / complete lifecycle transitions (Site Director).
+- Live ledger entry / mid-trip consumption flows (Cruise Director).
+- Mid-trip manifest operations (Cruise Director).
+- Trip start / complete lifecycle transitions (Cruise Director).
 - Guest self-service portal.
 - Cross-organization visibility of any kind.
 - Deep analytics and reporting beyond setup + operational status + per-trip revenue.
@@ -340,7 +340,7 @@ Area: Trips
 Depends on: US-4.2
 
 Acceptance Criteria:
-- [ ] Shows name, boat, dates, status, assigned Site Director.
+- [ ] Shows name, boat, dates, status, assigned Cruise Director.
 - [ ] Shows guest count and remaining capacity.
 - [ ] Shows the manifest (flat list of guests).
 - [ ] Shows revenue summary (charges, settled, outstanding) — read-only.
@@ -373,7 +373,7 @@ Acceptance Criteria:
 - [ ] Manifest size cannot exceed the boat's capacity.
 - [ ] Guest count and remaining capacity update on the trip view.
 
-Notes: Mid-trip add/remove once the trip is `active` is Site Director scope. Spatial cabin assignment is deferred — the manifest is a flat list of guests.
+Notes: Mid-trip add/remove once the trip is `active` is Cruise Director scope. Spatial cabin assignment is deferred — the manifest is a flat list of guests.
 
 ### US-4.6: Prepare initial manifest — remove a guest (pre-departure)
 
@@ -407,11 +407,11 @@ Area: Trips
 Depends on: US-4.3
 
 Acceptance Criteria:
-- [ ] Trip detail view reflects status changes initiated by the Site Director (`planned → active`, `active → completed`).
+- [ ] Trip detail view reflects status changes initiated by the Cruise Director (`planned → active`, `active → completed`).
 - [ ] Org Admin cannot perform `start` or `complete` actions themselves.
 - [ ] Trip history view shows lifecycle timestamps.
 
-Notes: Lifecycle transitions are owned by Site Director (see `personas.md`).
+Notes: Lifecycle transitions are owned by Cruise Director (see `personas.md`).
 
 ### US-4.9: Cancel a planned trip
 
@@ -426,21 +426,21 @@ Acceptance Criteria:
 - [ ] Confirmation is required.
 - [ ] Status becomes `cancelled`; trip is hidden from default views but kept for records.
 
-### US-4.10: Assign a Site Director to a trip
+### US-4.10: Assign a Cruise Director to a trip
 
-> As an Organization Admin, I want to assign a Site Director to a trip so that it can be operated.
+> As an Organization Admin, I want to assign a Cruise Director to a trip so that it can be operated.
 
 Priority: Must
 Area: Trips
 Depends on: US-4.1, US-6.1
 
 Acceptance Criteria:
-- [ ] Admin selects from active users who have accepted a Site Director invitation.
-- [ ] At most one Site Director is assigned per trip at a time.
+- [ ] Admin selects from active users who have accepted a Cruise Director invitation.
+- [ ] At most one Cruise Director is assigned per trip at a time.
 - [ ] Reassignment is allowed while status is `planned` or `active`.
-- [ ] A trip cannot be transitioned to `active` (by the Site Director) without an assigned Site Director.
+- [ ] A trip cannot be transitioned to `active` (by the Cruise Director) without an assigned Cruise Director.
 
-Notes: Required to unblock Site Director workflows in subsequent sprints.
+Notes: Required to unblock Cruise Director workflows in subsequent sprints.
 
 ---
 
@@ -538,9 +538,9 @@ Acceptance Criteria: Deferred — captured so it is not lost. Will be expanded i
 
 ## Group 6: User Management (MVP Subset)
 
-### US-6.1: Invite a Site Director
+### US-6.1: Invite a Cruise Director
 
-> As an Organization Admin, I want to invite a user to be a Site Director so that I can assign them to trips.
+> As an Organization Admin, I want to invite a user to be a Cruise Director so that I can assign them to trips.
 
 Priority: Must
 Area: Users
@@ -548,7 +548,7 @@ Depends on: US-2.1
 
 Acceptance Criteria:
 - [ ] Admin provides invitee email and full name.
-- [ ] An invitation is sent to the email; on acceptance the invitee creates a password and joins the organization with the Site Director role.
+- [ ] An invitation is sent to the email; on acceptance the invitee creates a password and joins the organization with the Cruise Director role.
 - [ ] Pending invitations are listed in a users view with status (pending, accepted, expired).
 - [ ] Invitations expire after a bounded time window.
 - [ ] Duplicate active invitations to the same email are rejected.
@@ -596,7 +596,7 @@ Area: Oversight
 Depends on: US-2.1
 
 Acceptance Criteria:
-- [ ] Dashboard surfaces: boats below configured min stock for any catalog item, trips in `planned` with no Site Director assigned, trips in `planned` with empty manifests inside a configurable time-to-departure window, catalog items with no category, organization with no currency set.
+- [ ] Dashboard surfaces: boats below configured min stock for any catalog item, trips in `planned` with no Cruise Director assigned, trips in `planned` with empty manifests inside a configurable time-to-departure window, catalog items with no category, organization with no currency set.
 - [ ] Each item links to the screen where it can be fixed.
 
 ### US-7.2: Operational trip status view
@@ -643,7 +643,7 @@ The story IDs below feed proposed implementation sprints (003+). Final sprint sc
 1. **Sprint 003 — Auth + Org foundation:** US-1.1, US-1.2, US-1.3, US-2.1.
 2. **Sprint 004 — Fleet:** US-3.1, US-3.2, US-3.3, US-3.4, US-3.5.
 3. **Sprint 005 — Catalog + currency:** US-2.3, US-5.1, US-5.2, US-5.3, US-5.4, US-5.5.
-4. **Sprint 006 — Trips + Site Director invitation:** US-4.1, US-4.2, US-4.3, US-4.4, US-4.9, US-4.10, US-6.1, US-6.2.
+4. **Sprint 006 — Trips + Cruise Director invitation:** US-4.1, US-4.2, US-4.3, US-4.4, US-4.9, US-4.10, US-6.1, US-6.2.
 5. **Sprint 007 — Pre-departure manifest + oversight:** US-4.5, US-4.6, US-4.7, US-4.8, US-7.1, US-7.2.
 6. **Sprint 008 — Polish:** US-1.4, US-1.5, US-2.2, US-6.3, US-7.3.
 

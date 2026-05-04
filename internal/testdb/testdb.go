@@ -53,14 +53,15 @@ func SeedOrgWithAdmin(t *testing.T, p *store.Pool, orgName, adminEmail, adminFul
 	return o, got
 }
 
-// SeedSiteDirector creates a verified site-director user inside an
-// existing organization, bypassing the invitation flow. Useful for
+// SeedCruiseDirector creates a verified cruise-director user inside
+// an existing organization, bypassing the invitation flow. Useful for
 // tests that need a non-admin caller without exercising invitations.
-func SeedSiteDirector(t *testing.T, p *store.Pool, orgID interface{ String() string }, email, fullName string) *store.User {
+// Phone is optional; pass nil to omit.
+func SeedCruiseDirector(t *testing.T, p *store.Pool, orgID interface{ String() string }, email, fullName string, phone *string) *store.User {
 	t.Helper()
 	ctx := context.Background()
 	hash := mustHash(t, TestPassword)
-	u, err := p.CreateInvitedUser(ctx, parseUUID(t, orgID.String()), email, fullName, store.RoleSiteDirector, hash)
+	u, err := p.CreateInvitedUser(ctx, parseUUID(t, orgID.String()), email, fullName, store.RoleCruiseDirector, phone, hash)
 	if err != nil {
 		t.Fatalf("CreateInvitedUser: %v", err)
 	}

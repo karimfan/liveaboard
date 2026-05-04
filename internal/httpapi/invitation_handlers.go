@@ -10,15 +10,19 @@ import (
 	"github.com/karimfan/liveaboard/internal/store"
 )
 
-// invitation_handlers.go: Sprint 009 admin-only invitation surface.
-// All routes are mounted behind RequireOrgAdmin; the accept/lookup
-// endpoints are public (token-bearing).
+// invitation_handlers.go: Sprint 010 admin-only invitation surface.
+// Sprint 009 created invitations from {email, role} only. Sprint 010
+// captures full_name (required) and phone (optional) at invite time so
+// the admin's mental model is "I'm adding a Cruise Director" — not
+// "I'm slinging a token at a stranger."
 
 // --- admin (org_admin only) ---
 
 type inviteReq struct {
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	Email    string `json:"email"`
+	FullName string `json:"full_name"`
+	Phone    string `json:"phone"`
+	Role     string `json:"role"`
 }
 
 func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) {
@@ -29,9 +33,14 @@ func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if req.Role == "" {
-		req.Role = store.RoleSiteDirector
+		req.Role = store.RoleCruiseDirector
 	}
-	inv, err := s.Auth.Invite(r.Context(), u.OrganizationID, u.ID, req.Email, req.Role)
+	inv, err := s.Auth.Invite(r.Context(), u.OrganizationID, u.ID, auth.InviteInput{
+		Email:    req.Email,
+		FullName: req.FullName,
+		Phone:    req.Phone,
+		Role:     req.Role,
+	})
 	if err != nil {
 		writeServiceError(w, err)
 		return
@@ -94,6 +103,7 @@ func (s *Server) handleLookupInvitation(w http.ResponseWriter, r *http.Request) 
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"email":             view.Email,
+		"full_name":         view.FullName,
 		"role":              view.Role,
 		"organization_name": view.OrganizationName,
 		"expires_at":        view.ExpiresAt,
@@ -102,17 +112,19 @@ func (s *Server) handleLookupInvitation(w http.ResponseWriter, r *http.Request) 
 
 type acceptInvitationReq struct {
 	Token    string `json:"token"`
-	FullName string `json:"full_name"`
 	Password string `json:"password"`
 }
 
+// handleAcceptInvitation consumes a token and creates the user from
+// the invitation row's metadata (no name input from the invitee — the
+// admin captured it at invite time).
 func (s *Server) handleAcceptInvitation(w http.ResponseWriter, r *http.Request) {
 	var req acceptInvitationReq
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 		return
 	}
-	res, err := s.Auth.AcceptInvitation(r.Context(), req.Token, req.FullName, req.Password)
+	res, err := s.Auth.AcceptInvitation(r.Context(), req.Token, req.Password)
 	if err != nil {
 		writeServiceError(w, err)
 		return
@@ -127,6 +139,8 @@ func invitationView(inv *store.Invitation) map[string]any {
 	return map[string]any{
 		"id":         inv.ID,
 		"email":      inv.Email,
+		"full_name":  inv.FullName,
+		"phone":      inv.Phone,
 		"role":       inv.Role,
 		"expires_at": inv.ExpiresAt,
 	}

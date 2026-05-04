@@ -2,19 +2,27 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { adminApi, type Overview as OverviewT } from "../api";
+import { api, type ApiError, type CruiseDirectorOverview } from "../../lib/api";
 import { useMe } from "../useMe";
 
 export function Overview() {
   const me = useMe();
+
+  if (!me.loaded) return null;
+
+  // Org Admin sees the operational triage screen (Sprint 008).
+  // Cruise Director sees their personal landing (Sprint 010).
+  if (me.me?.role === "org_admin") {
+    return <AdminOverview />;
+  }
+  return <CruiseDirectorLanding />;
+}
+
+function AdminOverview() {
   const [data, setData] = useState<OverviewT | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Site Directors don't have access to the admin /overview endpoint.
-  // Their landing page renders a smaller variant.
-  const isAdmin = me.loaded && me.me?.role === "org_admin";
-
   useEffect(() => {
-    if (!isAdmin) return;
     let cancelled = false;
     adminApi
       .overview()
@@ -23,13 +31,7 @@ export function Overview() {
     return () => {
       cancelled = true;
     };
-  }, [isAdmin]);
-
-  if (!me.loaded) return null;
-
-  if (!isAdmin) {
-    return <SiteDirectorOverview />;
-  }
+  }, []);
 
   if (error) return <div className="error">{error}</div>;
   if (!data) return <div className="muted">Loading…</div>;
@@ -100,8 +102,8 @@ export function Overview() {
         <div className="admin-card">
           <h2 className="admin-card__title">Low-stock alerts</h2>
           <div className="alert-row__sub">
-            Per-boat inventory tracking arrives in Sprint 009. Once stock
-            levels are recorded, alerts will appear here.
+            Per-boat inventory tracking arrives in a future sprint. Once
+            stock levels are recorded, alerts will appear here.
           </div>
         </div>
 
@@ -116,23 +118,117 @@ export function Overview() {
   );
 }
 
-function SiteDirectorOverview() {
+function CruiseDirectorLanding() {
+  const [data, setData] = useState<CruiseDirectorOverview | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .cruiseDirectorOverview()
+      .then((d) => !cancelled && setData(d))
+      .catch((e: ApiError) => !cancelled && setError(e?.message ?? "Failed to load."));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (error) return <div className="error">{error}</div>;
+  if (!data) return <div className="muted">Loading…</div>;
+
+  const { profile, stats, trips } = data;
+  const orderedTrips = [...trips].sort((a, b) => orderRank(a.status) - orderRank(b.status));
+
   return (
     <>
       <div className="admin-page-header">
         <div>
           <h1 className="admin-page-title">My trips</h1>
           <div className="admin-page-subtitle">
-            Your assigned trips, current and upcoming.
+            Your assigned trips and contact details.
           </div>
         </div>
       </div>
-      <div className="admin-card">
-        <p className="muted">
-          Site Director views are coming together. Open <Link to="/admin/trips">Trips</Link> for
-          the trips you're assigned to.
-        </p>
+
+      <div className="admin-grid">
+        <div className="admin-card">
+          <h2 className="admin-card__title">{profile.full_name}</h2>
+          <ul className="contact-card">
+            <li>{profile.email}</li>
+            {profile.phone && <li>{profile.phone}</li>}
+            <li className="muted">
+              {profile.organization_name} · {profile.role.replace("_", " ")}
+            </li>
+          </ul>
+          <p style={{ marginTop: "var(--sp-md)" }}>
+            <Link to="/admin/account">Edit profile</Link>
+          </p>
+        </div>
+
+        <div className="admin-card">
+          <h2 className="admin-card__title">At a glance</h2>
+          <ul className="counts">
+            <li>
+              <span className="counts__value">{stats.upcoming}</span>
+              <span className="counts__label">Upcoming</span>
+            </li>
+            <li>
+              <span className="counts__value">{stats.active}</span>
+              <span className="counts__label">Active</span>
+            </li>
+            <li>
+              <span className="counts__value">{stats.past}</span>
+              <span className="counts__label">Past</span>
+            </li>
+          </ul>
+        </div>
       </div>
+
+      <h2 style={{ marginTop: "var(--sp-xl)" }}>My trips</h2>
+      {orderedTrips.length === 0 ? (
+        <div className="empty-state">
+          <h3>No assigned trips yet</h3>
+          <p className="muted">
+            An admin will assign you to a trip when one is ready.
+          </p>
+        </div>
+      ) : (
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Boat</th>
+              <th>Itinerary</th>
+              <th>Dates</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orderedTrips.map((t) => (
+              <tr key={t.id}>
+                <td>
+                  <span className={`chip chip--${t.status}`}>{t.status}</span>
+                </td>
+                <td>{t.boat_name}</td>
+                <td>{t.itinerary}</td>
+                <td>
+                  {t.start_date} → {t.end_date}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </>
   );
+}
+
+function orderRank(status: "upcoming" | "active" | "past"): number {
+  switch (status) {
+    case "active":
+      return 0;
+    case "upcoming":
+      return 1;
+    case "past":
+      return 2;
+  }
 }

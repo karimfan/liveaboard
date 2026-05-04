@@ -265,6 +265,49 @@ func (s *Server) handleCancelEmailChange(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
+// --- profile (Sprint 010) ---
+
+type updateProfileReq struct {
+	FullName string  `json:"full_name"`
+	Phone    *string `json:"phone"`
+}
+
+// handleUpdateProfile rewrites the calling user's full_name + phone.
+// Email and role are NOT touched here — they have their own dedicated
+// flows. Phone is optional; pass null to clear, omit to keep current,
+// or supply a string. We accept both null and omitted as "clear" to
+// keep the SPA simple.
+func (s *Server) handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
+	u := auth.UserFromContext(r.Context())
+	var req updateProfileReq
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		return
+	}
+	if strings.TrimSpace(req.FullName) == "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", "full_name is required")
+		return
+	}
+	var phonePtr *string
+	if req.Phone != nil {
+		trimmed := strings.TrimSpace(*req.Phone)
+		if trimmed != "" {
+			phonePtr = &trimmed
+		}
+	}
+	if err := s.Auth.Store.UpdateUserProfile(r.Context(), u.ID, strings.TrimSpace(req.FullName), phonePtr); err != nil {
+		s.Log.Error("update profile", "err", err, "user_id", u.ID)
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
+	updated, err := s.Auth.Store.UserByID(r.Context(), u.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
+	writeJSON(w, http.StatusOK, authUserView(updated))
+}
+
 // --- helpers ---
 
 // decodeJSON enforces unknown-field rejection so tests catch typos.
@@ -286,6 +329,7 @@ func authUserView(u *store.User) map[string]any {
 		"id":              u.ID,
 		"email":           u.Email,
 		"full_name":       u.FullName,
+		"phone":           u.Phone,
 		"role":            u.Role,
 		"organization_id": u.OrganizationID,
 		"email_verified":  verified,

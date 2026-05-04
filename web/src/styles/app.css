@@ -597,3 +597,48 @@ h3 { font-size: var(--fs-xl); }
   margin-bottom: var(--sp-md);
   font-weight: 500;
 }
+
+/* Sprint 010 — Cruise Director landing extras */
+
+.chip--upcoming { background: var(--c-100);        color: var(--c-700);     }
+.chip--past     { background: var(--c-100);        color: var(--c-500);     }
+
+.contact-card {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--fs-sm);
+}
+
+.counts {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-md);
+}
+
+.counts li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.counts__value {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  color: var(--c-900);
+}
+
+.counts__label {
+  font-size: var(--fs-xs);
+  color: var(--c-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+

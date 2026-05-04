@@ -10,7 +10,6 @@ export function AcceptInvitation() {
   const [invitation, setInvitation] = useState<InvitationLookup | null>(null);
   const [lookupErr, setLookupErr] = useState<string | null>(null);
 
-  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +38,10 @@ export function AcceptInvitation() {
     setError(null);
     setSubmitting(true);
     try {
-      await api.acceptInvitation(token, fullName, password);
+      // Sprint 010: name + phone come from the invitation row (the
+      // admin captured them at invite time). We only ask for a
+      // password here.
+      await api.acceptInvitation(token, password);
       navigate("/admin");
     } catch (err) {
       const apiErr = err as ApiError;
@@ -84,26 +86,16 @@ export function AcceptInvitation() {
       <div className="auth-stack">
         <h1 className="auth-wordmark">Liveaboard</h1>
         <form className="auth-card" onSubmit={onSubmit}>
-          <h1>Join {invitation.organization_name}</h1>
+          <h1>Hi {invitation.full_name}.</h1>
           <p className="muted" style={{ marginBottom: "var(--sp-md)" }}>
-            You've been invited to <strong>{invitation.organization_name}</strong> as a{" "}
-            {invitation.role.replace("_", " ")}. Set a name and password to finish setup.
+            You've been invited to <strong>{invitation.organization_name}</strong>{" "}
+            as a {invitation.role.replace("_", " ")}. Set a password to finish
+            joining. You can update your details from your account page later.
           </p>
           {error && <div className="error">{error}</div>}
           <div className="field">
             <label htmlFor="email">Email</label>
             <input id="email" type="email" value={invitation.email} disabled />
-          </div>
-          <div className="field">
-            <label htmlFor="fullName">Your full name</label>
-            <input
-              id="fullName"
-              type="text"
-              autoComplete="name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-            />
           </div>
           <div className="field">
             <label htmlFor="password">Password</label>
@@ -112,6 +104,7 @@ export function AcceptInvitation() {
               type="password"
               autoComplete="new-password"
               minLength={8}
+              autoFocus
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

@@ -54,12 +54,36 @@ The previous Clerk-backed iteration (Sprint 005) is preserved on the
 | Confirm email change    | `POST /api/account/confirm-email-change`   | Token     |
 | List pending email      | `GET  /api/account/pending-email-change`   | Yes       |
 | Cancel email change     | `POST /api/account/cancel-email-change`    | Yes       |
-| Invite user             | `POST /api/invitations`               | Yes (admin)    |
+| Invite Cruise Director  | `POST /api/invitations`               | Yes (admin)    |
 | Resend invitation       | `POST /api/invitations/{id}/resend`   | Yes (admin)    |
 | Revoke invitation       | `DELETE /api/invitations/{id}`        | Yes (admin)    |
 | List pending invites    | `GET  /api/invitations`               | Yes (admin)    |
 | Lookup invitation       | `GET  /api/invitations/lookup?token=` | No (token)     |
+| Update profile          | `PATCH /api/account/profile`          | Yes (any role) |
+| Cruise Director landing | `GET  /api/admin/cruise-director-overview` | Yes (CD-only) |
 | Accept invitation       | `POST /api/invitations/accept`        | No (token)     |
+
+## Invitation payload (Sprint 010)
+
+The invitation `POST` body now includes name + optional phone:
+
+```
+POST /api/invitations
+{
+  "email":     "maya@example.com",
+  "full_name": "Maya Sanchez",
+  "phone":     "+1 555 0142",   // optional
+  "role":      "cruise_director" // defaults if omitted
+}
+```
+
+The accept page at `/invitations/<token>/accept` greets by name and
+asks only for a password. The user row inherits `full_name` and
+`phone` from the invitation. The recipient can edit either later from
+`/admin/account → My profile`.
+
+The `lookup` endpoint exposes `full_name` so the SPA can render the
+greeting; it does **not** expose `phone`.
 
 ## Non-enumeration guarantees
 

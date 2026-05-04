@@ -30,7 +30,7 @@ func signInAsAdmin(t *testing.T, h *harness) (*http.Cookie, *store.Organization,
 	return cookie, org, user
 }
 
-// bootstrapDirector creates a Site Director user in the same org by
+// bootstrapDirector creates a Cruise Director user in the same org by
 // shortcutting the invitation flow at the store layer (we already test
 // the full HTTP invitation flow elsewhere), marks them verified, and
 // logs them in.
@@ -41,7 +41,7 @@ func bootstrapDirector(t *testing.T, h *harness, orgID uuid.UUID) (*http.Cookie,
 	if err != nil {
 		t.Fatalf("bcrypt: %v", err)
 	}
-	user, err := h.pool.CreateInvitedUser(ctx, orgID, "dir@x.test", "Director", store.RoleSiteDirector, hash)
+	user, err := h.pool.CreateInvitedUser(ctx, orgID, "dir@x.test", "Director", store.RoleCruiseDirector, nil, hash)
 	if err != nil {
 		t.Fatalf("CreateInvitedUser: %v", err)
 	}

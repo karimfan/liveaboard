@@ -105,10 +105,17 @@ func firstURL(line string) string {
 }
 
 // Vars are the template variables every email kind shares.
+//
+// RecipientName was added in Sprint 010 so invitation emails can greet
+// the recipient by name (the admin captures it at invite time). Other
+// flows that don't have a name (forgot password, change email)
+// silently leave it empty; templates that reference it should default
+// gracefully.
 type Vars struct {
 	AppName          string
 	OrganizationName string
 	RecipientEmail   string
+	RecipientName    string
 	InviterName      string
 	ActionURL        string
 	ExpiresAt        time.Time
