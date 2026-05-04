@@ -8,32 +8,15 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 
 | Persona | Scope | Primary use |
 |---|---|---|
-| Organization Owner | Org-wide | Read-only oversight: financial, operational, reporting. |
-| Organization Admin | Org-wide | Configure the org: fleet, catalog, pricing, trip planning, user management. |
+| Organization Admin | Org-wide | Configure the org and oversee operations: fleet, catalog, pricing, trip planning, user management, reporting and financial oversight. |
 | Site Director | Single trip | Run one trip end-to-end: manifest, consumption, onboard ops. |
 | Guest | Self only | View own tab, dive schedule, trip details. (Future.) |
 
 ---
 
-## Organization Owner
-
-**Scope:** All boats, trips, users, catalog, ledger, and reports within their organization.
-
-**Owns:**
-- Full read access to financial reporting and analytics across the org.
-- Org-level configuration that requires owner-tier authority (billing, org deletion — out of scope for MVP).
-
-**Does not own:**
-- Day-to-day fleet/trip/catalog configuration (Org Admin).
-- Trip operations or guest manifest (Site Director).
-
-**Boundary with Org Admin:** Owner is read-only at the operational layer. Owner-tier mutations (billing, org deletion) are deferred beyond MVP.
-
----
-
 ## Organization Admin
 
-**Scope:** Org-wide configuration and planning.
+**Scope:** Org-wide configuration, planning, and oversight.
 
 **Owns:**
 - Organization profile and defaults (name, currency).
@@ -42,13 +25,13 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Trip planning: create trip shell, set dates, assign Site Director, cancel planned trips.
 - Pre-departure manifest preparation: initial guest list and cabin assignments before the trip starts.
 - User management (MVP subset): invite Site Directors, deactivate users, assign trip leadership.
-- Oversight: setup completeness, operational trip status, revenue summaries.
+- Reporting and oversight: setup completeness, operational trip status, revenue summaries, cross-trip analytics, financial reports.
 
 **Does not own:**
 - Starting or completing active trips (Site Director).
 - Mid-trip manifest changes — adding/removing/reassigning guests once a trip is `active` (Site Director).
 - Recording guest consumption / ledger entries (Site Director).
-- Owner-tier financial controls (Owner).
+- Billing and org-deletion controls — deferred (post-MVP).
 - Advanced role administration (multi-admin, custom roles) — deferred.
 
 **Boundary with Site Director:** Org Admin owns the trip until it transitions to `active`. At that point, manifest mutations and lifecycle transitions move to the Site Director. Org Admin retains read access throughout and may cancel only `planned` trips.
@@ -68,7 +51,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 **Does not own:**
 - Boat/cabin configuration (Org Admin).
 - Catalog/pricing (Org Admin).
-- Cross-trip or org-wide reporting (Owner, Org Admin).
+- Cross-trip or org-wide reporting (Org Admin).
 - User invitation or role management (Org Admin).
 
 **Boundary with Org Admin:** Site Director takes the trip from a configured shell with an initial manifest and runs it. They cannot create trips, add boats, or change catalog items.
@@ -93,7 +76,7 @@ Out of scope for the initial product. Captured here so the data model accounts f
 
 For features that could belong to multiple personas, the table below records the resolution. Add a row when a real case forces a decision.
 
-| Capability | Owner persona | Notes |
+| Capability | Persona | Notes |
 |---|---|---|
 | Create trip shell | Org Admin | Date/boat/name. Trip starts in `planned`. |
 | Assign Site Director to trip | Org Admin | Required before trip can be started. |
@@ -109,14 +92,14 @@ For features that could belong to multiple personas, the table below records the
 | Setup completeness dashboard | Org Admin | What is misconfigured. |
 | Operational trip status view | Org Admin | Across trips. |
 | Revenue summary per trip | Org Admin | `Should` priority. |
-| Cross-trip analytics | Owner | Deferred. |
+| Cross-trip analytics | Org Admin | Deferred (post-MVP). |
 
 ---
 
 ## Out of Scope (All Personas, MVP)
 
 - Guest self-service portal.
-- Owner-tier billing and org deletion controls.
+- Billing and org-deletion controls (post-MVP).
 - Multi-admin and custom-role administration.
 - Cross-organization visibility of any kind.
 - Offline / sync.
