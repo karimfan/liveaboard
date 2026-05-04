@@ -12,6 +12,7 @@ import (
 
 	"github.com/karimfan/liveaboard/internal/auth"
 	"github.com/karimfan/liveaboard/internal/config"
+	"github.com/karimfan/liveaboard/internal/email"
 	"github.com/karimfan/liveaboard/internal/httpapi"
 	"github.com/karimfan/liveaboard/internal/org"
 	"github.com/karimfan/liveaboard/internal/store"
@@ -37,6 +38,11 @@ func main() {
 	}
 	log.Info("config loaded", "mode", cfg.Mode, "addr", cfg.Addr, "cookie_secure", cfg.CookieSecure)
 
+	if cfg.SMTPHost == "" || cfg.SMTPUsername == "" || cfg.SMTPPassword == "" || cfg.SMTPFrom == "" {
+		log.Error("SMTP not configured", "host_set", cfg.SMTPHost != "", "user_set", cfg.SMTPUsername != "", "from_set", cfg.SMTPFrom != "")
+		os.Exit(1)
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
@@ -51,42 +57,30 @@ func main() {
 	}
 	defer pool.Close()
 
-	provider, err := auth.NewClerkProvider(cfg.ClerkSecretKey, "")
-	if err != nil {
-		log.Error("init clerk provider", "err", err)
-		os.Exit(1)
+	sender := &email.SMTPSender{
+		Host:     cfg.SMTPHost,
+		Port:     cfg.SMTPPort,
+		Username: cfg.SMTPUsername,
+		Password: cfg.SMTPPassword,
 	}
 
-	exchange := &auth.Exchanger{
-		Provider:     provider,
-		Store:        pool,
-		Log:          log,
-		SessionTTL:   cfg.SessionDuration,
-		CookieSecure: cfg.CookieSecure,
-	}
+	authSvc := auth.New(pool, sender, log, cfg.AppBaseURL, cfg.SMTPFrom)
+	authSvc.BcryptCost = cfg.BcryptCost
+	authSvc.SessionDuration = cfg.SessionDuration
+	authSvc.VerificationDuration = cfg.VerificationDuration
+
 	session := &auth.SessionMiddleware{
 		Store: pool,
 		Log:   log,
 	}
-	admin := &auth.AdminHandlers{
-		Provider: provider,
-		Store:    pool,
-		Log:      log,
-	}
-	webhook, err := auth.NewWebhookReceiver(provider, pool, log, cfg.ClerkWebhookSecret)
-	if err != nil {
-		log.Error("init webhook receiver", "err", err)
-		os.Exit(1)
-	}
 
 	srv := &httpapi.Server{
-		Org:      org.New(pool),
-		Log:      log,
-		Exchange: exchange,
-		Session:  session,
-		Admin:    admin,
-		AdminAPI: &httpapi.AdminHandlers{Store: pool},
-		Webhook:  webhook,
+		Org:          org.New(pool),
+		Log:          log,
+		Auth:         authSvc,
+		Session:      session,
+		AdminAPI:     &httpapi.AdminHandlers{Store: pool},
+		CookieSecure: cfg.CookieSecure,
 	}
 
 	httpServer := &http.Server{

@@ -8,11 +8,71 @@ package testdb
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/karimfan/liveaboard/internal/config"
 	"github.com/karimfan/liveaboard/internal/store"
 )
+
+// TestPassword is the canonical password used in tests. Hashed at bcrypt
+// cost 4 so the suite stays fast.
+const TestPassword = "Sup3rStrong!"
+
+func mustHash(t *testing.T, pw string) []byte {
+	t.Helper()
+	h, err := bcrypt.GenerateFromPassword([]byte(pw), 4)
+	if err != nil {
+		t.Fatalf("bcrypt: %v", err)
+	}
+	return h
+}
+
+// SeedOrgWithAdmin creates an organization plus its first admin user
+// and immediately marks the admin email-verified so the user passes the
+// post-Sprint-009 verification gate. Returns the org and admin rows.
+func SeedOrgWithAdmin(t *testing.T, p *store.Pool, orgName, adminEmail, adminFullName string) (*store.Organization, *store.User) {
+	t.Helper()
+	ctx := context.Background()
+	hash := mustHash(t, TestPassword)
+	o, u, err := p.CreateOrgAndAdmin(ctx, orgName, adminEmail, adminFullName, hash)
+	if err != nil {
+		t.Fatalf("CreateOrgAndAdmin: %v", err)
+	}
+	if err := p.MarkEmailVerified(ctx, u.ID, nowUTC()); err != nil {
+		t.Fatalf("MarkEmailVerified: %v", err)
+	}
+	// Refresh so callers see the verified-at timestamp.
+	got, err := p.UserByID(ctx, u.ID)
+	if err != nil {
+		t.Fatalf("UserByID: %v", err)
+	}
+	return o, got
+}
+
+// SeedSiteDirector creates a verified site-director user inside an
+// existing organization, bypassing the invitation flow. Useful for
+// tests that need a non-admin caller without exercising invitations.
+func SeedSiteDirector(t *testing.T, p *store.Pool, orgID interface{ String() string }, email, fullName string) *store.User {
+	t.Helper()
+	ctx := context.Background()
+	hash := mustHash(t, TestPassword)
+	u, err := p.CreateInvitedUser(ctx, parseUUID(t, orgID.String()), email, fullName, store.RoleSiteDirector, hash)
+	if err != nil {
+		t.Fatalf("CreateInvitedUser: %v", err)
+	}
+	if err := p.MarkEmailVerified(ctx, u.ID, nowUTC()); err != nil {
+		t.Fatalf("MarkEmailVerified: %v", err)
+	}
+	got, err := p.UserByID(ctx, u.ID)
+	if err != nil {
+		t.Fatalf("UserByID: %v", err)
+	}
+	return got
+}
 
 // Pool returns a freshly-migrated, freshly-truncated *store.Pool.
 func Pool(t *testing.T) *store.Pool {
@@ -59,9 +119,12 @@ func Pool(t *testing.T) *store.Pool {
 		TRUNCATE TABLE
 			trips,
 			boats,
-			app_sessions,
-			webhook_events,
-			auth_sync_cursors,
+			sessions,
+			email_verifications,
+			invitations,
+			password_reset_tokens,
+			email_change_requests,
+			login_attempts,
 			users,
 			organizations
 		RESTART IDENTITY CASCADE
@@ -69,4 +132,18 @@ func Pool(t *testing.T) *store.Pool {
 		t.Fatalf("truncate: %v", err)
 	}
 	return p
+}
+
+// nowUTC + parseUUID kept inline to avoid pulling extra deps into this
+// helper package. Tests that need richer time control mock at the
+// store-layer call site.
+func nowUTC() time.Time { return time.Now().UTC() }
+
+func parseUUID(t *testing.T, s string) uuid.UUID {
+	t.Helper()
+	u, err := uuid.Parse(s)
+	if err != nil {
+		t.Fatalf("parseUUID(%q): %v", s, err)
+	}
+	return u
 }

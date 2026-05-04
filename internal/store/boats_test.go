@@ -5,19 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/karimfan/liveaboard/internal/store"
 	"github.com/karimfan/liveaboard/internal/testdb"
 )
 
 func bootstrapOrg(t *testing.T, p *store.Pool) *store.Organization {
 	t.Helper()
-	org, _, err := p.CreateExternalOrgAndAdmin(context.Background(),
-		"Acme Diving", "org_clerk_boats", "user_clerk_boats", "owner@x.test", "Owner")
-	if err != nil {
-		t.Fatalf("CreateExternalOrgAndAdmin: %v", err)
-	}
+	org, _ := testdb.SeedOrgWithAdmin(t, p, "Acme Diving", "owner@x.test", "Owner")
 	return org
 }
 
@@ -104,12 +98,8 @@ func TestUpsertBoatTenantIsolation(t *testing.T) {
 	ctx := context.Background()
 	orgA := bootstrapOrg(t, p)
 
-	var orgBID uuid.UUID
-	if err := p.QueryRow(ctx,
-		`INSERT INTO organizations (name, clerk_org_id) VALUES ($1, $2) RETURNING id`,
-		"Beta Diving", "org_clerk_b").Scan(&orgBID); err != nil {
-		t.Fatalf("create org B: %v", err)
-	}
+	orgB, _ := testdb.SeedOrgWithAdmin(t, p, "Beta Diving", "owner-b@x.test", "Owner B")
+	orgBID := orgB.ID
 
 	now := time.Now().UTC()
 	if _, err := p.UpsertBoat(ctx, orgA.ID, "liveaboard.com", store.BoatScrape{

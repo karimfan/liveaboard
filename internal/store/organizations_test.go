@@ -4,23 +4,16 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/karimfan/liveaboard/internal/store"
 	"github.com/karimfan/liveaboard/internal/testdb"
 )
 
-func TestCreateExternalOrgAndAdmin(t *testing.T) {
+func TestCreateOrgAndAdmin(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()
 
-	org, user, err := p.CreateExternalOrgAndAdmin(ctx,
-		"Acme Diving", "org_clerk_1",
-		"user_clerk_1", "owner@acme.test", "Owner",
-	)
-	if err != nil {
-		t.Fatalf("CreateExternalOrgAndAdmin: %v", err)
-	}
+	org, user := testdb.SeedOrgWithAdmin(t, p, "Acme Diving", "owner@acme.test", "Owner")
 	if org.Name != "Acme Diving" {
 		t.Errorf("org name: %q", org.Name)
 	}
@@ -30,109 +23,48 @@ func TestCreateExternalOrgAndAdmin(t *testing.T) {
 	if user.Role != store.RoleOrgAdmin {
 		t.Errorf("user.Role = %q, want %q", user.Role, store.RoleOrgAdmin)
 	}
-	if user.ClerkUserID != "user_clerk_1" {
-		t.Errorf("user.ClerkUserID = %q", user.ClerkUserID)
+	if user.EmailVerifiedAt == nil {
+		t.Errorf("expected verified-at set after seed")
+	}
+	if !user.IsActive {
+		t.Errorf("expected admin to be active")
+	}
+	if got, err := p.UserByEmail(ctx, "owner@acme.test"); err != nil || got.ID != user.ID {
+		t.Errorf("UserByEmail roundtrip: got %v err %v", got, err)
 	}
 }
 
-func TestCreateExternalOrgAndAdminEmailConflict(t *testing.T) {
+func TestCreateOrgAndAdminEmailConflict(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()
-	if _, _, err := p.CreateExternalOrgAndAdmin(ctx, "A", "org_a", "user_a", "x@x.test", "Alice"); err != nil {
-		t.Fatalf("first: %v", err)
-	}
-	_, _, err := p.CreateExternalOrgAndAdmin(ctx, "B", "org_b", "user_b", "x@x.test", "Bob")
+	testdb.SeedOrgWithAdmin(t, p, "A", "x@x.test", "Alice")
+
+	hash := []byte("doesnt-matter")
+	_, _, err := p.CreateOrgAndAdmin(ctx, "B", "x@x.test", "Bob", hash)
 	if !errors.Is(err, store.ErrEmailTaken) {
 		t.Fatalf("err = %v want ErrEmailTaken", err)
 	}
 }
 
-func TestCreateExternalOrgAndAdminClerkIDConflict(t *testing.T) {
+func TestCreateInvitedUser(t *testing.T) {
 	p := testdb.Pool(t)
-	ctx := context.Background()
-	if _, _, err := p.CreateExternalOrgAndAdmin(ctx, "A", "org_a", "user_a", "a@x.test", "Alice"); err != nil {
-		t.Fatalf("first: %v", err)
-	}
-	// Same clerk_org_id, different email -> ErrOrgClerkIDTaken
-	_, _, err := p.CreateExternalOrgAndAdmin(ctx, "B", "org_a", "user_b", "b@x.test", "Bob")
-	if !errors.Is(err, store.ErrOrgClerkIDTaken) {
-		t.Fatalf("err = %v want ErrOrgClerkIDTaken", err)
-	}
-}
-
-func TestUserByClerkID(t *testing.T) {
-	p := testdb.Pool(t)
-	ctx := context.Background()
-	_, want, err := p.CreateExternalOrgAndAdmin(ctx, "A", "org_a", "user_a", "a@x.test", "Alice")
-	if err != nil {
-		t.Fatalf("setup: %v", err)
-	}
-
-	got, err := p.UserByClerkID(ctx, "user_a")
-	if err != nil {
-		t.Fatalf("UserByClerkID: %v", err)
-	}
-	if got.ID != want.ID {
-		t.Errorf("got id %v want %v", got.ID, want.ID)
-	}
-
-	if _, err := p.UserByClerkID(ctx, "user_missing"); !errors.Is(err, store.ErrNotFound) {
-		t.Errorf("missing: %v want ErrNotFound", err)
-	}
-}
-
-func TestCreateExternalUser(t *testing.T) {
-	p := testdb.Pool(t)
-	ctx := context.Background()
-	org, _, err := p.CreateExternalOrgAndAdmin(ctx, "A", "org_a", "user_a", "a@x.test", "Alice")
-	if err != nil {
-		t.Fatalf("setup: %v", err)
-	}
-
-	site, err := p.CreateExternalUser(ctx, org.ID, "user_b", "site@x.test", "Site Director", store.RoleSiteDirector)
-	if err != nil {
-		t.Fatalf("CreateExternalUser: %v", err)
-	}
+	org, _ := testdb.SeedOrgWithAdmin(t, p, "A", "a@x.test", "Alice")
+	site := testdb.SeedSiteDirector(t, p, org.ID, "site@x.test", "Site Director")
 	if site.Role != store.RoleSiteDirector {
 		t.Errorf("Role = %q", site.Role)
 	}
-	if site.ClerkUserID != "user_b" {
-		t.Errorf("ClerkUserID = %q", site.ClerkUserID)
+	if site.OrganizationID != org.ID {
+		t.Errorf("OrganizationID drift: %v", site.OrganizationID)
 	}
-}
-
-func TestUpdateExternalUserSyncsIdentity(t *testing.T) {
-	p := testdb.Pool(t)
-	ctx := context.Background()
-	_, want, err := p.CreateExternalOrgAndAdmin(ctx, "A", "org_a", "user_a", "old@x.test", "Old Name")
-	if err != nil {
-		t.Fatalf("setup: %v", err)
-	}
-
-	if err := p.UpdateExternalUser(ctx, "user_a", "new@x.test", "New Name"); err != nil {
-		t.Fatalf("UpdateExternalUser: %v", err)
-	}
-
-	got, err := p.UserByID(ctx, want.ID)
-	if err != nil {
-		t.Fatalf("UserByID: %v", err)
-	}
-	if got.Email != "new@x.test" || got.FullName != "New Name" {
-		t.Errorf("got %+v", got)
-	}
-	// Role unchanged.
-	if got.Role != store.RoleOrgAdmin {
-		t.Errorf("Role drift: %q", got.Role)
+	if site.EmailVerifiedAt == nil {
+		t.Errorf("seeded directors should be verified")
 	}
 }
 
 func TestDeactivateUser(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()
-	_, user, err := p.CreateExternalOrgAndAdmin(ctx, "A", "org_a", "user_a", "a@x.test", "Alice")
-	if err != nil {
-		t.Fatalf("setup: %v", err)
-	}
+	_, user := testdb.SeedOrgWithAdmin(t, p, "A", "a@x.test", "Alice")
 	if err := p.DeactivateUser(ctx, user.ID); err != nil {
 		t.Fatalf("DeactivateUser: %v", err)
 	}
@@ -145,33 +77,10 @@ func TestDeactivateUser(t *testing.T) {
 	}
 }
 
-func TestOrganizationByClerkID(t *testing.T) {
-	p := testdb.Pool(t)
-	ctx := context.Background()
-	want, _, err := p.CreateExternalOrgAndAdmin(ctx, "A", "org_a", "user_a", "a@x.test", "Alice")
-	if err != nil {
-		t.Fatalf("setup: %v", err)
-	}
-	got, err := p.OrganizationByClerkID(ctx, "org_a")
-	if err != nil {
-		t.Fatalf("OrganizationByClerkID: %v", err)
-	}
-	if got.ID != want.ID {
-		t.Errorf("id mismatch")
-	}
-
-	if _, err := p.OrganizationByClerkID(ctx, "org_missing"); !errors.Is(err, store.ErrNotFound) {
-		t.Errorf("missing: %v want ErrNotFound", err)
-	}
-}
-
 func TestOrganizationByNameCaseInsensitive(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()
-	want, _, err := p.CreateExternalOrgAndAdmin(ctx, "Acme Diving", "org_byname", "user_byname", "byname@x.test", "U")
-	if err != nil {
-		t.Fatalf("setup: %v", err)
-	}
+	want, _ := testdb.SeedOrgWithAdmin(t, p, "Acme Diving", "byname@x.test", "U")
 
 	for _, q := range []string{"Acme Diving", "acme diving", "ACME DIVING"} {
 		got, err := p.OrganizationByName(ctx, q)
@@ -192,37 +101,33 @@ func TestOrganizationByNameCaseInsensitive(t *testing.T) {
 func TestOrganizationByNameAmbiguous(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()
-	if _, _, err := p.CreateExternalOrgAndAdmin(ctx, "Acme", "org_a1", "user_a1", "a1@x.test", "A"); err != nil {
-		t.Fatalf("setup A: %v", err)
-	}
-	// Insert a second "Acme" via direct INSERT (case-different but
-	// matched case-insensitively).
+	testdb.SeedOrgWithAdmin(t, p, "Acme", "a1@x.test", "A1")
+	// Direct INSERT a second org with the same name in a different case so
+	// the case-insensitive matcher returns multiple rows. The unique
+	// constraint on `organizations.name` is exact-case, so this is allowed.
 	if _, err := p.Exec(ctx,
-		`INSERT INTO organizations (name, clerk_org_id) VALUES ($1, $2)`,
-		"acme", "org_a2"); err != nil {
-		t.Fatalf("setup A2: %v", err)
+		`INSERT INTO organizations (name) VALUES ($1)`, "acme"); err != nil {
+		t.Fatalf("seed second org: %v", err)
 	}
-
-	_, err := p.OrganizationByName(ctx, "Acme")
-	if !errors.Is(err, store.ErrOrgAmbiguous) {
+	if _, err := p.OrganizationByName(ctx, "Acme"); !errors.Is(err, store.ErrOrgAmbiguous) {
 		t.Fatalf("err = %v want ErrOrgAmbiguous", err)
 	}
 }
 
-func TestUpdateOrganizationName(t *testing.T) {
+func TestUpdateOrganizationProfile(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()
-	if _, _, err := p.CreateExternalOrgAndAdmin(ctx, "Old", "org_a", "user_a", "a@x.test", "Alice"); err != nil {
-		t.Fatalf("setup: %v", err)
-	}
-	if err := p.UpdateOrganizationName(ctx, "org_a", "New", time.Now()); err != nil {
-		t.Fatalf("UpdateOrganizationName: %v", err)
-	}
-	got, err := p.OrganizationByClerkID(ctx, "org_a")
+	org, _ := testdb.SeedOrgWithAdmin(t, p, "Old", "a@x.test", "Alice")
+
+	cur := "EUR"
+	got, err := p.UpdateOrganizationProfile(ctx, org.ID, "New", &cur)
 	if err != nil {
-		t.Fatalf("OrganizationByClerkID: %v", err)
+		t.Fatalf("UpdateOrganizationProfile: %v", err)
 	}
 	if got.Name != "New" {
 		t.Errorf("Name = %q", got.Name)
+	}
+	if got.Currency == nil || *got.Currency != "EUR" {
+		t.Errorf("Currency = %v want EUR", got.Currency)
 	}
 }

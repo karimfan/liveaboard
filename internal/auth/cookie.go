@@ -2,37 +2,32 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"time"
 
 	"github.com/karimfan/liveaboard/internal/store"
 )
 
-// SessionCookieName is the SPA-facing session cookie. It is the same name
-// Sprint 003 used; the cutover replaces the data behind it (sessions row
-// -> app_sessions row backed by a Clerk session) without changing the
-// frontend contract.
+// SessionCookieName is the SPA-facing session cookie. Same name we
+// have used since Sprint 003; the data behind it now lives in the
+// `sessions` table (Sprint 009 cutover).
 const SessionCookieName = "lb_session"
 
-// MintAppSession generates a new opaque cookie token, persists an
-// app_sessions row, and returns (rawToken, sessionRow). Callers set the
-// cookie via SetSessionCookie.
-func MintAppSession(
+// MintSession generates a new opaque cookie token, persists a session
+// row, and returns the raw token + session row. Callers set the cookie
+// via SetSessionCookie.
+func MintSession(
 	ctx context.Context,
 	pool *store.Pool,
 	user *store.User,
-	clerkUserID, clerkSessionID string,
 	now time.Time,
 	ttl time.Duration,
-) (rawToken string, sess *store.AppSession, err error) {
-	rawToken, tokenHash, err := newCookieToken()
+) (rawToken string, sess *store.Session, err error) {
+	rawToken, tokenHash, err := NewToken()
 	if err != nil {
 		return "", nil, err
 	}
-	sess, err = pool.CreateAppSession(ctx, user.ID, tokenHash, clerkUserID, clerkSessionID, now.Add(ttl))
+	sess, err = pool.CreateSession(ctx, user.ID, tokenHash, now.Add(ttl))
 	if err != nil {
 		return "", nil, err
 	}
@@ -64,20 +59,4 @@ func ClearSessionCookie(w http.ResponseWriter, secure bool) {
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,
 	})
-}
-
-// HashCookieToken returns sha256(token) — the value persisted as
-// app_sessions.token_hash. The plaintext token is never stored.
-func HashCookieToken(rawToken string) []byte {
-	sum := sha256.Sum256([]byte(rawToken))
-	return sum[:]
-}
-
-func newCookieToken() (raw string, hash []byte, err error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", nil, err
-	}
-	raw = hex.EncodeToString(b)
-	return raw, HashCookieToken(raw), nil
 }

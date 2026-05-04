@@ -1,0 +1,11 @@
+Welcome to {{.AppName}}{{if .OrganizationName}}, {{.OrganizationName}}{{end}}.
+
+Confirm your email address by visiting:
+
+  {{.ActionURL}}
+
+This link expires on {{fmtdate .ExpiresAt}}.
+
+If you didn't sign up, you can ignore this message.
+
+— {{.AppName}}

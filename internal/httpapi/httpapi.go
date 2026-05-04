@@ -15,19 +15,21 @@ import (
 	"github.com/karimfan/liveaboard/internal/store"
 )
 
-// Server bundles the dependencies the chi router needs. After Sprint 005
-// the Auth surface is split: Exchanger handles the Clerk-backed auth
-// flows, AdminHandlers handles invitations and deactivation, Webhook
-// handles Clerk -> us syncing, and SessionMiddleware authenticates every
-// other API call via the lb_session cookie.
+// Server bundles dependencies the chi router needs. Sprint 009 replaced
+// the Clerk-backed Exchanger / WebhookReceiver / AdminHandlers surface
+// with a single auth.Service that owns every flow (signup, verification,
+// login, logout, forgot/reset/change-password, invitations, change-email).
+//
+// CookieSecure controls the Secure flag on the session cookie. AdminAPI
+// is the Sprint 008 admin chrome (overview / boats / users / trips), kept
+// untouched through this swap.
 type Server struct {
-	Org      *org.Service
-	Log      *slog.Logger
-	Exchange *auth.Exchanger
-	Session  *auth.SessionMiddleware
-	Admin    *auth.AdminHandlers
-	AdminAPI *AdminHandlers // Sprint 008 /api/admin/* surface
-	Webhook  *auth.WebhookReceiver
+	Org          *org.Service
+	Log          *slog.Logger
+	Auth         *auth.Service
+	Session      *auth.SessionMiddleware
+	AdminAPI     *AdminHandlers
+	CookieSecure bool
 }
 
 func (s *Server) Router() http.Handler {
@@ -39,15 +41,21 @@ func (s *Server) Router() http.Handler {
 	r.Use(middleware.Timeout(15 * time.Second))
 
 	r.Route("/api", func(r chi.Router) {
-		// Public auth orchestration. The SPA calls these once after a
-		// successful Clerk SignUp / SignIn to mint the lb_session
-		// cookie; from then on every other endpoint is cookie-auth.
-		r.Post("/signup-complete", s.Exchange.HandleSignupComplete)
-		r.Post("/auth/exchange", s.Exchange.HandleExchange)
-		r.Post("/logout", s.Exchange.HandleLogout)
+		// Public auth surface — no session required.
+		r.Post("/auth/signup", s.handleSignup)
+		r.Post("/auth/verify-email", s.handleVerifyEmail)
+		r.Post("/auth/resend-verification", s.handleResendVerification)
+		r.Post("/auth/login", s.handleLogin)
+		r.Post("/auth/forgot-password", s.handleForgotPassword)
+		r.Post("/auth/reset-password", s.handleResetPassword)
 
-		// Webhook: signature-verified, never cookie-auth.
-		r.Post("/webhooks/clerk", s.Webhook.Handle)
+		// Public invitation accept (token-bearing, no cookie).
+		r.Get("/invitations/lookup", s.handleLookupInvitation)
+		r.Post("/invitations/accept", s.handleAcceptInvitation)
+
+		// Logout works whether you have a valid cookie or not — it always
+		// returns 200 and best-effort deletes the row.
+		r.Post("/auth/logout", s.handleLogout)
 
 		// Authenticated routes.
 		r.Group(func(r chi.Router) {
@@ -56,18 +64,27 @@ func (s *Server) Router() http.Handler {
 			r.Get("/me", s.handleMe)
 			r.Get("/organization", s.handleOrganization)
 
-			// Org-admin-only routes (Sprint 005).
+			// Account self-service.
+			r.Post("/account/change-password", s.handleChangePassword)
+			r.Post("/account/request-email-change", s.handleRequestEmailChange)
+			r.Get("/account/pending-email-change", s.handlePendingEmailChange)
+			r.Post("/account/cancel-email-change", s.handleCancelEmailChange)
+
+			// Confirm-email-change: authenticated when the user clicks
+			// the link in the same browser; if not we still accept it
+			// (the service falls back to "delete all sessions").
+			r.Post("/account/confirm-email-change", s.handleConfirmEmailChange)
+
+			// Org-admin-only invitation routes.
 			r.Group(func(r chi.Router) {
 				r.Use(auth.RequireOrgAdmin)
-				r.Post("/invitations", s.Admin.HandleInvite)
-				r.Post("/invitations/{id}/resend", s.handleResendInvite)
-				r.Post("/users/{id}/deactivate", s.handleDeactivateUser)
+				r.Get("/invitations", s.handleListInvitations)
+				r.Post("/invitations", s.handleCreateInvitation)
+				r.Post("/invitations/{id}/resend", s.handleResendInvitation)
+				r.Delete("/invitations/{id}", s.handleRevokeInvitation)
 			})
 
-			// Sprint 008 admin chrome surface. Most endpoints are
-			// admin-only; the trips list is open to any authenticated
-			// user but server-scoped to their assigned trips when the
-			// caller is a Site Director (see HandleListTrips).
+			// Sprint 008 admin chrome surface — unchanged.
 			r.Route("/admin", func(r chi.Router) {
 				r.Get("/trips", s.AdminAPI.HandleListTrips)
 
@@ -95,17 +112,11 @@ func (s *Server) Router() http.Handler {
 	return r
 }
 
-// --- handlers ---
+// --- core handlers ---
 
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	u := auth.UserFromContext(r.Context())
-	writeJSON(w, http.StatusOK, map[string]any{
-		"id":              u.ID,
-		"email":           u.Email,
-		"full_name":       u.FullName,
-		"role":            u.Role,
-		"organization_id": u.OrganizationID,
-	})
+	writeJSON(w, http.StatusOK, authUserView(u))
 }
 
 func (s *Server) handleOrganization(w http.ResponseWriter, r *http.Request) {
@@ -119,20 +130,10 @@ func (s *Server) handleOrganization(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, view)
 }
 
-func (s *Server) handleResendInvite(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	s.Admin.HandleResendInvite(w, r, id)
-}
-
-func (s *Server) handleDeactivateUser(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	s.Admin.HandleDeactivateUser(w, r, id)
-}
-
 // --- helpers ---
 
-// userFromContext is a thin re-export of auth.UserFromContext for any
-// callers within this package that don't want to import internal/auth.
+// userFromContext is a thin re-export used by sibling files that don't
+// import internal/auth directly.
 func userFromContext(ctx interface{ Value(any) any }) *store.User {
 	if ctx == nil {
 		return nil

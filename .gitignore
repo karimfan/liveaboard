@@ -25,3 +25,4 @@ web/tsconfig.tsbuildinfo
 
 # Tooling
 .gstack/
+.claude/

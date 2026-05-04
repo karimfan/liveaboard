@@ -1,133 +1,101 @@
-# Auth (Clerk) — operational guide
+# Auth — operational guide
 
-This is the runbook for the Clerk-backed auth stack landed in Sprint 005.
-For the why, see [`docs/decisions/0001-auth-provider.md`](decisions/0001-auth-provider.md).
+This is the runbook for the self-hosted auth stack landed in Sprint 009.
+For the why, see [`docs/decisions/0002-revert-clerk.md`](decisions/0002-revert-clerk.md).
+The previous Clerk-backed iteration (Sprint 005) is preserved on the
+`clerk-archive` branch.
+
+## Components
+
+- **`internal/auth`** — service layer (signup / verify / login / logout,
+  forgot/reset/change password, invitations, change-email) plus the
+  session middleware and the cookie helpers.
+- **`internal/store`** — Postgres-backed persistence: `users`,
+  `organizations`, `sessions`, `email_verifications`, `invitations`,
+  `password_reset_tokens`, `email_change_requests`, `login_attempts`.
+- **`internal/email`** — `Sender` interface, `MockSender` for tests, and
+  `SMTPSender` (Brevo via `net/smtp` + STARTTLS).
+- **`internal/httpapi`** — wires the service into HTTP routes under
+  `/api/auth/*`, `/api/account/*`, `/api/invitations*`, `/api/me`,
+  `/api/organization`.
 
 ## Local dev setup
 
-1. Sign up at https://clerk.com (free).
-2. Create a new application — name it "Liveaboard (dev)". Pick **React** + **Go** when asked.
-3. *Configure → Email, Phone, Username* — enable email + password (or social, your call).
-4. *Configure → Organizations* — turn on. Add custom org-role slugs `org_admin` and `site_director` so they map directly to `users.role`.
-5. *API Keys* — copy:
-   - `CLERK_PUBLISHABLE_KEY` (`pk_test_...`)
-   - `CLERK_SECRET_KEY` (`sk_test_...`)
-6. *Configure → Webhooks → Add Endpoint*:
-   - URL: a tunnel pointing at `http://localhost:8080/api/webhooks/clerk` (e.g. `cloudflared tunnel --url http://localhost:8080`).
-   - Subscribe to: `user.*`, `organization.*`, `organizationMembership.*`.
-   - Copy the resulting **Signing Secret** (`whsec_...`) — this is `CLERK_WEBHOOK_SECRET`.
-7. Drop all four into `.env.local` (gitignored) at the repo root, plus the duplicate `VITE_CLERK_PUBLISHABLE_KEY` Vite needs:
+1. Sign up at https://www.brevo.com (free tier covers ~300 mails/day).
+2. *Senders & IPs → SMTP & API* — generate an SMTP key.
+3. Drop the secrets into `.env.local` at the repo root (gitignored):
 
-   ```bash
-   CLERK_PUBLISHABLE_KEY=pk_test_...
-   CLERK_SECRET_KEY=sk_test_...
-   CLERK_WEBHOOK_SECRET=whsec_...
-   VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+   ```
+   LIVEABOARD_SMTP_HOST=smtp-relay.brevo.com
+   LIVEABOARD_SMTP_PORT=587
+   LIVEABOARD_SMTP_USERNAME=<your SMTP user>
+   LIVEABOARD_SMTP_PASSWORD=<your SMTP key>
+   LIVEABOARD_SMTP_FROM=<verified sender email>
+   LIVEABOARD_APP_BASE_URL=http://localhost:5173
    ```
 
-8. `make dev` and visit http://localhost:5173.
+4. `make dev` boots the backend on `:8080` and Vite on `:5173`. Open
+   http://localhost:5173/signup, fill the form, and watch your inbox
+   for the verification email.
 
-## Backlog mapping
+## Flows
 
-| Story | Provided by |
-|---|---|
-| US-1.1 sign up as Org Admin | Clerk `<SignUp>` + our `POST /api/signup-complete` (creates Clerk org + local org + first admin) |
-| US-1.2 log in | Clerk `<SignIn>` + `POST /api/auth/exchange` (mints `lb_session`) |
-| US-1.3 log out | `POST /api/logout` (revokes Clerk session + clears `lb_session`) |
-| US-1.4 password reset | Clerk's hosted reset flow (no app code) |
-| US-1.5 profile updates | Clerk `<UserProfile>` component (no app code; `user.updated` webhook syncs name/email) |
-| US-6.1 invite Site Director | `POST /api/invitations` → Clerk emails the invitee → `organizationMembership.created` webhook creates the local row |
-| US-6.2 deactivate user | `POST /api/users/{id}/deactivate` → Clerk `RemoveMembership` + local `is_active=false` + revokes `app_sessions` |
-| US-6.3 resend invitation | `POST /api/invitations/{id}/resend` → revokes the old Clerk invitation and creates a fresh one |
+| Flow                    | Public route                          | Authenticated? |
+|-------------------------|---------------------------------------|----------------|
+| Signup (creates org)    | `POST /api/auth/signup`               | No             |
+| Verify email            | `POST /api/auth/verify-email`         | No (token)     |
+| Resend verification     | `POST /api/auth/resend-verification`  | No             |
+| Login                   | `POST /api/auth/login`                | No             |
+| Logout                  | `POST /api/auth/logout`               | Yes (cookie)   |
+| Forgot password         | `POST /api/auth/forgot-password`      | No             |
+| Reset password          | `POST /api/auth/reset-password`       | No (token)     |
+| Change password         | `POST /api/account/change-password`   | Yes            |
+| Request email change    | `POST /api/account/request-email-change`   | Yes       |
+| Confirm email change    | `POST /api/account/confirm-email-change`   | Token     |
+| List pending email      | `GET  /api/account/pending-email-change`   | Yes       |
+| Cancel email change     | `POST /api/account/cancel-email-change`    | Yes       |
+| Invite user             | `POST /api/invitations`               | Yes (admin)    |
+| Resend invitation       | `POST /api/invitations/{id}/resend`   | Yes (admin)    |
+| Revoke invitation       | `DELETE /api/invitations/{id}`        | Yes (admin)    |
+| List pending invites    | `GET  /api/invitations`               | Yes (admin)    |
+| Lookup invitation       | `GET  /api/invitations/lookup?token=` | No (token)     |
+| Accept invitation       | `POST /api/invitations/accept`        | No (token)     |
 
-## Request paths
+## Non-enumeration guarantees
 
-### Sign up (org bootstrap)
+`signup`, `forgot-password`, and `resend-verification` always return 200
+with the same shape regardless of whether the email matches a real
+account. Login distinguishes "wrong password" from "verification
+required" only after a clean credential check, and emits
+`ErrInvalidCredentials` for any state that should look identical to an
+attacker (unknown email, inactive user, bad password).
 
-```
-SPA -> Clerk <SignUp> -> Clerk JS issues session -> SignedIn ->
-SPA collects organization_name -> POST /api/signup-complete (Bearer JWT) ->
-backend verifies JWT, creates Clerk org, creates local org+admin atomically,
-mints lb_session -> SPA navigates to /
-```
+## Tokens
 
-### Log in (existing user)
+Every flow that emails a link uses 64-char hex random tokens. Only the
+sha256 is persisted; the raw token is the link itself, so a leaked DB
+dump cannot reconstruct unconsumed links.
 
-```
-SPA -> Clerk <SignIn> -> Clerk session -> SignedIn ->
-SPA gets JWT, POST /api/auth/exchange -> backend verifies JWT, looks up
-local user by clerk_user_id, mints lb_session -> SPA navigates to /
-```
+| Kind                 | Default TTL |
+|----------------------|-------------|
+| Email verification   | 24h         |
+| Invitation           | 7d          |
+| Password reset       | 1h          |
+| Change-email confirm | 1h          |
 
-### Subsequent requests
+## Throttle
 
-```
-SPA fetch with credentials: 'include' -> backend reads lb_session cookie,
-verifies app_sessions row, attaches users row to context -> handler runs.
-```
+`login_attempts` is incremented on every failed login keyed by email.
+Cooldown schedule: 1–4 strikes free, 5 = 1 minute, 6 = 5 minutes, 7+ =
+15 minutes. Successful login + password reset both clear the counter.
 
-### Webhook (Clerk -> us)
+## Production checklist
 
-```
-Clerk -> POST /api/webhooks/clerk (svix-signed) -> backend verifies
-signature, dedupes via webhook_events.id, dispatches to per-event handler.
-```
-
-## Key rotation
-
-- **Publishable key (`pk_test_*` / `pk_live_*`)**: not a secret, but
-  changing it re-issues the dev instance. Update `.env.local` and
-  `.env.example` together; redeploy.
-- **Secret key (`sk_test_*` / `sk_live_*`)**: dashboard *API Keys* →
-  Roll. Update `.env.local` (or process env in production), restart the
-  backend. The next JWT verification call uses the new key.
-- **Webhook signing secret (`whsec_*`)**: dashboard *Webhooks → Endpoint
-  → Reveal/Roll Signing Secret*. Update `.env.local`/process env, restart
-  the backend. In-flight Clerk retries signed with the old secret will
-  be rejected; you may want to log an event id list and re-deliver from
-  the dashboard if you care about the gap.
-
-## Adding a new webhook event handler
-
-1. Subscribe to the event in the Clerk dashboard's webhook endpoint
-   config.
-2. Add a `case` for the event type in `internal/auth/webhook.go`'s
-   `dispatch` method.
-3. Implement `handleX` in `internal/auth/webhook_handlers.go`. Decode
-   the relevant payload subset; do not error on extra fields; return
-   `nil` on no-op events so Clerk does not retry.
-4. Add a captured-payload test in `internal/auth/webhook_test.go`. Use
-   `signedRequest(t, "evt_X", payload)` to build a signed request.
-5. The `webhook_events` PRIMARY KEY (svix-id) handles idempotency
-   automatically — replays return 200 without re-running the handler.
-
-## Escape hatch (leaving Clerk)
-
-See ADR `docs/decisions/0001-auth-provider.md` § "Escape Hatch".
-
-## Stub / offline tests
-
-Backend tests use `auth.NewStubProvider()`. The stub implements the full
-Provider interface in memory and lets tests exercise every code path
-without network. See `internal/auth/provider_test.go` and
-`internal/auth/exchange_test.go`.
-
-There is no live integration test by default. The single test that
-contacts Clerk (`TestClerkProviderRejectsBogusJWT`) skips when
-`CLERK_SECRET_KEY` is unset.
-
-## Production deployment
-
-Production refuses to start unless every Clerk secret is supplied via
-the **process environment** (not a dotfile):
-
-- `CLERK_SECRET_KEY` — backend SDK calls.
-- `CLERK_WEBHOOK_SECRET` — webhook signature verification.
-
-`CLERK_PUBLISHABLE_KEY` and `VITE_CLERK_PUBLISHABLE_KEY` are not
-secrets but should still be passed through env for consistency.
-`LIVEABOARD_COOKIE_SECURE=true` is also enforced.
-
-The webhook endpoint (`/api/webhooks/clerk`) must be reachable from
-Clerk's egress at the configured webhook URL. In production this is
-just your public hostname; in dev, use a tunnel as described above.
+- `LIVEABOARD_COOKIE_SECURE=true` (the loader rejects production startup
+  otherwise).
+- All SMTP creds + `LIVEABOARD_DATABASE_URL` come from the process env
+  (the loader rejects production startup if a dotfile sources them).
+- `LIVEABOARD_APP_BASE_URL` matches the public host the SPA is served
+  from. Email links pin to it; misconfigure and links will 404.
+- A reverse proxy strips `Cookie` from request logs, since the session
+  cookie is bearer-equivalent.

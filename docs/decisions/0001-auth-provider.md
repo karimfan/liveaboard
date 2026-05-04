@@ -1,6 +1,6 @@
 # ADR 0001: Authentication Provider
 
-**Status:** Accepted (Sprint 005, 2026-05-01)
+**Status:** Superseded by [ADR 0002](0002-revert-clerk.md) (Sprint 009, 2026-05-01)
 
 ## Context
 

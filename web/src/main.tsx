@@ -1,17 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { ClerkProvider } from "@clerk/clerk-react";
 
 import "./styles/tokens.css";
 import "./styles/app.css";
 
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
-import { Dashboard } from "./pages/Dashboard";
+import { VerifyEmail } from "./pages/VerifyEmail";
+import { ForgotPassword } from "./pages/ForgotPassword";
+import { ResetPassword } from "./pages/ResetPassword";
+import { AcceptInvitation } from "./pages/AcceptInvitation";
 import { RequireSession } from "./lib/RequireSession";
-import { appConfig } from "./lib/config";
-import { clerkAppearance } from "./lib/clerkAppearance";
 
 import { AdminShell, RequireAdmin } from "./admin/Shell";
 import { MeProvider } from "./admin/useMe";
@@ -24,74 +24,70 @@ import { Catalog } from "./admin/pages/Catalog";
 import { Users } from "./admin/pages/Users";
 import { Organization } from "./admin/pages/Organization";
 import { Reports } from "./admin/pages/Reports";
+import { Account } from "./admin/pages/Account";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ClerkProvider
-      publishableKey={appConfig.clerkPublishableKey}
-      appearance={clerkAppearance}
-      signInFallbackRedirectUrl="/"
-      signUpFallbackRedirectUrl="/signup"
-    >
-      <BrowserRouter>
-        <Routes>
-          <Route path="/signup/*" element={<Signup />} />
-          <Route path="/login/*" element={<Login />} />
+    <BrowserRouter>
+      <Routes>
+        {/* Public auth surface — no session required. */}
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/invitations/:token/accept" element={<AcceptInvitation />} />
+
+        {/* Root redirects to the admin chrome — that's the only authenticated
+            surface. RequireSession on /admin handles the unauthenticated case. */}
+        <Route path="/" element={<Navigate to="/admin" replace />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireSession>
+              <MeProvider>
+                <AdminShell />
+              </MeProvider>
+            </RequireSession>
+          }
+        >
+          {/* Both roles */}
+          <Route index element={<Overview />} />
+          <Route path="trips" element={<Trips />} />
+          <Route path="account" element={<Account />} />
+
+          {/* Org-admin-only routes — RequireAdmin redirects directors to /admin */}
           <Route
-            path="/"
-            element={
-              <RequireSession>
-                <Dashboard />
-              </RequireSession>
-            }
+            path="organization"
+            element={<RequireAdmin><Organization /></RequireAdmin>}
           />
           <Route
-            path="/admin"
-            element={
-              <RequireSession>
-                <MeProvider>
-                  <AdminShell />
-                </MeProvider>
-              </RequireSession>
-            }
+            path="fleet"
+            element={<RequireAdmin><Fleet /></RequireAdmin>}
+          />
+          <Route
+            path="fleet/:id"
+            element={<RequireAdmin><BoatDetail /></RequireAdmin>}
           >
-            {/* Both roles */}
-            <Route index element={<Overview />} />
-            <Route path="trips" element={<Trips />} />
-
-            {/* Org-admin-only routes — RequireAdmin redirects directors to /admin */}
-            <Route
-              path="organization"
-              element={<RequireAdmin><Organization /></RequireAdmin>}
-            />
-            <Route
-              path="fleet"
-              element={<RequireAdmin><Fleet /></RequireAdmin>}
-            />
-            <Route
-              path="fleet/:id"
-              element={<RequireAdmin><BoatDetail /></RequireAdmin>}
-            >
-              <Route index element={<BoatTrips />} />
-              <Route path="inventory" element={<BoatInventory />} />
-              <Route path="notes" element={<BoatNotes />} />
-            </Route>
-            <Route
-              path="catalog"
-              element={<RequireAdmin><Catalog /></RequireAdmin>}
-            />
-            <Route
-              path="users"
-              element={<RequireAdmin><Users /></RequireAdmin>}
-            />
-            <Route
-              path="reports"
-              element={<RequireAdmin><Reports /></RequireAdmin>}
-            />
+            <Route index element={<BoatTrips />} />
+            <Route path="inventory" element={<BoatInventory />} />
+            <Route path="notes" element={<BoatNotes />} />
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </ClerkProvider>
+          <Route
+            path="catalog"
+            element={<RequireAdmin><Catalog /></RequireAdmin>}
+          />
+          <Route
+            path="users"
+            element={<RequireAdmin><Users /></RequireAdmin>}
+          />
+          <Route
+            path="reports"
+            element={<RequireAdmin><Reports /></RequireAdmin>}
+          />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   </React.StrictMode>,
 );

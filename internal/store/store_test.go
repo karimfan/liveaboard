@@ -11,9 +11,7 @@ func TestSchemaTruncates(t *testing.T) {
 	p := testdb.Pool(t)
 	// Smoke: each test gets a clean schema. Insert and verify count.
 	ctx := context.Background()
-	if _, _, err := p.CreateExternalOrgAndAdmin(ctx, "Acme Diving", "org_clerk_smoke", "user_clerk_smoke", "owner@acme.test", "Acme Owner"); err != nil {
-		t.Fatalf("create: %v", err)
-	}
+	testdb.SeedOrgWithAdmin(t, p, "Acme Diving", "owner@acme.test", "Acme Owner")
 	var n int
 	if err := p.QueryRow(ctx, `SELECT count(*) FROM users`).Scan(&n); err != nil {
 		t.Fatalf("count: %v", err)

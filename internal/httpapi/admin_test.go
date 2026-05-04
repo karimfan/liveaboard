@@ -7,31 +7,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/karimfan/liveaboard/internal/auth"
 	"github.com/karimfan/liveaboard/internal/store"
 )
 
-// signInAsAdmin bootstraps an org via /api/signup-complete and returns
-// the admin's session cookie + the org/user it created.
+// signInAsAdmin bootstraps an org via the new signup -> verify -> login
+// flow and returns the admin's session cookie + the org/user it created.
 func signInAsAdmin(t *testing.T, h *harness) (*http.Cookie, *store.Organization, *store.User) {
 	t.Helper()
 	c := &http.Client{}
-	pUser := h.stub.NewUser("admin@x.test", "Admin")
-	jwt, _ := h.stub.NewSession(pUser.ID, "", time.Hour)
-	resp, body := bearer(t, c, h.server.URL+"/api/signup-complete", jwt, map[string]any{
-		"organization_name": "Acme Diving",
-	})
-	if resp.StatusCode != 200 {
-		t.Fatalf("signup-complete: %d %v", resp.StatusCode, body)
-	}
-	cookie := pickCookieFrom(resp.Cookies(), auth.SessionCookieName)
-	if cookie == nil {
-		t.Fatalf("no lb_session cookie")
-	}
-	user, err := h.pool.UserByClerkID(context.Background(), pUser.ID)
+	cookie := signupAndVerify(t, h, c, "Acme Diving", "admin@x.test", "Admin", "Sup3rStrong!")
+	user, err := h.pool.UserByEmail(context.Background(), "admin@x.test")
 	if err != nil {
-		t.Fatalf("UserByClerkID: %v", err)
+		t.Fatalf("UserByEmail: %v", err)
 	}
 	org, err := h.pool.OrganizationByID(context.Background(), user.OrganizationID)
 	if err != nil {
@@ -40,27 +30,41 @@ func signInAsAdmin(t *testing.T, h *harness) (*http.Cookie, *store.Organization,
 	return cookie, org, user
 }
 
-// bootstrapDirector creates a Site Director user in the same org and
-// returns their session cookie + user row.
+// bootstrapDirector creates a Site Director user in the same org by
+// shortcutting the invitation flow at the store layer (we already test
+// the full HTTP invitation flow elsewhere), marks them verified, and
+// logs them in.
 func bootstrapDirector(t *testing.T, h *harness, orgID uuid.UUID) (*http.Cookie, *store.User) {
 	t.Helper()
-	pUser := h.stub.NewUser("dir@x.test", "Site Director")
-	user, err := h.pool.CreateExternalUser(context.Background(),
-		orgID, pUser.ID, "dir@x.test", "Site Director", store.RoleSiteDirector)
+	ctx := context.Background()
+	hash, err := bcrypt.GenerateFromPassword([]byte("Sup3rStrong!"), 4)
 	if err != nil {
-		t.Fatalf("CreateExternalUser: %v", err)
+		t.Fatalf("bcrypt: %v", err)
 	}
-	jwt, _ := h.stub.NewSession(pUser.ID, "", time.Hour)
+	user, err := h.pool.CreateInvitedUser(ctx, orgID, "dir@x.test", "Director", store.RoleSiteDirector, hash)
+	if err != nil {
+		t.Fatalf("CreateInvitedUser: %v", err)
+	}
+	if err := h.pool.MarkEmailVerified(ctx, user.ID, time.Now().UTC()); err != nil {
+		t.Fatalf("MarkEmailVerified: %v", err)
+	}
+	got, err := h.pool.UserByID(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("UserByID: %v", err)
+	}
 	c := &http.Client{}
-	resp, body := bearer(t, c, h.server.URL+"/api/auth/exchange", jwt, nil)
+	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/auth/login", map[string]any{
+		"email":    "dir@x.test",
+		"password": "Sup3rStrong!",
+	})
 	if resp.StatusCode != 200 {
-		t.Fatalf("director exchange: %d %v", resp.StatusCode, body)
+		t.Fatalf("director login: %d %v", resp.StatusCode, body)
 	}
 	cookie := pickCookieFrom(resp.Cookies(), auth.SessionCookieName)
 	if cookie == nil {
 		t.Fatalf("no lb_session cookie for director")
 	}
-	return cookie, user
+	return cookie, got
 }
 
 func TestAdminOverviewRequiresAdmin(t *testing.T) {

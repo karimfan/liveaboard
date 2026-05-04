@@ -25,7 +25,7 @@ make build       # production binary at bin/liveaboard with embedded SPA
 make lint        # gofmt + go vet + secret-scan of config/*.env
 make fmt         # gofmt -w
 make clean       # remove bin/, web/dist contents, web/.env.local
-make dev-reset   # wipe Clerk users+orgs and truncate local users/orgs/sessions
+make dev-reset   # truncate local auth + tenancy tables (users/orgs/sessions/etc.)
 make scrape-boat # seed a boat + its 18-month trip schedule from liveaboard.com
                  # see internal/scrape/README.md for usage
 ```
@@ -34,12 +34,14 @@ Open http://localhost:5173 after `make dev`.
 
 ## Sign-up flow (dev)
 
-Authentication is provided by [Clerk](https://clerk.com). Before `make dev`
-will work end-to-end you need a Clerk dev instance and four env vars in
-`.env.local`. See [`docs/auth.md`](docs/auth.md) for the 8-step setup.
+Authentication is fully self-hosted (Sprint 009). Before `make dev` can
+deliver verification / invitation / password-reset emails you need a
+Brevo SMTP key and a few env vars in `.env.local`. See
+[`docs/auth.md`](docs/auth.md) for the full setup and route map.
 
-After signup, the SPA collects the organization name, posts it to
-`POST /api/signup-complete`, and your local `lb_session` cookie is set.
+The SPA's signup form posts to `POST /api/auth/signup`, which creates
+the org + admin user and sends a verification email. Click the link
+(`/verify-email?token=…`), then sign in.
 
 ## Configuration
 

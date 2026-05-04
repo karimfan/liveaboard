@@ -35,15 +35,19 @@ type Config struct {
 	SessionDuration      time.Duration `env:"LIVEABOARD_SESSION_DURATION" default:"336h"`
 	VerificationDuration time.Duration `env:"LIVEABOARD_VERIFICATION_DURATION" default:"24h"`
 
-	// Clerk identity provider keys. These are not `required` at the loader
-	// level so tests using the stub provider don't need to supply them.
-	// The Clerk provider's constructor validates that ClerkSecretKey is
-	// non-empty; the webhook handler validates ClerkWebhookSecret. In
-	// production those validations happen at startup, before the listener
-	// binds.
-	ClerkPublishableKey string `env:"CLERK_PUBLISHABLE_KEY"`
-	ClerkSecretKey      string `env:"CLERK_SECRET_KEY" secret:"true"`
-	ClerkWebhookSecret  string `env:"CLERK_WEBHOOK_SECRET" secret:"true"`
+	// AppBaseURL is the public base URL of the frontend, used to build
+	// links inside outgoing emails (verification, invitation, password
+	// reset, change-email confirm). No trailing slash.
+	AppBaseURL string `env:"LIVEABOARD_APP_BASE_URL" default:"http://localhost:5173"`
+
+	// Brevo / SMTP relay settings. Empty in test mode (handlers use a
+	// MockSender). Required at server startup in dev/prod (validated by
+	// cmd/server/main).
+	SMTPHost     string `env:"LIVEABOARD_SMTP_HOST"`
+	SMTPPort     int    `env:"LIVEABOARD_SMTP_PORT" default:"587"`
+	SMTPUsername string `env:"LIVEABOARD_SMTP_USERNAME" secret:"true"`
+	SMTPPassword string `env:"LIVEABOARD_SMTP_PASSWORD" secret:"true"`
+	SMTPFrom     string `env:"LIVEABOARD_SMTP_FROM"`
 
 	// Scraper knobs (Sprint 006). The scrape-boat CLI reads these to
 	// politely fetch liveaboard.com boat detail pages. None are

@@ -1,91 +1,120 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { SignedIn, SignedOut, SignUp, useAuth, useUser } from "@clerk/clerk-react";
+import { Link } from "react-router-dom";
 
 import { api, type ApiError } from "../lib/api";
 
-/**
- * Signup is a two-phase flow:
- *
- *   1. <SignedOut>: render Clerk's <SignUp /> component (chromeless via
- *      appearance overrides; our wordmark provides the page chrome).
- *
- *   2. <SignedIn>: the user has a Clerk identity but no org yet. Show
- *      our org-name form, POST /api/signup-complete with the Clerk JWT,
- *      and on success navigate to /.
- */
 export function Signup() {
-  return (
-    <div className="auth-shell">
-      <div className="auth-stack">
-        <SignedOut>
-          <h1 className="auth-wordmark">Liveaboard</h1>
-          <SignUp routing="path" path="/signup" signInUrl="/login" />
-        </SignedOut>
-        <SignedIn>
-          <FinishSignup />
-        </SignedIn>
-      </div>
-    </div>
-  );
-}
-
-function FinishSignup() {
-  const navigate = useNavigate();
-  const { getToken } = useAuth();
-  const { user } = useUser();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [orgName, setOrgName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const inferredFullName = user
-    ? [user.firstName, user.lastName].filter(Boolean).join(" ")
-    : "";
+  const [done, setDone] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      const jwt = await getToken();
-      if (!jwt) throw { error: "no_token", message: "Clerk session missing." } as ApiError;
-      await api.signupComplete(jwt, orgName, inferredFullName);
-      navigate("/");
+      await api.signup({
+        email,
+        password,
+        full_name: fullName,
+        organization_name: orgName,
+      });
+      setDone(true);
     } catch (err) {
       const apiErr = err as ApiError;
-      setError(apiErr.message ?? "Could not create organization.");
+      setError(apiErr.message ?? "Could not create your account.");
     } finally {
       setSubmitting(false);
     }
   }
 
-  return (
-    <form className="auth-card" onSubmit={onSubmit}>
-      <h1>Name your organization</h1>
-      <p className="muted" style={{ marginBottom: "var(--sp-lg)" }}>
-        You're signed in as {user?.primaryEmailAddress?.emailAddress}. Pick a
-        name for your organization to finish setup.
-      </p>
-      {error && <div className="error">{error}</div>}
-      <div className="field">
-        <label htmlFor="orgName">Organization name</label>
-        <input
-          id="orgName"
-          type="text"
-          autoComplete="organization"
-          value={orgName}
-          onChange={(e) => setOrgName(e.target.value)}
-          required
-        />
+  if (done) {
+    return (
+      <div className="auth-shell">
+        <div className="auth-stack">
+          <h1 className="auth-wordmark">Liveaboard</h1>
+          <div className="auth-card">
+            <h1>Check your inbox</h1>
+            <p>
+              We've sent a verification link to <strong>{email}</strong>. Click
+              it to activate your account, then sign in.
+            </p>
+            <p className="muted">
+              <Link to="/login">Back to sign in</Link>
+            </p>
+          </div>
+        </div>
       </div>
-      <button
-        className="primary"
-        type="submit"
-        disabled={submitting || orgName.trim() === ""}
-        style={{ width: "100%" }}
-      >
-        {submitting ? "Creating…" : "Create organization"}
-      </button>
-    </form>
+    );
+  }
+
+  return (
+    <div className="auth-shell">
+      <div className="auth-stack">
+        <h1 className="auth-wordmark">Liveaboard</h1>
+        <form className="auth-card" onSubmit={onSubmit}>
+          <h1>Create an organization</h1>
+          {error && <div className="error">{error}</div>}
+          <div className="field">
+            <label htmlFor="orgName">Organization name</label>
+            <input
+              id="orgName"
+              type="text"
+              autoComplete="organization"
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="fullName">Your full name</label>
+            <input
+              id="fullName"
+              type="text"
+              autoComplete="name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+              At least 8 characters with upper, lower, and a digit.
+            </p>
+          </div>
+          <button className="primary" type="submit" disabled={submitting} style={{ width: "100%" }}>
+            {submitting ? "Creating…" : "Create organization"}
+          </button>
+          <p className="muted" style={{ marginTop: "var(--sp-md)" }}>
+            Have an account? <Link to="/login">Sign in</Link>
+          </p>
+        </form>
+      </div>
+    </div>
   );
 }
