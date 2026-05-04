@@ -50,3 +50,14 @@ clean:
 .PHONY: dev-reset
 dev-reset:
 	./scripts/dev-reset.sh
+
+## scrape-boat: Scrape a boat from liveaboard.com into a local org.
+##              Required: URL=<boat-url> ORG=<name|uuid>.
+##              Optional: MONTHS=<n> (default 18), DRY_RUN=1.
+.PHONY: scrape-boat
+scrape-boat:
+	./scripts/scrape-boat.sh \
+		--url "$(URL)" \
+		--org "$(ORG)" \
+		$(if $(MONTHS),--months $(MONTHS)) \
+		$(if $(DRY_RUN),--dry-run)

@@ -165,6 +165,50 @@ func TestOrganizationByClerkID(t *testing.T) {
 	}
 }
 
+func TestOrganizationByNameCaseInsensitive(t *testing.T) {
+	p := testdb.Pool(t)
+	ctx := context.Background()
+	want, _, err := p.CreateExternalOrgAndAdmin(ctx, "Acme Diving", "org_byname", "user_byname", "byname@x.test", "U")
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	for _, q := range []string{"Acme Diving", "acme diving", "ACME DIVING"} {
+		got, err := p.OrganizationByName(ctx, q)
+		if err != nil {
+			t.Errorf("query %q: %v", q, err)
+			continue
+		}
+		if got.ID != want.ID {
+			t.Errorf("query %q: got id %v want %v", q, got.ID, want.ID)
+		}
+	}
+
+	if _, err := p.OrganizationByName(ctx, "no-such-org"); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("missing: %v want ErrNotFound", err)
+	}
+}
+
+func TestOrganizationByNameAmbiguous(t *testing.T) {
+	p := testdb.Pool(t)
+	ctx := context.Background()
+	if _, _, err := p.CreateExternalOrgAndAdmin(ctx, "Acme", "org_a1", "user_a1", "a1@x.test", "A"); err != nil {
+		t.Fatalf("setup A: %v", err)
+	}
+	// Insert a second "Acme" via direct INSERT (case-different but
+	// matched case-insensitively).
+	if _, err := p.Exec(ctx,
+		`INSERT INTO organizations (name, clerk_org_id) VALUES ($1, $2)`,
+		"acme", "org_a2"); err != nil {
+		t.Fatalf("setup A2: %v", err)
+	}
+
+	_, err := p.OrganizationByName(ctx, "Acme")
+	if !errors.Is(err, store.ErrOrgAmbiguous) {
+		t.Fatalf("err = %v want ErrOrgAmbiguous", err)
+	}
+}
+
 func TestUpdateOrganizationName(t *testing.T) {
 	p := testdb.Pool(t)
 	ctx := context.Background()

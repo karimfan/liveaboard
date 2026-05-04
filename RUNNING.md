@@ -18,13 +18,16 @@ createdb liveaboard_test       # test database
 ## Daily commands
 
 ```bash
-make help     # list all targets
-make dev      # backend on :8080 + Vite on :5173 (dev mode)
-make test     # go test ./... in test mode
-make build    # production binary at bin/liveaboard with embedded SPA
-make lint     # gofmt + go vet + secret-scan of config/*.env
-make fmt      # gofmt -w
-make clean    # remove bin/, web/dist contents, web/.env.local
+make help        # list all targets
+make dev         # backend on :8080 + Vite on :5173 (dev mode)
+make test        # go test ./... in test mode
+make build       # production binary at bin/liveaboard with embedded SPA
+make lint        # gofmt + go vet + secret-scan of config/*.env
+make fmt         # gofmt -w
+make clean       # remove bin/, web/dist contents, web/.env.local
+make dev-reset   # wipe Clerk users+orgs and truncate local users/orgs/sessions
+make scrape-boat # seed a boat + its 18-month trip schedule from liveaboard.com
+                 # see internal/scrape/README.md for usage
 ```
 
 Open http://localhost:5173 after `make dev`.

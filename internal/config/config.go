@@ -45,6 +45,14 @@ type Config struct {
 	ClerkSecretKey      string `env:"CLERK_SECRET_KEY" secret:"true"`
 	ClerkWebhookSecret  string `env:"CLERK_WEBHOOK_SECRET" secret:"true"`
 
+	// Scraper knobs (Sprint 006). The scrape-boat CLI reads these to
+	// politely fetch liveaboard.com boat detail pages. None are
+	// secrets; all have defaults that fit the dev workflow.
+	ScraperUserAgent     string        `env:"LIVEABOARD_SCRAPER_USER_AGENT" default:"Liveaboard-Operator-Tool/0.1 (+local-dev)"`
+	ScraperMinIntervalMS int           `env:"LIVEABOARD_SCRAPER_MIN_INTERVAL_MS" default:"1000"`
+	ScraperMaxRetries    int           `env:"LIVEABOARD_SCRAPER_MAX_RETRIES" default:"3"`
+	ScraperHTTPTimeout   time.Duration `env:"LIVEABOARD_SCRAPER_HTTP_TIMEOUT" default:"15s"`
+
 	// VITE_API_BASE is part of the schema only so the loader catches typos
 	// in mode files. The Go runtime never reads it; the Makefile copies
 	// VITE_* keys into web/.env.local for Vite to consume.

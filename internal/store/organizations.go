@@ -113,3 +113,44 @@ var ErrOrgClerkIDTaken = errors.New("store: organization already linked to that 
 // The existing OrganizationByID helper in users.go remains valid (it's
 // tenant-agnostic and used by both auth and the dashboard endpoint) and
 // will be moved here in a follow-up cleanup.
+
+// ErrOrgAmbiguous indicates that OrganizationByName matched more than
+// one row. The caller (typically the scrape-boat CLI) should ask the
+// operator to use the org's UUID instead.
+var ErrOrgAmbiguous = errors.New("store: organization name matches multiple rows")
+
+// OrganizationByName returns the unique organization whose name matches
+// the given string case-insensitively. Returns ErrNotFound if no rows
+// match and ErrOrgAmbiguous if more than one matches.
+func (p *Pool) OrganizationByName(ctx context.Context, name string) (*Organization, error) {
+	rows, err := p.Query(ctx, `
+		SELECT id, name, currency, created_at, updated_at
+		FROM organizations
+		WHERE LOWER(name) = LOWER($1)
+		LIMIT 2
+	`, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orgs []*Organization
+	for rows.Next() {
+		o := &Organization{}
+		if err := rows.Scan(&o.ID, &o.Name, &o.Currency, &o.CreatedAt, &o.UpdatedAt); err != nil {
+			return nil, err
+		}
+		orgs = append(orgs, o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	switch len(orgs) {
+	case 0:
+		return nil, ErrNotFound
+	case 1:
+		return orgs[0], nil
+	default:
+		return nil, ErrOrgAmbiguous
+	}
+}
