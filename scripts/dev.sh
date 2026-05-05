@@ -27,4 +27,23 @@ BACKEND_PID=$!
 (cd web && npm run dev) &
 WEB_PID=$!
 
-wait
+# Wait for the FIRST child to exit, not all of them. If the backend
+# crashes (port conflict, missing SMTP envs, migration error, panic),
+# we want to fail loudly here instead of leaving Vite running and
+# silently serving ECONNREFUSED proxy errors until the operator
+# notices something's wrong.
+wait -n
+EXITED_PID=$?
+
+if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
+  echo "" >&2
+  echo "ERROR: backend (cmd/server) exited; tearing down Vite." >&2
+  echo "Common causes:" >&2
+  echo "  - port :8080 already in use (lsof -iTCP:8080 -sTCP:LISTEN)" >&2
+  echo "  - LIVEABOARD_SMTP_* envs missing (see RUNNING.md)" >&2
+  echo "  - migration or startup query failed (scroll up for details)" >&2
+elif ! kill -0 "${WEB_PID}" 2>/dev/null; then
+  echo "" >&2
+  echo "ERROR: Vite (web) exited; tearing down the backend." >&2
+fi
+exit "${EXITED_PID}"
