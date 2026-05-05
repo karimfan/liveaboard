@@ -37,6 +37,28 @@
   --c-error: #dc3545;
   --c-error-bg: #fef2f2;
 
+  /*
+   * Sea palette (Sprint 011). The page-level mood; the warm slate
+   * scale stays as the working surface for sidebar, cards, and
+   * tables so density doesn't suffer. See DESIGN.md "Sea palette".
+   */
+  --c-sea-50: #ecf6f4;
+  --c-sea-100: #c6e4df;
+  --c-sea-200: #93cfc6;
+  --c-sea-300: #5fb8ac;
+  --c-sea-400: #34a092;
+  --c-sea-500: #1f8478;
+  --c-sea-600: #176960;
+  --c-sea-700: #11514a;
+
+  --gradient-sea: linear-gradient(
+    180deg,
+    var(--c-sea-50)  0%,
+    var(--c-sea-100) 18%,
+    var(--c-sea-300) 60%,
+    var(--c-sea-500) 100%
+  );
+
   /* Spacing — 8px base */
   --sp-2xs: 2px;
   --sp-xs: 4px;

@@ -7,12 +7,27 @@
 html,
 body {
   margin: 0;
-  background: var(--c-50);
   color: var(--c-900);
   font-family: var(--font-body);
   font-size: var(--fs-base);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Sprint 011 — sea gradient on the SPA. The gradient is fixed to
+ * the viewport so scrolling long admin pages doesn't repeat or
+ * stretch it. Slate scale stays the working-surface palette;
+ * sidebar, cards, and tables are still opaque white over this
+ * background.
+ */
+html,
+body {
+  background: var(--gradient-sea);
+  background-attachment: fixed;
+}
+body {
+  min-height: 100vh;
 }
 
 a {
@@ -94,9 +109,11 @@ h3 { font-size: var(--fs-xl); }
 
 .auth-shell {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--sp-lg);
+  background: transparent;
 }
 
 .auth-stack {
@@ -106,21 +123,22 @@ h3 { font-size: var(--fs-xl); }
   flex-direction: column;
   align-items: stretch;
   gap: var(--sp-md);
-  background: white;
-  border: 1px solid var(--c-200);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--r-lg);
   padding: var(--sp-xl);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 32px rgba(17, 81, 74, 0.18);
+  backdrop-filter: blur(6px);
 }
 
 .auth-wordmark {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   letter-spacing: -0.01em;
-  color: var(--c-900);
+  color: var(--c-sea-700);
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .auth-card {
@@ -642,3 +660,139 @@ h3 { font-size: var(--fs-xl); }
   letter-spacing: 0.04em;
 }
 
+
+/* ============================================================
+ * Sprint 011 — sidebar user menu + sign-out
+ * ============================================================ */
+
+.user-menu-wrap {
+  position: relative;
+}
+
+.admin-sidebar__trigger {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  padding: var(--sp-sm) var(--sp-sm);
+  cursor: pointer;
+  transition: background var(--dur-short) var(--ease-out),
+              border-color var(--dur-short) var(--ease-out);
+  font-family: inherit;
+  color: inherit;
+}
+.admin-sidebar__trigger:hover {
+  background: var(--c-100);
+}
+.admin-sidebar__trigger:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+.admin-sidebar__trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-sidebar__trigger-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-sm);
+  font-weight: 600;
+  color: var(--c-900);
+  font-size: var(--fs-sm);
+}
+
+.admin-sidebar__chevron {
+  font-size: 10px;
+  color: var(--c-500);
+}
+
+.admin-sidebar__trigger-meta {
+  color: var(--c-500);
+  font-size: var(--fs-xs);
+  margin-top: var(--sp-2xs);
+}
+
+.user-menu {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--c-200);
+  border-radius: var(--r-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: var(--sp-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+}
+
+.user-menu__item {
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: var(--sp-sm) var(--sp-md);
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--c-700);
+  cursor: pointer;
+  transition: background var(--dur-short) var(--ease-out),
+              color var(--dur-short) var(--ease-out);
+}
+.user-menu__item:hover {
+  background: var(--c-primary-subtle);
+  color: var(--c-primary);
+}
+.user-menu__item:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: -2px;
+}
+.user-menu__item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.user-menu__error {
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--c-error-bg);
+  color: var(--c-error);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-xs);
+  margin-top: 2px;
+}
+
+.admin-sidebar__signout {
+  margin-top: var(--sp-sm);
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--c-200);
+  border-radius: var(--r-md);
+  padding: var(--sp-sm) var(--sp-md);
+  color: var(--c-600);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: background var(--dur-short) var(--ease-out),
+              color var(--dur-short) var(--ease-out),
+              border-color var(--dur-short) var(--ease-out);
+}
+.admin-sidebar__signout:hover {
+  background: var(--c-100);
+  color: var(--c-900);
+  border-color: var(--c-300);
+}
+.admin-sidebar__signout:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+.admin-sidebar__signout:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

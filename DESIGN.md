@@ -7,10 +7,10 @@
 - **Project type:** Web app / dashboard
 
 ## Aesthetic Direction
-- **Direction:** Industrial/Utilitarian — function-first, data-dense where needed, clean where not
-- **Decoration level:** Minimal — typography and whitespace do the work. No gradients, illustrations, or ocean imagery in the UI.
-- **Mood:** Serious, competent, operational. This should feel like a professional business tool — think Linear or Stripe Dashboard — not a dive tourism site.
-- **Reference sites:** Competitors (DiveHQ, DiversDesk, Bloowatch, Liveaboard Manager) all converge on ocean-blue tourism aesthetics. This design deliberately breaks from that convention to signal "operations tool."
+- **Direction:** Industrial/Utilitarian on the working surfaces; subtle marine-brand mood on the page-level background.
+- **Decoration level:** Minimal where it counts. Working surfaces (sidebar, cards, tables, forms) lean on typography + whitespace; no ocean imagery, no illustrations. The body-level gradient (Sprint 011) is the one decorative element — it signals "scuba liveaboard product" without pushing into tourism-site territory because the working surfaces stay opaque slate.
+- **Mood:** Serious, competent, operational with a faint nod to the sea. Linear/Stripe density on the data; brand recognition at the chrome edges.
+- **Reference sites:** Competitors (DiveHQ, DiversDesk, Bloowatch, Liveaboard Manager) all converge on saturated ocean-blue tourism aesthetics. This design uses a sea gradient at the page level so the product feels at home in the dive industry, but holds the line on slate working surfaces so the operator-facing tool still looks like Linear, not Booking.com.
 
 ## Typography
 - **Display/Hero:** General Sans 700 — geometric, confident, modern without being trendy
@@ -30,11 +30,11 @@
   - 4xl: 2.5rem (40px)
 
 ## Color
-- **Approach:** Restrained — warm slate neutrals + single bold accent. Deliberately no blue.
+- **Approach:** Two-layer palette. **Working surfaces** (sidebar, cards, tables, forms) use the warm slate scale + amber accent — the original "operations tool" tone, optimized for density and contrast. **Page-level mood** uses a turquoise sea gradient applied to `<body>` so the SPA feels at home for a scuba liveaboard product without compromising surface legibility.
 - **Primary:** #E5853B (Amber/Warm Orange) — warm, urgent, operational. Used for CTAs, active states, accent highlights.
 - **Primary hover:** #D0752F
 - **Primary subtle:** #FDF3EB — light accent background for badges, highlights
-- **Neutrals:** Warm slate scale
+- **Neutrals (working-surface scale):** Warm slate
   - 50: #F8F7F6
   - 100: #F0EEEC
   - 200: #E3E0DD
@@ -45,12 +45,23 @@
   - 700: #44403C
   - 800: #292524
   - 900: #1C1917
+- **Sea palette (page-level mood, Sprint 011):**
+  - 50: #ECF6F4 — foam / haze
+  - 100: #C6E4DF — shallow shore
+  - 200: #93CFC6 — sunlit shallow
+  - 300: #5FB8AC — turquoise
+  - 400: #34A092 — open water
+  - 500: #1F8478 — mid-depth
+  - 600: #176960 — twilight
+  - 700: #11514A — deep
+  - **`--gradient-sea`** = `linear-gradient(180deg, sea-50 0%, sea-100 18%, sea-300 60%, sea-500 100%)`. Applied to `body { background: var(--gradient-sea); background-attachment: fixed; }` so scrolling doesn't tile or stretch the gradient.
+  - **Where to use it:** Page background only. Do NOT use sea tokens on cards, tables, or form surfaces — those stay opaque white over the gradient. Reasonable exceptions: the auth-page wordmark uses `--c-sea-700` for brand emphasis.
 - **Semantic:**
   - Success: #2D9D5C (bg: #ECFDF3)
   - Warning: #D4930C (bg: #FFF9EB)
   - Error: #DC3545 (bg: #FEF2F2)
   - Info: #3B7CE5 (bg: #EFF6FF)
-- **Dark mode:** Invert surfaces, reduce accent saturation ~15%. Accent becomes #D4792F. Background becomes #0F0E0D. Surface becomes #1A1918.
+- **Dark mode:** Invert surfaces, reduce accent saturation ~15%. Accent becomes #D4792F. Background becomes #0F0E0D. Surface becomes #1A1918. Sea gradient is suppressed in dark mode (deep teal would compete with chrome contrast).
 
 ## Spacing
 - **Base unit:** 8px
@@ -75,3 +86,5 @@
 | 2026-04-29 | No blue in palette | Every competitor uses ocean-blue. Amber accent signals "business tool, not tourism site" |
 | 2026-04-29 | Industrial/utilitarian aesthetic | Operators managing money and manifests need a tool that looks serious and competent |
 | 2026-04-29 | Warm slate neutrals over cool grays | Pairs with amber accent; feels physical and grounded rather than clinical |
+| 2026-05-05 | **Reverse the no-blue rule — introduce a sea gradient** at the page level (Sprint 011). | The original rule held "no blue at all"; in practice the SPA felt anonymous next to a product whose customers run dive boats. Compromise: keep slate as the working-surface palette so tables/forms stay neutral and dense, but apply a turquoise gradient to `<body>` so the chrome edges hint at "sea." Cards and the sidebar stay white over the gradient. The original intent (don't look like a tourism site) is preserved by the surface palette, not by avoiding blue everywhere. |
+| 2026-05-05 | Auth pages re-centered, wordmark recolored | Sprint 011 — the unauthenticated pages were left-skewed in some viewports and the wordmark used `--c-900` which got lost against the lighter card. Centered the auth-shell with flex and recolored the wordmark to `--c-sea-700` for brand emphasis. |
