@@ -18,7 +18,18 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const text = await resp.text();
-  const parsed = text ? (JSON.parse(text) as unknown) : null;
+  let parsed: unknown = null;
+  if (text) {
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      const snippet = text.length > 200 ? `${text.slice(0, 200)}…` : text;
+      throw {
+        error: "invalid_response",
+        message: `${method} ${path}: server returned non-JSON response (HTTP ${resp.status}). Body: ${snippet}`,
+      } as ApiError;
+    }
+  }
   if (!resp.ok) {
     const err = (parsed ?? { error: "unknown", message: resp.statusText }) as ApiError;
     throw err;

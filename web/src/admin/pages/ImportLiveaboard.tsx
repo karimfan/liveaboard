@@ -54,8 +54,8 @@ export function ImportLiveaboard() {
             />
             <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>
               We honor liveaboard.com's robots.txt and rate-limit at 1
-              request per second. A full 18-month scrape takes about
-              30 seconds.
+              request per second. We'll fetch every published trip on
+              the boat's listing.
             </p>
           </div>
           <button className="primary" type="submit" disabled={submitting}>

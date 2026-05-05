@@ -11,8 +11,28 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+  return parseResponse<T>(resp, `${method} ${path}`);
+}
+
+// parseResponse turns a fetch Response into a typed body, preserving
+// the response shape on error and exposing the raw text when the body
+// isn't valid JSON. Without this, a malformed response surfaces as
+// V8's bare "Unexpected non-whitespace character at position N"
+// SyntaxError and the operator never sees what the server returned.
+async function parseResponse<T>(resp: Response, label: string): Promise<T> {
   const text = await resp.text();
-  const parsed = text ? (JSON.parse(text) as unknown) : null;
+  let parsed: unknown = null;
+  if (text) {
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      const snippet = text.length > 200 ? `${text.slice(0, 200)}…` : text;
+      throw {
+        error: "invalid_response",
+        message: `${label}: server returned non-JSON response (HTTP ${resp.status}). Body: ${snippet}`,
+      } as ApiError;
+    }
+  }
   if (!resp.ok) {
     throw (parsed ?? { error: "unknown", message: resp.statusText }) as ApiError;
   }
@@ -116,7 +136,8 @@ export const adminApi = {
     call<ImportJob>("GET", `/admin/import/jobs/${encodeURIComponent(id)}`),
 
   // Spreadsheet preview: multipart upload, NOT JSON. Bypasses the
-  // shared `call` helper because of the body shape.
+  // shared `call` helper because of the body shape, but reuses the
+  // shared response parser.
   previewSpreadsheet: async (file: File): Promise<SpreadsheetPreviewResponse> => {
     const fd = new FormData();
     fd.append("file", file);
@@ -125,12 +146,7 @@ export const adminApi = {
       credentials: "include",
       body: fd,
     });
-    const text = await resp.text();
-    const parsed = text ? (JSON.parse(text) as unknown) : null;
-    if (!resp.ok) {
-      throw (parsed ?? { error: "unknown", message: resp.statusText }) as ApiError;
-    }
-    return parsed as SpreadsheetPreviewResponse;
+    return parseResponse<SpreadsheetPreviewResponse>(resp, "POST /admin/import/spreadsheet/preview");
   },
 
   commitSpreadsheet: (input: {

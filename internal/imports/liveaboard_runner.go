@@ -51,6 +51,13 @@ type Runner struct {
 
 // New returns a Runner with sensible defaults. Pass a *liveaboard.Client
 // constructed with the operator's User-Agent / rate limit / timeout.
+//
+// Months defaults to 36. The 18-month cap from the original CLI was
+// arbitrary and excluded operators who post their schedules a year+
+// in advance. liveaboard.com's pagination naturally returns empty
+// months past the boat's last published trip, so over-iterating just
+// means a few extra rate-limited HTTP fetches that yield zero rows
+// — no correctness risk.
 func New(p *store.Pool, client *liveaboard.Client, log *slog.Logger) *Runner {
 	return &Runner{
 		Store:   p,
@@ -58,7 +65,7 @@ func New(p *store.Pool, client *liveaboard.Client, log *slog.Logger) *Runner {
 		Log:     log,
 		Now:     func() time.Time { return time.Now().UTC() },
 		RunBoat: liveaboard.RunBoat,
-		Months:  18,
+		Months:  36,
 	}
 }
 

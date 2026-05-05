@@ -49,7 +49,7 @@ export function ImportJobView({ jobId }: { jobId: string }) {
       <p className="muted" style={{ marginBottom: "var(--sp-md)" }}>
         Status: <strong>{job.status}</strong>
         {job.source === "liveaboard_com" && job.status === "running" && (
-          <span> · this can take up to 30 seconds</span>
+          <span> · fetching the boat's full schedule, ~1 request per second</span>
         )}
       </p>
 

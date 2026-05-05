@@ -18,9 +18,9 @@ export function Import() {
         <Link to="/admin/import/liveaboard" className="admin-card import-card">
           <h2 className="admin-card__title">From liveaboard.com</h2>
           <p>
-            Paste a boat's URL and we'll fetch the next 18 months of
-            trips. Re-running is safe — your operator-edited names and
-            guest counts stay put.
+            Paste a boat's URL and we'll fetch every published trip on
+            the listing. Re-running is safe — your operator-edited
+            names and guest counts stay put.
           </p>
         </Link>
 
