@@ -22,11 +22,11 @@ export function BoatTrips() {
   const isAdmin = me.loaded && me.me?.role === "org_admin";
   const { directors } = useCruiseDirectors(isAdmin);
 
-  function onAssigned(tripId: string, directorId: string | null, name: string | null) {
+  function onChanged(tripId: string, ids: string[], names: string[]) {
     setTrips((prev) =>
       prev.map((t) =>
         t.id === tripId
-          ? { ...t, cruise_director_user_id: directorId, cruise_director_name: name }
+          ? { ...t, cruise_director_user_ids: ids, cruise_director_names: names }
           : t,
       ),
     );
@@ -63,7 +63,7 @@ export function BoatTrips() {
                 trip={t}
                 directors={directors}
                 canEdit={isAdmin}
-                onAssigned={onAssigned}
+                onChanged={onChanged}
               />
             </td>
             <td className="num">{t.price_text ?? "—"}</td>

@@ -18,10 +18,12 @@ var templatesFS embed.FS
 type Kind string
 
 const (
-	KindVerification  Kind = "verification"
-	KindInvitation    Kind = "invitation"
-	KindPasswordReset Kind = "password_reset"
-	KindChangeEmail   Kind = "change_email"
+	KindVerification   Kind = "verification"
+	KindInvitation     Kind = "invitation"
+	KindPasswordReset  Kind = "password_reset"
+	KindChangeEmail    Kind = "change_email"
+	KindTripAssigned   Kind = "trip_assigned"
+	KindTripUnassigned Kind = "trip_unassigned"
 )
 
 // Render renders the three parts of an email kind against the given vars

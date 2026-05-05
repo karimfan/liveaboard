@@ -83,8 +83,18 @@ export type Trip = {
   return_port: string | null;
   price_text: string | null;
   availability_text: string | null;
-  cruise_director_user_id: string | null;
-  cruise_director_name: string | null;
+  num_guests: number | null;
+  cruise_director_user_ids: string[];
+  cruise_director_names: string[];
+};
+
+// Sprint 013 — assign/unassign endpoints return the updated director
+// list for the trip so the SPA can patch the row in place without an
+// extra fetch.
+export type TripDirectorsView = {
+  trip_id: string;
+  cruise_director_user_ids: string[];
+  cruise_director_names: string[];
 };
 
 export type AdminUser = {
@@ -117,10 +127,17 @@ export const adminApi = {
   listTrips: () =>
     call<{ trips: Trip[]; scope: "all" | "assigned_to_me" }>("GET", "/admin/trips"),
 
-  assignCruiseDirector: (tripId: string, cruiseDirectorUserId: string | null) =>
-    call<{ ok: true }>("PATCH", `/admin/trips/${tripId}`, {
-      cruise_director_user_id: cruiseDirectorUserId,
+  // Sprint 013 — 1:N director assignment.
+  addCruiseDirector: (tripId: string, userId: string) =>
+    call<TripDirectorsView>("POST", `/admin/trips/${tripId}/cruise-directors`, {
+      user_id: userId,
     }),
+
+  removeCruiseDirector: (tripId: string, userId: string) =>
+    call<TripDirectorsView>(
+      "DELETE",
+      `/admin/trips/${tripId}/cruise-directors/${encodeURIComponent(userId)}`,
+    ),
 
   listUsers: () => call<{ users: AdminUser[] }>("GET", "/admin/users"),
 

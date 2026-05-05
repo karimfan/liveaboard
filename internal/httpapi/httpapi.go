@@ -105,8 +105,14 @@ func (s *Server) Router() http.Handler {
 					r.Get("/boats", s.AdminAPI.HandleListBoats)
 					r.Get("/boats/{id}", s.AdminAPI.HandleGetBoat)
 					r.Get("/boats/{id}/trips", s.AdminAPI.HandleListBoatTrips)
-					r.Patch("/trips/{id}", s.AdminAPI.HandleAssignCruiseDirector)
 					r.Get("/users", s.AdminAPI.HandleListUsers)
+
+					// Sprint 013 — 1:N trip cruise-director assignment.
+					// Replaces the Sprint 008/010 PATCH that took a
+					// single user id. Each call also dispatches an
+					// email notification to the affected director.
+					r.Post("/trips/{id}/cruise-directors", s.handleAssignCruiseDirector)
+					r.Delete("/trips/{id}/cruise-directors/{user_id}", s.handleUnassignCruiseDirector)
 
 					// Sprint 012 — native trip import. Two paths:
 					// liveaboard.com (async via the runner) and

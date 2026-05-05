@@ -111,6 +111,10 @@ func firstURL(line string) string {
 // flows that don't have a name (forgot password, change email)
 // silently leave it empty; templates that reference it should default
 // gracefully.
+//
+// TripBoatName / TripItinerary / TripStartDate / TripEndDate carry
+// the context for the Sprint 013 trip-assignment notifications. They
+// stay empty for every other kind.
 type Vars struct {
 	AppName          string
 	OrganizationName string
@@ -119,4 +123,9 @@ type Vars struct {
 	InviterName      string
 	ActionURL        string
 	ExpiresAt        time.Time
+
+	TripBoatName  string
+	TripItinerary string
+	TripStartDate time.Time
+	TripEndDate   time.Time
 }

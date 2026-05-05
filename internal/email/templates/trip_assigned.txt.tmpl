@@ -1,0 +1,16 @@
+Hi {{.RecipientName}},
+
+{{.InviterName}} assigned you as a Cruise Director on the following trip:
+
+  Boat       {{.TripBoatName}}
+  Itinerary  {{.TripItinerary}}
+  Dates      {{fmtdate .TripStartDate}} → {{fmtdate .TripEndDate}}
+
+Open your trip list on {{.AppName}} to review the details:
+
+  {{.ActionURL}}
+
+If you weren't expecting this assignment, reach out to {{.InviterName}}
+or your organization admin.
+
+— {{.AppName}}

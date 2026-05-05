@@ -860,3 +860,59 @@ select.select-inline:focus {
   outline-offset: -1px;
   border-color: var(--c-primary);
 }
+
+/*
+ * Sprint 013 — Cruise Director chips. Existing assignments render
+ * as removable chips inside the trip table cell; an "Add director"
+ * select sits below them.
+ */
+.director-assign {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+.director-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.director-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 10px;
+  background: var(--c-primary-subtle);
+  color: var(--c-primary);
+  border-radius: var(--r-full);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.director-chip__x {
+  background: transparent;
+  color: var(--c-primary);
+  border: none;
+  border-radius: var(--r-full);
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.director-chip__x:hover {
+  background: rgba(229, 133, 59, 0.18);
+}
+.director-chip__x:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.director-chips--readonly .director-chip {
+  background: var(--c-100);
+  color: var(--c-700);
+  padding: 2px 10px;
+}

@@ -29,14 +29,14 @@ export function Trips() {
     };
   }, []);
 
-  // After a successful assignment, patch the row in place so the
-  // dropdown re-renders with the new selection without a full refetch.
-  function onAssigned(tripId: string, directorId: string | null, name: string | null) {
+  // After a successful add/remove, patch the row in place with the
+  // server-returned director list so the chips re-render.
+  function onChanged(tripId: string, ids: string[], names: string[]) {
     setTrips((prev) =>
       prev
         ? prev.map((t) =>
             t.id === tripId
-              ? { ...t, cruise_director_user_id: directorId, cruise_director_name: name }
+              ? { ...t, cruise_director_user_ids: ids, cruise_director_names: names }
               : t,
           )
         : prev,
@@ -105,7 +105,7 @@ export function Trips() {
                     trip={t}
                     directors={directors}
                     canEdit={isAdmin}
-                    onAssigned={onAssigned}
+                    onChanged={onChanged}
                   />
                 </td>
                 <td className="num">{t.price_text ?? "—"}</td>

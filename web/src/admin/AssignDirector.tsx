@@ -1,11 +1,18 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
-import { adminApi, type AdminUser, type Trip } from "./api";
+import { adminApi, type AdminUser, type Trip, type TripDirectorsView } from "./api";
 import type { ApiError } from "../lib/api";
 
+// Sprint 013 — multi-director assignment. Each trip can carry any
+// number of Cruise Directors via the trip_cruise_directors join
+// table. The UI is a chip list: existing assignments render as
+// removable chips; an "Add" select picks from unassigned directors
+// in the org. Each add/remove is one network call (with email
+// notification dispatched server-side).
+
 // useCruiseDirectors fetches the org's active cruise directors once
-// and caches them in component state. Used by trip-list views to
-// populate the assignment dropdown without each row re-fetching.
+// per page and caches them in component state. Used by trip-list
+// views to populate the per-row assignment dropdown.
 export function useCruiseDirectors(canEdit: boolean) {
   const [directors, setDirectors] = useState<AdminUser[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -38,69 +45,125 @@ export function useCruiseDirectors(canEdit: boolean) {
   return { directors, loaded };
 }
 
-// AssignDirector is the per-row cell. For admins it renders a select;
-// for everyone else it renders the name (or "Unassigned" chip). The
-// select POSTs the change immediately on selection and calls
-// onAssigned so the parent can patch its trip list in place.
+// AssignDirector renders the per-row cell. For admins it shows
+// removable chips for each assigned director plus an "Add" select.
+// For cruise directors viewing their own trips it renders names
+// (or the Unassigned chip).
 export function AssignDirector({
   trip,
   directors,
   canEdit,
-  onAssigned,
+  onChanged,
 }: {
   trip: Trip;
   directors: AdminUser[];
   canEdit: boolean;
-  onAssigned: (tripId: string, directorId: string | null, name: string | null) => void;
+  onChanged: (tripId: string, ids: string[], names: string[]) => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Tracks the last user-initiated select value so we can reset
+  // the picker after a successful add.
+  const pickerRef = useRef<HTMLSelectElement | null>(null);
 
+  // Read-only view for non-admins.
   if (!canEdit) {
-    return trip.cruise_director_name ? (
-      <>{trip.cruise_director_name}</>
-    ) : (
-      <span className="chip chip--warn">Unassigned</span>
+    if (trip.cruise_director_names.length === 0) {
+      return <span className="chip chip--warn">Unassigned</span>;
+    }
+    return (
+      <div className="director-chips director-chips--readonly">
+        {trip.cruise_director_names.map((n, i) => (
+          <span key={i} className="director-chip">
+            {n}
+          </span>
+        ))}
+      </div>
     );
   }
 
-  async function onChange(e: ChangeEvent<HTMLSelectElement>) {
+  const assignedIDs = new Set(trip.cruise_director_user_ids);
+  const available = directors.filter((d) => !assignedIDs.has(d.id));
+
+  function applyResult(res: TripDirectorsView) {
+    onChanged(res.trip_id, res.cruise_director_user_ids, res.cruise_director_names);
+  }
+
+  async function add(e: ChangeEvent<HTMLSelectElement>) {
     setError(null);
-    const v = e.target.value;
-    const directorId = v === "" ? null : v;
+    const userId = e.target.value;
+    if (!userId) return;
     setSubmitting(true);
     try {
-      await adminApi.assignCruiseDirector(trip.id, directorId);
-      const name = directorId
-        ? directors.find((d) => d.id === directorId)?.full_name ?? null
-        : null;
-      onAssigned(trip.id, directorId, name);
+      const res = await adminApi.addCruiseDirector(trip.id, userId);
+      applyResult(res);
     } catch (err) {
       const apiErr = err as ApiError;
       setError(apiErr?.message ?? "Failed to assign");
+    } finally {
+      setSubmitting(false);
+      // Reset the picker to the placeholder option.
+      if (pickerRef.current) pickerRef.current.value = "";
+    }
+  }
+
+  async function remove(userId: string) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await adminApi.removeCruiseDirector(trip.id, userId);
+      applyResult(res);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setError(apiErr?.message ?? "Failed to remove");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div>
-      <select
-        className="select-inline"
-        value={trip.cruise_director_user_id ?? ""}
-        onChange={onChange}
-        disabled={submitting}
-        aria-label={`Cruise director for ${trip.boat_name}`}
-      >
-        <option value="">— Unassigned —</option>
-        {directors.map((d) => (
-          <option key={d.id} value={d.id}>
-            {d.full_name}
-          </option>
-        ))}
-      </select>
+    <div className="director-assign">
+      <div className="director-chips">
+        {trip.cruise_director_user_ids.map((id, i) => {
+          const name = trip.cruise_director_names[i] ?? id;
+          return (
+            <span key={id} className="director-chip">
+              {name}
+              <button
+                type="button"
+                className="director-chip__x"
+                aria-label={`Remove ${name}`}
+                onClick={() => remove(id)}
+                disabled={submitting}
+              >
+                ×
+              </button>
+            </span>
+          );
+        })}
+        {trip.cruise_director_user_ids.length === 0 && (
+          <span className="chip chip--warn">Unassigned</span>
+        )}
+      </div>
+      {available.length > 0 && (
+        <select
+          ref={pickerRef}
+          className="select-inline director-assign__picker"
+          defaultValue=""
+          onChange={add}
+          disabled={submitting}
+          aria-label={`Add cruise director to ${trip.boat_name}`}
+        >
+          <option value="">+ Add director</option>
+          {available.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.full_name}
+            </option>
+          ))}
+        </select>
+      )}
       {error && (
-        <div className="muted" style={{ color: "var(--c-error)", fontSize: 12, marginTop: 2 }}>
+        <div style={{ color: "var(--c-error)", fontSize: 12, marginTop: 2 }}>
           {error}
         </div>
       )}

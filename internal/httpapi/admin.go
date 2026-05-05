@@ -153,9 +153,18 @@ func (a *AdminHandlers) HandleListBoatTrips(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
+	tripIDs := make([]uuid.UUID, 0, len(trips))
+	for _, t := range trips {
+		tripIDs = append(tripIDs, t.ID)
+	}
+	directorsByTrip, err := a.Store.CruiseDirectorAssignmentsByTrip(r.Context(), tripIDs)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
 	out := make([]map[string]any, 0, len(trips))
 	for _, t := range trips {
-		out = append(out, tripView(t, boat.DisplayName, directorNames))
+		out = append(out, tripView(t, boat.DisplayName, directorsByTrip[t.ID], directorNames))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"trips": out})
 }
@@ -193,56 +202,20 @@ func (a *AdminHandlers) HandleListTrips(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
-	out := make([]map[string]any, 0, len(trips))
+	tripIDs := make([]uuid.UUID, 0, len(trips))
 	for _, t := range trips {
-		out = append(out, tripView(t, boatNames[t.BoatID], directorNames))
+		tripIDs = append(tripIDs, t.ID)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"trips": out, "scope": tripScopeFor(u.Role)})
-}
-
-// HandleAssignCruiseDirector PATCHes a trip's cruise_director_user_id.
-// Pass {"cruise_director_user_id": null} to clear, or a uuid string to
-// assign.
-func (a *AdminHandlers) HandleAssignCruiseDirector(w http.ResponseWriter, r *http.Request) {
-	u := auth.UserFromContext(r.Context())
-	tripID, ok := uuidParam(w, r, "id")
-	if !ok {
-		return
-	}
-	var in struct {
-		CruiseDirectorUserID *string `json:"cruise_director_user_id"`
-	}
-	if !readJSONInto(w, r, &in) {
-		return
-	}
-	var directorPtr *uuid.UUID
-	if in.CruiseDirectorUserID != nil && *in.CruiseDirectorUserID != "" {
-		id, err := uuid.Parse(*in.CruiseDirectorUserID)
-		if err != nil {
-			writeError(w, http.StatusBadRequest, "invalid_input", "cruise_director_user_id must be a uuid")
-			return
-		}
-		// Validate the candidate director belongs to this org.
-		director, err := a.Store.UserByID(r.Context(), id)
-		if errors.Is(err, store.ErrNotFound) || (err == nil && director.OrganizationID != u.OrganizationID) {
-			writeError(w, http.StatusBadRequest, "invalid_input", "user not in this organization")
-			return
-		}
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "internal", "internal error")
-			return
-		}
-		directorPtr = &id
-	}
-	if err := a.Store.AssignCruiseDirector(r.Context(), u.OrganizationID, tripID, directorPtr); err != nil {
-		if errors.Is(err, store.ErrNotFound) {
-			writeError(w, http.StatusNotFound, "not_found", "trip not found")
-			return
-		}
+	directorsByTrip, err := a.Store.CruiseDirectorAssignmentsByTrip(ctx, tripIDs)
+	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+	out := make([]map[string]any, 0, len(trips))
+	for _, t := range trips {
+		out = append(out, tripView(t, boatNames[t.BoatID], directorsByTrip[t.ID], directorNames))
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"trips": out, "scope": tripScopeFor(u.Role)})
 }
 
 // HandleListUsers returns every user in the org.
@@ -340,26 +313,33 @@ func boatView(b *store.Boat) map[string]any {
 	}
 }
 
-func tripView(t *store.Trip, boatName string, directorNames map[uuid.UUID]string) map[string]any {
-	var directorName *string
-	if t.CruiseDirectorUserID != nil {
-		if name, ok := directorNames[*t.CruiseDirectorUserID]; ok {
-			directorName = &name
+// tripView serializes a trip plus its assigned cruise directors.
+// directorIDs is the list of user IDs assigned to *this* trip (the
+// caller pre-resolves via CruiseDirectorAssignmentsByTrip);
+// directorNames is the org-wide name map.
+func tripView(t *store.Trip, boatName string, directorIDs []uuid.UUID, directorNames map[uuid.UUID]string) map[string]any {
+	idStrs := make([]string, 0, len(directorIDs))
+	names := make([]string, 0, len(directorIDs))
+	for _, id := range directorIDs {
+		idStrs = append(idStrs, id.String())
+		if n, ok := directorNames[id]; ok {
+			names = append(names, n)
 		}
 	}
 	return map[string]any{
-		"id":                      t.ID,
-		"boat_id":                 t.BoatID,
-		"boat_name":               boatName,
-		"start_date":              t.StartDate.Format("2006-01-02"),
-		"end_date":                t.EndDate.Format("2006-01-02"),
-		"itinerary":               t.Itinerary,
-		"departure_port":          t.DeparturePort,
-		"return_port":             t.ReturnPort,
-		"price_text":              t.PriceText,
-		"availability_text":       t.AvailabilityText,
-		"cruise_director_user_id": t.CruiseDirectorUserID,
-		"cruise_director_name":    directorName,
+		"id":                       t.ID,
+		"boat_id":                  t.BoatID,
+		"boat_name":                boatName,
+		"start_date":               t.StartDate.Format("2006-01-02"),
+		"end_date":                 t.EndDate.Format("2006-01-02"),
+		"itinerary":                t.Itinerary,
+		"departure_port":           t.DeparturePort,
+		"return_port":              t.ReturnPort,
+		"price_text":               t.PriceText,
+		"availability_text":        t.AvailabilityText,
+		"num_guests":               t.NumGuests,
+		"cruise_director_user_ids": idStrs,
+		"cruise_director_names":    names,
 	}
 }
 

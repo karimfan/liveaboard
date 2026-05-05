@@ -120,6 +120,7 @@ func Pool(t *testing.T) *store.Pool {
 		TRUNCATE TABLE
 			import_previews,
 			import_jobs,
+			trip_cruise_directors,
 			trips,
 			boats,
 			sessions,

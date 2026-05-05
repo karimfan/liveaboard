@@ -1,0 +1,12 @@
+Hi {{.RecipientName}},
+
+{{.InviterName}} removed you from the following trip:
+
+  Boat       {{.TripBoatName}}
+  Itinerary  {{.TripItinerary}}
+  Dates      {{fmtdate .TripStartDate}} → {{fmtdate .TripEndDate}}
+
+If this was a mistake, reach out to {{.InviterName}} or your
+organization admin to be re-assigned.
+
+— {{.AppName}}
