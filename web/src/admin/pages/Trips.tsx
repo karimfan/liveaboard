@@ -3,12 +3,16 @@ import { Link } from "react-router-dom";
 
 import { adminApi, type Trip } from "../api";
 import { useMe } from "../useMe";
+import { AssignDirector, useCruiseDirectors } from "../AssignDirector";
 
 export function Trips() {
   const me = useMe();
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [scope, setScope] = useState<"all" | "assigned_to_me">("all");
   const [error, setError] = useState<string | null>(null);
+
+  const isAdmin = me.loaded && me.me?.role === "org_admin";
+  const { directors } = useCruiseDirectors(isAdmin);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,7 +29,19 @@ export function Trips() {
     };
   }, []);
 
-  const isAdmin = me.loaded && me.me?.role === "org_admin";
+  // After a successful assignment, patch the row in place so the
+  // dropdown re-renders with the new selection without a full refetch.
+  function onAssigned(tripId: string, directorId: string | null, name: string | null) {
+    setTrips((prev) =>
+      prev
+        ? prev.map((t) =>
+            t.id === tripId
+              ? { ...t, cruise_director_user_id: directorId, cruise_director_name: name }
+              : t,
+          )
+        : prev,
+    );
+  }
 
   return (
     <>
@@ -52,16 +68,21 @@ export function Trips() {
         <div className="empty-state">
           <h3>No trips yet</h3>
           <p>
-            {isAdmin
-              ? "Use the boat scraper or click + Trip once that flow lands."
-              : "You haven't been assigned to any trips."}
+            {isAdmin ? (
+              <>
+                <Link to="/admin/import">Import trips</Link> from
+                liveaboard.com or upload a spreadsheet.
+              </>
+            ) : (
+              "You haven't been assigned to any trips."
+            )}
           </p>
         </div>
       ) : (
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Dates</th>
+              <th className="col-dates">Dates</th>
               <th>Boat</th>
               <th>Itinerary</th>
               <th>Director</th>
@@ -72,15 +93,20 @@ export function Trips() {
           <tbody>
             {trips.map((t) => (
               <tr key={t.id}>
-                <td>
+                <td className="col-dates">
                   {t.start_date} → {t.end_date}
                 </td>
-                <td>{t.boat_name}</td>
+                <td>
+                  <Link to={`/admin/fleet/${t.boat_id}`}>{t.boat_name}</Link>
+                </td>
                 <td>{t.itinerary}</td>
                 <td>
-                  {t.cruise_director_name ?? (
-                    <span className="chip chip--warn">Unassigned</span>
-                  )}
+                  <AssignDirector
+                    trip={t}
+                    directors={directors}
+                    canEdit={isAdmin}
+                    onAssigned={onAssigned}
+                  />
                 </td>
                 <td className="num">{t.price_text ?? "—"}</td>
                 <td>

@@ -832,3 +832,8 @@ tr.is-skipped {
 tr.is-skipped td {
   text-decoration: line-through;
 }
+
+/* Sprint 012 follow-up — keep the date range on a single line. */
+.col-dates {
+  white-space: nowrap;
+}

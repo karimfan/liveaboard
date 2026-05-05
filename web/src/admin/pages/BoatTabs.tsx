@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 import type { Boat, Trip } from "../api";
+import { useMe } from "../useMe";
+import { AssignDirector, useCruiseDirectors } from "../AssignDirector";
 
 type Ctx = { boat: Boat; trips: Trip[] };
 
@@ -9,7 +12,26 @@ function useBoatCtx(): Ctx {
 }
 
 export function BoatTrips() {
-  const { trips } = useBoatCtx();
+  const me = useMe();
+  const ctx = useBoatCtx();
+
+  // Local copy so director assignments patch in place without a
+  // refetch of the boat detail page.
+  const [trips, setTrips] = useState<Trip[]>(ctx.trips);
+
+  const isAdmin = me.loaded && me.me?.role === "org_admin";
+  const { directors } = useCruiseDirectors(isAdmin);
+
+  function onAssigned(tripId: string, directorId: string | null, name: string | null) {
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id === tripId
+          ? { ...t, cruise_director_user_id: directorId, cruise_director_name: name }
+          : t,
+      ),
+    );
+  }
+
   if (trips.length === 0) {
     return (
       <div className="empty-state">
@@ -22,7 +44,7 @@ export function BoatTrips() {
     <table className="admin-table">
       <thead>
         <tr>
-          <th>Dates</th>
+          <th className="col-dates">Dates</th>
           <th>Itinerary</th>
           <th>Director</th>
           <th>Price</th>
@@ -32,14 +54,17 @@ export function BoatTrips() {
       <tbody>
         {trips.map((t) => (
           <tr key={t.id}>
-            <td>
+            <td className="col-dates">
               {t.start_date} → {t.end_date}
             </td>
             <td>{t.itinerary}</td>
             <td>
-              {t.cruise_director_name ?? (
-                <span className="chip chip--warn">Unassigned</span>
-              )}
+              <AssignDirector
+                trip={t}
+                directors={directors}
+                canEdit={isAdmin}
+                onAssigned={onAssigned}
+              />
             </td>
             <td className="num">{t.price_text ?? "—"}</td>
             <td>
@@ -71,7 +96,7 @@ export function BoatInventory() {
       <h3>Inventory tracking coming next sprint</h3>
       <p>
         Per-boat stock quantities for each catalog item will live here.
-        Schema and CRUD ship in Sprint 009.
+        Schema and CRUD ship in a future sprint.
       </p>
     </div>
   );
