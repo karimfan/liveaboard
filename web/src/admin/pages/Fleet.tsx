@@ -27,9 +27,9 @@ export function Fleet() {
             All boats in your organization.
           </div>
         </div>
-        <button className="primary" disabled title="Coming next sprint">
-          + Add boat
-        </button>
+        <Link to="/admin/import" className="primary" style={{ display: "inline-block" }}>
+          + Import boat
+        </Link>
       </div>
 
       <div className="filter-bar">
@@ -50,8 +50,8 @@ export function Fleet() {
         <div className="empty-state">
           <h3>No boats yet</h3>
           <p>
-            Use <code>make scrape-boat</code> to import one from
-            liveaboard.com, or click "+ Add boat" once that flow lands.
+            <Link to="/admin/import">Import a boat</Link> from liveaboard.com
+            or upload a spreadsheet to seed your fleet.
           </p>
         </div>
       ) : (

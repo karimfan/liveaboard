@@ -14,7 +14,9 @@ import (
 	"github.com/karimfan/liveaboard/internal/config"
 	"github.com/karimfan/liveaboard/internal/email"
 	"github.com/karimfan/liveaboard/internal/httpapi"
+	"github.com/karimfan/liveaboard/internal/imports"
 	"github.com/karimfan/liveaboard/internal/org"
+	"github.com/karimfan/liveaboard/internal/scrape/liveaboard"
 	"github.com/karimfan/liveaboard/internal/store"
 )
 
@@ -74,12 +76,41 @@ func main() {
 		Log:   log,
 	}
 
+	// Sprint 012 — liveaboard.com import runner. The same Client
+	// constructor used by the scrape CLI; rate-limited and
+	// politeness-aware. Concurrent kicks serialize at the HTTP
+	// layer via the client's rate limiter, so we don't need a
+	// worker pool.
+	scrapeClient, err := liveaboard.NewClient(liveaboard.ClientConfig{
+		UserAgent:   cfg.ScraperUserAgent,
+		MinInterval: time.Duration(cfg.ScraperMinIntervalMS) * time.Millisecond,
+		MaxRetries:  cfg.ScraperMaxRetries,
+		Timeout:     cfg.ScraperHTTPTimeout,
+		Log:         log,
+	})
+	if err != nil {
+		log.Error("init scrape client", "err", err)
+		os.Exit(1)
+	}
+	importRunner := imports.New(pool, scrapeClient, log)
+
+	// Best-effort cleanup of orphaned import-jobs and expired
+	// previews from a prior shutdown. Both are small queries, run
+	// once at startup.
+	if n, err := pool.MarkInFlightImportJobsFailed(ctx, "server restart"); err == nil && n > 0 {
+		log.Warn("orphaned import jobs cleared", "count", n)
+	}
+	if n, err := pool.DeleteExpiredImportPreviews(ctx, time.Now().UTC()); err == nil && n > 0 {
+		log.Info("expired import previews cleared", "count", n)
+	}
+
 	srv := &httpapi.Server{
 		Org:          org.New(pool),
 		Log:          log,
 		Auth:         authSvc,
 		Session:      session,
 		AdminAPI:     &httpapi.AdminHandlers{Store: pool},
+		ImportRunner: importRunner,
 		CookieSecure: cfg.CookieSecure,
 	}
 
@@ -102,4 +133,8 @@ func main() {
 	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelShutdown()
 	_ = httpServer.Shutdown(shutdownCtx)
+
+	// Wait up to 30s for in-flight import jobs to land. Anything
+	// still running at the deadline is marked failed.
+	importRunner.Wait(30*time.Second, "server shutdown")
 }

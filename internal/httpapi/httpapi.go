@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/karimfan/liveaboard/internal/auth"
+	"github.com/karimfan/liveaboard/internal/imports"
 	"github.com/karimfan/liveaboard/internal/org"
 	"github.com/karimfan/liveaboard/internal/store"
 )
@@ -29,6 +30,7 @@ type Server struct {
 	Auth         *auth.Service
 	Session      *auth.SessionMiddleware
 	AdminAPI     *AdminHandlers
+	ImportRunner *imports.Runner
 	CookieSecure bool
 }
 
@@ -105,6 +107,14 @@ func (s *Server) Router() http.Handler {
 					r.Get("/boats/{id}/trips", s.AdminAPI.HandleListBoatTrips)
 					r.Patch("/trips/{id}", s.AdminAPI.HandleAssignCruiseDirector)
 					r.Get("/users", s.AdminAPI.HandleListUsers)
+
+					// Sprint 012 — native trip import. Two paths:
+					// liveaboard.com (async via the runner) and
+					// spreadsheet upload (sync preview + commit).
+					r.Post("/import/liveaboard", s.handleKickLiveaboardImport)
+					r.Get("/import/jobs/{id}", s.handleGetImportJob)
+					r.Post("/import/spreadsheet/preview", s.handleSpreadsheetPreview)
+					r.Post("/import/spreadsheet/commit", s.handleSpreadsheetCommit)
 				})
 			})
 

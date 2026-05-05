@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { adminApi, type Trip } from "../api";
 import { useMe } from "../useMe";
@@ -38,9 +39,9 @@ export function Trips() {
           </div>
         </div>
         {isAdmin && (
-          <button className="primary" disabled title="Coming next sprint">
-            + Trip
-          </button>
+          <Link to="/admin/import" className="primary" style={{ display: "inline-block" }}>
+            + Import trips
+          </Link>
         )}
       </div>
 

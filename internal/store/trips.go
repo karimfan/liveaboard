@@ -32,6 +32,11 @@ type Trip struct {
 	// detecting NULL here.
 	CruiseDirectorUserID *uuid.UUID
 
+	// NumGuests is the expected guest count for the trip (Sprint 012).
+	// Spreadsheet imports are the authoritative source for this field;
+	// the liveaboard.com scraper never touches it.
+	NumGuests *int
+
 	SourceProvider     string
 	SourceTripKey      string
 	SourceURL          string
@@ -52,6 +57,11 @@ type TripScrape struct {
 	AvailabilityText string
 	SourceURL        string
 	SourceTripKey    string
+
+	// NumGuests is honored by ReplaceSpreadsheetTrips and ignored by
+	// ReplaceFutureScrapedTrips. Pass nil to leave the column as-is on
+	// update / NULL on insert.
+	NumGuests *int
 }
 
 // ReplaceFutureScrapedTripsResult reports the outcome of a scrape
@@ -66,7 +76,7 @@ const tripColumns = `id, organization_id, boat_id,
 	start_date, end_date, itinerary,
 	departure_port, return_port,
 	price_text, availability_text,
-	cruise_director_user_id,
+	cruise_director_user_id, num_guests,
 	source_provider, source_trip_key, source_url, source_last_synced_at,
 	created_at, updated_at`
 
@@ -78,7 +88,7 @@ func scanTrip(row interface {
 		&t.StartDate, &t.EndDate, &t.Itinerary,
 		&t.DeparturePort, &t.ReturnPort,
 		&t.PriceText, &t.AvailabilityText,
-		&t.CruiseDirectorUserID,
+		&t.CruiseDirectorUserID, &t.NumGuests,
 		&t.SourceProvider, &t.SourceTripKey, &t.SourceURL, &t.SourceLastSyncedAt,
 		&t.CreatedAt, &t.UpdatedAt,
 	)
@@ -176,6 +186,115 @@ func (p *Pool) ReplaceFutureScrapedTrips(
 		return nil, fmt.Errorf("delete stale trips: %w", err)
 	}
 	res.StaleDeletes = int(tag.RowsAffected())
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// ReplaceSpreadsheetTrips upserts spreadsheet-sourced trips grouped by
+// boat in a single transaction, with per-boat stale-delete: for each
+// (org, boat, source_provider='spreadsheet') triple, the file is the
+// authoritative schedule for THAT boat's future spreadsheet trips.
+// Boats not present in the upload are untouched.
+//
+// Differs from ReplaceFutureScrapedTrips in two ways:
+//
+//  1. INSERT and UPDATE both write num_guests from the input. The
+//     spreadsheet is the authoritative source for this field; a
+//     corrected upload can fix the count.
+//  2. Operates on multiple boats per call (the upload mixes vessels);
+//     ReplaceFutureScrapedTrips is per-boat.
+//
+// scrapesByBoat keys are boat UUIDs already resolved from the
+// vessel-name mapping in the wizard.
+func (p *Pool) ReplaceSpreadsheetTrips(
+	ctx context.Context,
+	orgID uuid.UUID,
+	scrapesByBoat map[uuid.UUID][]TripScrape,
+	syncedAt time.Time,
+	today time.Time,
+) (*ReplaceFutureScrapedTripsResult, error) {
+	const sourceProvider = "spreadsheet"
+
+	tx, err := p.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	res := &ReplaceFutureScrapedTripsResult{}
+
+	for boatID, scrapes := range scrapesByBoat {
+		touched := make([]string, 0, len(scrapes))
+
+		for i := range scrapes {
+			s := scrapes[i]
+			if s.SourceTripKey == "" {
+				return nil, fmt.Errorf("trip %d for boat %s has empty source_trip_key", i, boatID)
+			}
+			if s.EndDate.Before(s.StartDate) {
+				return nil, fmt.Errorf("trip %s has end_date before start_date", s.SourceTripKey)
+			}
+
+			var inserted bool
+			err := tx.QueryRow(ctx, `
+				INSERT INTO trips (
+					organization_id, boat_id,
+					start_date, end_date, itinerary,
+					departure_port, return_port,
+					price_text, availability_text,
+					num_guests,
+					source_provider, source_trip_key, source_url, source_last_synced_at
+				)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+				ON CONFLICT (boat_id, source_provider, source_trip_key) DO UPDATE SET
+					start_date            = EXCLUDED.start_date,
+					end_date              = EXCLUDED.end_date,
+					itinerary             = EXCLUDED.itinerary,
+					departure_port        = EXCLUDED.departure_port,
+					return_port           = EXCLUDED.return_port,
+					price_text            = EXCLUDED.price_text,
+					availability_text     = EXCLUDED.availability_text,
+					num_guests            = EXCLUDED.num_guests,
+					source_url            = EXCLUDED.source_url,
+					source_last_synced_at = EXCLUDED.source_last_synced_at,
+					updated_at            = now()
+				RETURNING (xmax = 0) AS inserted
+			`,
+				orgID, boatID,
+				s.StartDate, s.EndDate, s.Itinerary,
+				nullableString(s.DeparturePort), nullableString(s.ReturnPort),
+				nullableString(s.PriceText), nullableString(s.AvailabilityText),
+				s.NumGuests,
+				sourceProvider, s.SourceTripKey, s.SourceURL, syncedAt,
+			).Scan(&inserted)
+			if err != nil {
+				return nil, fmt.Errorf("upsert trip %s: %w", s.SourceTripKey, err)
+			}
+			if inserted {
+				res.Inserts++
+			} else {
+				res.Updates++
+			}
+			touched = append(touched, s.SourceTripKey)
+		}
+
+		// Per-boat stale-delete: future spreadsheet trips for this
+		// boat that aren't in the upload are removed.
+		tag, err := tx.Exec(ctx, `
+			DELETE FROM trips
+			WHERE boat_id = $1
+			  AND source_provider = $2
+			  AND start_date >= $3
+			  AND source_trip_key <> ALL($4::text[])
+		`, boatID, sourceProvider, today, touched)
+		if err != nil {
+			return nil, fmt.Errorf("delete stale trips for boat %s: %w", boatID, err)
+		}
+		res.StaleDeletes += int(tag.RowsAffected())
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err

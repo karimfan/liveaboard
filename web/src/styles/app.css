@@ -804,3 +804,31 @@ h3 { font-size: var(--fs-xl); }
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Sprint 012 — import hub + spreadsheet wizard */
+
+.import-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--dur-short) var(--ease-out),
+              box-shadow var(--dur-short) var(--ease-out);
+}
+.import-card:hover {
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(8, 86, 128, 0.12);
+}
+.import-card p {
+  color: var(--c-600);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  margin: 0;
+}
+
+tr.is-skipped {
+  opacity: 0.5;
+}
+tr.is-skipped td {
+  text-decoration: line-through;
+}

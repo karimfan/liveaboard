@@ -15,6 +15,7 @@ import (
 	"github.com/karimfan/liveaboard/internal/auth"
 	"github.com/karimfan/liveaboard/internal/email"
 	"github.com/karimfan/liveaboard/internal/httpapi"
+	"github.com/karimfan/liveaboard/internal/imports"
 	"github.com/karimfan/liveaboard/internal/org"
 	"github.com/karimfan/liveaboard/internal/store"
 	"github.com/karimfan/liveaboard/internal/testdb"
@@ -42,12 +43,18 @@ func newHarness(t *testing.T) *harness {
 	svc.SessionDuration = time.Hour
 
 	session := &auth.SessionMiddleware{Store: pool, Log: log}
+
+	// Sprint 012 — wire a Runner with no real network. Tests don't
+	// exercise the goroutine path; this just keeps Kick() from
+	// dereferencing a nil Runner.
+	runner := &imports.Runner{Store: pool, Log: log, Months: 1}
 	srv := &httpapi.Server{
 		Org:          org.New(pool),
 		Log:          log,
 		Auth:         svc,
 		Session:      session,
 		AdminAPI:     &httpapi.AdminHandlers{Store: pool},
+		ImportRunner: runner,
 		CookieSecure: false,
 	}
 	ts := httptest.NewServer(srv.Router())

@@ -25,6 +25,9 @@ import { Users } from "./admin/pages/Users";
 import { Organization } from "./admin/pages/Organization";
 import { Reports } from "./admin/pages/Reports";
 import { Account } from "./admin/pages/Account";
+import { Import } from "./admin/pages/Import";
+import { ImportLiveaboard } from "./admin/pages/ImportLiveaboard";
+import { ImportSpreadsheet } from "./admin/pages/ImportSpreadsheet";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -84,6 +87,18 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route
             path="reports"
             element={<RequireAdmin><Reports /></RequireAdmin>}
+          />
+          <Route
+            path="import"
+            element={<RequireAdmin><Import /></RequireAdmin>}
+          />
+          <Route
+            path="import/liveaboard"
+            element={<RequireAdmin><ImportLiveaboard /></RequireAdmin>}
+          />
+          <Route
+            path="import/spreadsheet"
+            element={<RequireAdmin><ImportSpreadsheet /></RequireAdmin>}
           />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

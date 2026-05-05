@@ -11,6 +11,7 @@ const navItems: NavItem[] = [
   { to: "/admin/fleet", label: "Fleet", adminOnly: true },
   { to: "/admin/catalog", label: "Catalog", adminOnly: true },
   { to: "/admin/trips", label: "Trips" },
+  { to: "/admin/import", label: "Import", adminOnly: true },
   { to: "/admin/users", label: "Users", adminOnly: true },
   { to: "/admin/reports", label: "Reports", adminOnly: true },
 ];
