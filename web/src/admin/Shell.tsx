@@ -3,15 +3,32 @@ import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import { useMe } from "./useMe";
 import { UserMenu, useSignOut } from "./UserMenu";
 
-type NavItem = { to: string; label: string; end?: boolean; adminOnly?: boolean };
+type NavItem = {
+  to: string;
+  label: string;
+  end?: boolean;
+  adminOnly?: boolean;
+  children?: NavItem[];
+};
 
 const navItems: NavItem[] = [
   { to: "/admin", label: "Overview", end: true },
   { to: "/admin/organization", label: "Organization", adminOnly: true },
-  { to: "/admin/fleet", label: "Fleet", adminOnly: true },
-  { to: "/admin/inventory", label: "Inventory", adminOnly: true },
-  { to: "/admin/trips", label: "Trips" },
-  { to: "/admin/import", label: "Import", adminOnly: true },
+  {
+    to: "/admin/fleet",
+    label: "Fleet",
+    adminOnly: true,
+    children: [
+      { to: "/admin/inventory", label: "Inventory", adminOnly: true },
+    ],
+  },
+  {
+    to: "/admin/trips",
+    label: "Trips",
+    children: [
+      { to: "/admin/import", label: "Import", adminOnly: true },
+    ],
+  },
   { to: "/admin/users", label: "Users", adminOnly: true },
   { to: "/admin/reports", label: "Reports", adminOnly: true },
 ];
@@ -37,7 +54,16 @@ export function AdminShell() {
     return <Navigate to="/login" replace />;
   }
 
-  const visible = navItems.filter((n) => !n.adminOnly || me.me!.role === "org_admin");
+  const isAdmin = me.me!.role === "org_admin";
+  // Filter the parents the role can see; for each parent that
+  // survives, also filter its children. A child whose adminOnly
+  // would hide it disappears even if the parent stays visible.
+  const visible = navItems
+    .filter((n) => !n.adminOnly || isAdmin)
+    .map((n) => ({
+      ...n,
+      children: (n.children ?? []).filter((c) => !c.adminOnly || isAdmin),
+    }));
 
   return (
     <div className="admin">
@@ -45,16 +71,29 @@ export function AdminShell() {
         <div className="admin-sidebar__brand">Liveaboard</div>
         <nav className="admin-nav">
           {visible.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                "admin-nav__link" + (isActive ? " is-active" : "")
-              }
-            >
-              {item.label}
-            </NavLink>
+            <div key={item.to} className="admin-nav__group">
+              <NavLink
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  "admin-nav__link" + (isActive ? " is-active" : "")
+                }
+              >
+                {item.label}
+              </NavLink>
+              {item.children.map((child) => (
+                <NavLink
+                  key={child.to}
+                  to={child.to}
+                  className={({ isActive }) =>
+                    "admin-nav__link admin-nav__link--child" +
+                    (isActive ? " is-active" : "")
+                  }
+                >
+                  {child.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="admin-sidebar__footer">
