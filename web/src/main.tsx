@@ -20,7 +20,7 @@ import { Fleet } from "./admin/pages/Fleet";
 import { BoatDetail } from "./admin/pages/BoatDetail";
 import { BoatTrips, BoatInventory, BoatNotes } from "./admin/pages/BoatTabs";
 import { Trips } from "./admin/pages/Trips";
-import { Catalog } from "./admin/pages/Catalog";
+import { Inventory } from "./admin/pages/Inventory";
 import { Users } from "./admin/pages/Users";
 import { Organization } from "./admin/pages/Organization";
 import { Reports } from "./admin/pages/Reports";
@@ -77,8 +77,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="notes" element={<BoatNotes />} />
           </Route>
           <Route
-            path="catalog"
-            element={<RequireAdmin><Catalog /></RequireAdmin>}
+            path="inventory"
+            element={<RequireAdmin><Inventory /></RequireAdmin>}
           />
           <Route
             path="users"

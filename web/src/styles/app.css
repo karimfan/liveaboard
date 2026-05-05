@@ -837,3 +837,26 @@ tr.is-skipped td {
 .col-dates {
   white-space: nowrap;
 }
+
+/*
+ * Compact inline select for in-table use (the cruise-director
+ * dropdown on the trips list and the boat-detail trips tab). The
+ * global `select` rule sets width:100% + comfortable form-input
+ * padding, which is right for forms but oversized in a table cell.
+ */
+select.select-inline {
+  width: auto;
+  min-width: 140px;
+  padding: 4px 8px;
+  font-size: var(--fs-sm);
+  border-color: var(--c-200);
+  background: white;
+}
+select.select-inline:hover:not(:disabled) {
+  border-color: var(--c-300);
+}
+select.select-inline:focus {
+  outline: 2px solid var(--c-primary);
+  outline-offset: -1px;
+  border-color: var(--c-primary);
+}

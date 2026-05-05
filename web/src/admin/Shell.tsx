@@ -9,7 +9,7 @@ const navItems: NavItem[] = [
   { to: "/admin", label: "Overview", end: true },
   { to: "/admin/organization", label: "Organization", adminOnly: true },
   { to: "/admin/fleet", label: "Fleet", adminOnly: true },
-  { to: "/admin/catalog", label: "Catalog", adminOnly: true },
+  { to: "/admin/inventory", label: "Inventory", adminOnly: true },
   { to: "/admin/trips", label: "Trips" },
   { to: "/admin/import", label: "Import", adminOnly: true },
   { to: "/admin/users", label: "Users", adminOnly: true },

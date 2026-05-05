@@ -1,21 +1,20 @@
-export function Catalog() {
+export function Inventory() {
   return (
     <>
       <div className="admin-page-header">
         <div>
-          <h1 className="admin-page-title">Catalog</h1>
+          <h1 className="admin-page-title">Inventory</h1>
           <div className="admin-page-subtitle">
-            Org-level items, categories, and prices.
+            Items, categories, prices, and per-boat stock levels.
           </div>
         </div>
       </div>
 
       <div className="empty-state">
-        <h3>Catalog schema lands in Sprint 009</h3>
+        <h3>Inventory schema is on the roadmap</h3>
         <p>
-          Items and categories are defined here at the org level (one
-          item, one price). Per-boat <em>quantities</em> live on each
-          boat's <strong>Inventory</strong> tab once both schemas land.
+          This page will host org-level items + prices and per-boat
+          quantities once the schema and CRUD ship in a future sprint.
         </p>
         <p style={{ marginTop: "var(--sp-md)" }} className="muted">
           See <a href="/admin">Overview</a> for what's currently

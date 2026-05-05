@@ -86,10 +86,10 @@ export function AssignDirector({
   return (
     <div>
       <select
+        className="select-inline"
         value={trip.cruise_director_user_id ?? ""}
         onChange={onChange}
         disabled={submitting}
-        style={{ minWidth: 160 }}
         aria-label={`Cruise director for ${trip.boat_name}`}
       >
         <option value="">— Unassigned —</option>
