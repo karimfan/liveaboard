@@ -241,10 +241,19 @@ h3 { font-size: var(--fs-xl); }
  * Admin chrome (Sprint 007 — Option A "Control Tower")
  * ============================================================ */
 
+/*
+ * Sprint 011 — the admin shell is a centered block (max 1200px)
+ * floating on the body's sea gradient. Sidebar + main content sit
+ * side by side inside the block; on viewports wider than 1200px the
+ * gradient peeks through on either side.
+ */
 .admin {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;
   min-height: 100vh;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  box-shadow: 0 12px 40px rgba(8, 86, 128, 0.22);
 }
 
 .admin-sidebar {
@@ -310,9 +319,8 @@ h3 { font-size: var(--fs-xl); }
 }
 
 .admin-main {
+  background: var(--c-50);
   padding: var(--sp-xl) var(--sp-2xl);
-  max-width: 1200px;
-  width: 100%;
 }
 
 .admin-page-header {

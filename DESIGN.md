@@ -45,16 +45,16 @@
   - 700: #44403C
   - 800: #292524
   - 900: #1C1917
-- **Sea palette (page-level mood, Sprint 011):**
-  - 50: #ECF6F4 — foam / haze
-  - 100: #C6E4DF — shallow shore
-  - 200: #93CFC6 — sunlit shallow
-  - 300: #5FB8AC — turquoise
-  - 400: #34A092 — open water
-  - 500: #1F8478 — mid-depth
-  - 600: #176960 — twilight
-  - 700: #11514A — deep
-  - **`--gradient-sea`** = `linear-gradient(180deg, sea-50 0%, sea-100 18%, sea-300 60%, sea-500 100%)`. Applied to `body { background: var(--gradient-sea); background-attachment: fixed; }` so scrolling doesn't tile or stretch the gradient.
+- **Sea palette (page-level mood, Sprint 011):** Tropical Caribbean ocean — crystal lagoon at the top fading to open ocean blue at the bottom. Deliberately cyan-leaning, not teal.
+  - 50: #F0FBFF — sun on white sand
+  - 100: #D6F3FF — foam edge
+  - 200: #A9E3F7 — knee-deep tropical water
+  - 300: #6DCEF0 — lagoon
+  - 400: #2EB6E5 — open shallow ocean
+  - 500: #0E95CB — Caribbean noon
+  - 600: #0A76A6 — drop-off
+  - 700: #085680 — deep blue (still bright; not navy)
+  - **`--gradient-sea`** = `linear-gradient(180deg, sea-50 0%, sea-200 22%, sea-400 60%, sea-600 100%)`. Applied to `body { background: var(--gradient-sea); background-attachment: fixed; }` so scrolling doesn't tile or stretch the gradient.
   - **Where to use it:** Page background only. Do NOT use sea tokens on cards, tables, or form surfaces — those stay opaque white over the gradient. Reasonable exceptions: the auth-page wordmark uses `--c-sea-700` for brand emphasis.
 - **Semantic:**
   - Success: #2D9D5C (bg: #ECFDF3)
@@ -86,5 +86,7 @@
 | 2026-04-29 | No blue in palette | Every competitor uses ocean-blue. Amber accent signals "business tool, not tourism site" |
 | 2026-04-29 | Industrial/utilitarian aesthetic | Operators managing money and manifests need a tool that looks serious and competent |
 | 2026-04-29 | Warm slate neutrals over cool grays | Pairs with amber accent; feels physical and grounded rather than clinical |
-| 2026-05-05 | **Reverse the no-blue rule — introduce a sea gradient** at the page level (Sprint 011). | The original rule held "no blue at all"; in practice the SPA felt anonymous next to a product whose customers run dive boats. Compromise: keep slate as the working-surface palette so tables/forms stay neutral and dense, but apply a turquoise gradient to `<body>` so the chrome edges hint at "sea." Cards and the sidebar stay white over the gradient. The original intent (don't look like a tourism site) is preserved by the surface palette, not by avoiding blue everywhere. |
+| 2026-05-05 | **Reverse the no-blue rule — introduce a tropical-ocean gradient** at the page level (Sprint 011). | The original rule held "no blue at all"; in practice the SPA felt anonymous next to a product whose customers run dive boats. Compromise: keep slate as the working-surface palette so tables/forms stay neutral and dense, but apply a cyan-leaning ocean gradient to `<body>` so the chrome edges hint at the Caribbean shallows. Cards and the sidebar stay white over the gradient. The original intent (don't look like a tourism site) is preserved by the surface palette, not by avoiding blue everywhere. |
 | 2026-05-05 | Auth pages re-centered, wordmark recolored | Sprint 011 — the unauthenticated pages were left-skewed in some viewports and the wordmark used `--c-900` which got lost against the lighter card. Centered the auth-shell with flex and recolored the wordmark to `--c-sea-700` for brand emphasis. |
+| 2026-05-05 | First sea palette was teal; revised to true ocean blue | Sprint 011 — initial pass used greenish hex codes (`#34a092` etc.) which read as teal/aquamarine, not the bright Caribbean tropical blue requested. Swapped to a cyan-leaning palette (`#2eb6e5`, `#0e95cb`, `#085680`) that evokes Bahamas/Maldives postcards. Same role in the system; just the right hue. |
+| 2026-05-05 | Admin chrome centered as a block | Sprint 011 — the admin grid (`sidebar + main`) now caps at `--content-max` (1200px) and `margin: 0 auto`. On viewports wider than 1200px, the body gradient peeks through on either side and a soft tinted shadow makes the chrome feel like a centered island floating on the sea. On narrower viewports it fills the width naturally. Sidebar stays white; `.admin-main` gains `--c-50` background so cards still pop against it. |

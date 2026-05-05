@@ -38,25 +38,27 @@
   --c-error-bg: #fef2f2;
 
   /*
-   * Sea palette (Sprint 011). The page-level mood; the warm slate
-   * scale stays as the working surface for sidebar, cards, and
-   * tables so density doesn't suffer. See DESIGN.md "Sea palette".
+   * Sea palette (Sprint 011). Tropical / Caribbean ocean blue —
+   * crystal lagoon at the top fading to deep open water at the
+   * bottom. The page-level mood; the warm slate scale stays as the
+   * working surface for sidebar, cards, and tables so density
+   * doesn't suffer. See DESIGN.md "Sea palette".
    */
-  --c-sea-50: #ecf6f4;
-  --c-sea-100: #c6e4df;
-  --c-sea-200: #93cfc6;
-  --c-sea-300: #5fb8ac;
-  --c-sea-400: #34a092;
-  --c-sea-500: #1f8478;
-  --c-sea-600: #176960;
-  --c-sea-700: #11514a;
+  --c-sea-50: #f0fbff;
+  --c-sea-100: #d6f3ff;
+  --c-sea-200: #a9e3f7;
+  --c-sea-300: #6dcef0;
+  --c-sea-400: #2eb6e5;
+  --c-sea-500: #0e95cb;
+  --c-sea-600: #0a76a6;
+  --c-sea-700: #085680;
 
   --gradient-sea: linear-gradient(
     180deg,
     var(--c-sea-50)  0%,
-    var(--c-sea-100) 18%,
-    var(--c-sea-300) 60%,
-    var(--c-sea-500) 100%
+    var(--c-sea-200) 22%,
+    var(--c-sea-400) 60%,
+    var(--c-sea-600) 100%
   );
 
   /* Spacing — 8px base */
