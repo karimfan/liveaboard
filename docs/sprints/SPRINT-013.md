@@ -304,18 +304,18 @@ or expired rates return a clear validation error.
 - `internal/store/checkout_quotes_test.go` - Quote persistence tests.
 
 **Tasks:**
-- [ ] Add `0011_catalog_inventory_fx.sql` with constraints and indexes.
-- [ ] Enforce category/item uniqueness among non-archived rows.
-- [ ] Add stable `template_key` handling for default seed/repair.
-- [ ] Seed the default catalog in the same transaction as org signup.
-- [ ] Implement idempotent default repair that adds missing defaults
+- [x] Add `0011_catalog_inventory_fx.sql` with constraints and indexes.
+- [x] Enforce category/item uniqueness among non-archived rows.
+- [x] Add stable `template_key` handling for default seed/repair.
+- [x] Seed the default catalog in the same transaction as org signup.
+- [x] Implement idempotent default repair that adds missing defaults
       and does not overwrite operator edits.
-- [ ] Implement stock configuration and transactional movement with
+- [x] Implement stock configuration and transactional movement with
       `SELECT ... FOR UPDATE`.
-- [ ] Reject negative stock.
-- [ ] Validate category, item, and boat ownership in store helpers.
-- [ ] Implement FX conversion using integer/rational math only.
-- [ ] Persist quote and quote-line snapshots.
+- [x] Reject negative stock.
+- [x] Validate category, item, and boat ownership in store helpers.
+- [x] Implement FX conversion using integer/rational math only.
+- [x] Persist quote and quote-line snapshots.
 
 ### Phase 2: Backend API (~25%)
 
@@ -331,16 +331,16 @@ or expired rates return a clear validation error.
 - `internal/httpapi/*_test.go` - API/RBAC/validation tests.
 
 **Tasks:**
-- [ ] Mount catalog/inventory/fx mutation endpoints behind
+- [x] Mount catalog/inventory/fx mutation endpoints behind
       `auth.RequireOrgAdmin`.
-- [ ] Mount `/api/checkout/quote` behind session auth, not admin-only.
-- [ ] Return 403 for Cruise Directors on admin catalog/inventory/fx
+- [x] Mount `/api/checkout/quote` behind session auth, not admin-only.
+- [x] Return 403 for Cruise Directors on admin catalog/inventory/fx
       mutation endpoints.
-- [ ] Validate item fields, stock modes, movement types, money, and
+- [x] Validate item fields, stock modes, movement types, money, and
       supported currency codes.
-- [ ] Reject inventory rows for `stock_mode = none`.
-- [ ] Return low-stock/out-of-stock status in inventory responses.
-- [ ] Add quote tests for USD identity, converted currency, item-line
+- [x] Reject inventory rows for `stock_mode = none`.
+- [x] Return low-stock/out-of-stock status in inventory responses.
+- [x] Add quote tests for USD identity, converted currency, item-line
       snapshots, missing rate, expired rate, zero-decimal currency, and
       tenant isolation.
 
@@ -356,19 +356,19 @@ or expired rates return a clear validation error.
   modal styles.
 
 **Tasks:**
-- [ ] Build `/admin/inventory` tabs for Items, Categories, Boat Stock,
+- [x] Build `/admin/inventory` tabs for Items, Categories, Boat Stock,
       and FX Rates.
-- [ ] Add item create/edit modal with unit, charge type, stock mode,
+- [x] Add item create/edit modal with unit, charge type, stock mode,
       active state, and USD price fields.
-- [ ] Add category create/rename/archive UI.
-- [ ] Add "Apply missing defaults" command for legacy/dev orgs.
-- [ ] Add fleet inventory summary with low-stock count by boat.
-- [ ] Add boat inventory table with adjustment modal.
-- [ ] Add admin FX-rate screen sufficient to support local quote API
+- [x] Add category create/rename/archive UI.
+- [x] Add "Apply missing defaults" command for legacy/dev orgs.
+- [x] Add fleet inventory summary with low-stock count by boat.
+- [x] Add boat inventory table with adjustment modal.
+- [x] Add admin FX-rate screen sufficient to support local quote API
       testing.
-- [ ] Keep quote UI to admin/dev preview only; no guest checkout
+- [x] Keep quote UI to admin/dev preview only; no guest checkout
       surface in this sprint.
-- [ ] Run `npm run build` and manually inspect narrow table behavior.
+- [x] Run `npm run build` and manually inspect narrow table behavior.
 
 ### Phase 4: Product Docs and Follow-up Hooks (~10%)
 
@@ -380,13 +380,13 @@ or expired rates return a clear validation error.
 - `docs/CONFIG.md` - Document future FX provider config only if added.
 
 **Tasks:**
-- [ ] Update backlog decision from org-currency pricing to USD catalog
+- [x] Update backlog decision from org-currency pricing to USD catalog
       base plus checkout conversion.
-- [ ] Document `folio_charge` and `folio_void` as the bridge to the
+- [x] Document `folio_charge` and `folio_void` as the bridge to the
       Cruise Director ledger sprint.
-- [ ] Note that payment, receipts, taxes, guest checkout UI, and folio
+- [x] Note that payment, receipts, taxes, guest checkout UI, and folio
       posting are out of scope.
-- [ ] Capture provider-backed FX fetching as a follow-up.
+- [x] Capture provider-backed FX fetching as a follow-up.
 
 ## API Endpoints
 
@@ -431,35 +431,35 @@ or expired rates return a clear validation error.
 
 ## Definition of Done
 
-- [ ] New organizations receive the default liveaboard catalog at
+- [x] New organizations receive the default liveaboard catalog at
       signup.
-- [ ] Admin can apply missing defaults idempotently without overwriting
+- [x] Admin can apply missing defaults idempotently without overwriting
       edited items.
-- [ ] Admin can create, edit, deactivate, reactivate, and archive
+- [x] Admin can create, edit, deactivate, reactivate, and archive
       catalog items.
-- [ ] Admin can create, rename, reorder, reactivate, and archive
+- [x] Admin can create, rename, reorder, reactivate, and archive
       categories.
-- [ ] Catalog prices are stored only as USD cents.
-- [ ] Merchandise defaults include t-shirts, hoodies, mugs, rash
+- [x] Catalog prices are stored only as USD cents.
+- [x] Merchandise defaults include t-shirts, hoodies, mugs, rash
       guards, sunscreen, logbooks, and dry bags.
-- [ ] Admin can configure and adjust per-boat stock for counted items.
-- [ ] Stock adjustments are transactional, auditable, and reject
+- [x] Admin can configure and adjust per-boat stock for counted items.
+- [x] Stock adjustments are transactional, auditable, and reject
       cross-tenant references.
-- [ ] Stock adjustments reject negative stock.
-- [ ] Inventory endpoints show low-stock and out-of-stock status.
-- [ ] Movement service includes reusable `folio_charge` and
+- [x] Stock adjustments reject negative stock.
+- [x] Inventory endpoints show low-stock and out-of-stock status.
+- [x] Movement service includes reusable `folio_charge` and
       `folio_void` paths for the future guest folio workflow.
-- [ ] FX rates are stored as snapshots and conversion avoids float
+- [x] FX rates are stored as snapshots and conversion avoids float
       math.
-- [ ] `/api/checkout/quote` persists and returns quote amount, target
+- [x] `/api/checkout/quote` persists and returns quote amount, target
       currency, exponent, rate metadata, expiration, and line snapshots
       when provided.
-- [ ] Cruise Directors cannot mutate admin catalog, inventory, or FX
+- [x] Cruise Directors cannot mutate admin catalog, inventory, or FX
       endpoints.
-- [ ] Backend tests cover store, API, tenant isolation, validation,
+- [x] Backend tests cover store, API, tenant isolation, validation,
       rounding, default seeding, and stock movement behavior.
-- [ ] `npm run build` passes.
-- [ ] `go test ./...` passes with local PostgreSQL and network bind
+- [x] `npm run build` passes.
+- [x] `go test ./...` passes with local PostgreSQL and network bind
       permissions.
 
 ## Risks & Mitigations

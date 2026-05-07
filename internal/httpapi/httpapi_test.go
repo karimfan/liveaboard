@@ -43,6 +43,7 @@ func newHarness(t *testing.T) *harness {
 	svc.SessionDuration = time.Hour
 
 	session := &auth.SessionMiddleware{Store: pool, Log: log}
+	guestSession := &auth.GuestSessionMiddleware{Store: pool, Log: log}
 
 	// Sprint 012 — wire a Runner with no real network. Tests don't
 	// exercise the goroutine path; this just keeps Kick() from
@@ -53,6 +54,7 @@ func newHarness(t *testing.T) *harness {
 		Log:          log,
 		Auth:         svc,
 		Session:      session,
+		GuestSession: guestSession,
 		AdminAPI:     &httpapi.AdminHandlers{Store: pool},
 		ImportRunner: runner,
 		CookieSecure: false,

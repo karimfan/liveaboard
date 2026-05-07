@@ -10,7 +10,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 |---|---|---|
 | Organization Admin | Org-wide | Configure the org and oversee operations: fleet, catalog, pricing, trip planning, user management, reporting and financial oversight. |
 | Cruise Director | Single trip | Run one trip end-to-end: manifest, consumption, onboard ops. |
-| Guest | Self only | View own tab, dive schedule, trip details. (Future.) |
+| Guest | Self only | Accept a trip invite and complete their own trip registration. Future scope includes tab, dive schedule, and trip details. |
 
 ---
 
@@ -25,6 +25,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Per-boat inventory: how many counted catalog items each boat carries (quantity tracking).
 - Trip planning: create trip shell, set dates, assign Cruise Director, cancel planned trips.
 - Pre-departure manifest preparation: initial guest list before the trip starts.
+- Guest registration readiness: invite guests, resend/revoke registration links, and review submitted registration details.
 - User management (MVP subset): invite Cruise Directors, deactivate users, assign trip leadership.
 - Reporting and oversight: setup completeness, operational trip status, revenue summaries, cross-trip analytics, financial reports.
 
@@ -46,6 +47,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 **Owns:**
 - Their own profile: full name, contact phone (free-text). Editable from `/admin/account`.
 - Mid-trip manifest operations: add/remove/reassign guests once the trip is `active`.
+- Guest registration readiness for assigned trips: invite guests, resend/revoke registration links, and review submitted registration details.
 - Trip lifecycle transitions: start (`planned` → `active`), complete (`active` → `completed`).
 - Guest consumption / ledger entries.
 - Onboard operational coordination for the duration of the trip.
@@ -61,17 +63,21 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 
 ---
 
-## Guest (Future)
+## Guest
 
 **Scope:** Self only.
 
 **Owns:**
-- Read access to their own tab, dive schedule, and trip details.
+- Accepting a trip-specific registration invitation.
+- Creating or reusing a guest account with email and password.
+- Saving draft trip registration and returning later to complete it.
+- Submitting their own identity, travel, emergency contact, diving, dietary/allergy, rental gear, and notes information.
+- Future: read access to their own tab, dive schedule, and trip details.
 
 **Does not own:**
 - Anything else. No org, trip, or other-guest visibility.
 
-Out of scope for the initial product. Captured here so the data model accounts for it.
+Guest access is not the admin chrome and does not expose organization data, other trips, or other guests.
 
 ---
 
@@ -84,6 +90,9 @@ For features that could belong to multiple personas, the table below records the
 | Create trip shell | Org Admin | Date/boat/name. Trip starts in `planned`. |
 | Assign Cruise Director to trip | Org Admin | Required before trip can be started. |
 | Pre-departure manifest (planned trips) | Org Admin | Initial guest list. |
+| Guest registration invite | Org Admin or assigned Cruise Director | Trip-scoped registration link; Cruise Directors only for assigned trips. |
+| Guest registration draft/submit | Guest | Guests can save and return later before final submission. |
+| Submitted registration review | Org Admin or assigned Cruise Director | Registration detail is fetched explicitly for the relevant trip. |
 | Mid-trip manifest changes | Cruise Director | Add/remove/reassign once trip is `active`. |
 | Start trip (`planned` → `active`) | Cruise Director | Org Admin cannot. |
 | Complete trip (`active` → `completed`) | Cruise Director | Org Admin cannot. |
@@ -102,7 +111,7 @@ For features that could belong to multiple personas, the table below records the
 
 ## Out of Scope (All Personas, MVP)
 
-- Guest self-service portal.
+- Full guest self-service portal beyond trip registration.
 - Billing and org-deletion controls (post-MVP).
 - Multi-admin and custom-role administration.
 - Cross-organization visibility of any kind.

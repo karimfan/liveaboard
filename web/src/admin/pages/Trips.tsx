@@ -86,8 +86,10 @@ export function Trips() {
               <th>Boat</th>
               <th>Itinerary</th>
               <th>Director</th>
+              <th>Guests</th>
               <th>Price</th>
               <th>Availability</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -108,6 +110,9 @@ export function Trips() {
                     onChanged={onChanged}
                   />
                 </td>
+                <td>
+                  <ManifestSummary trip={t} />
+                </td>
                 <td className="num">{t.price_text ?? "—"}</td>
                 <td>
                   {t.availability_text ? (
@@ -125,11 +130,27 @@ export function Trips() {
                     <span className="muted">—</span>
                   )}
                 </td>
+                <td className="actions-cell">
+                  <Link to={`/admin/trips/${t.id}/manifest`}>Manifest</Link>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
     </>
+  );
+}
+
+function ManifestSummary({ trip }: { trip: Trip }) {
+  const summary = trip.manifest_summary;
+  if (!summary) return <span className="muted">0 guests</span>;
+  return (
+    <div className="manifest-summary">
+      <span>{summary.guest_count} guests</span>
+      {summary.submitted_count > 0 && <span>{summary.submitted_count} submitted</span>}
+      {summary.expected_count != null && <span>{summary.expected_count} expected</span>}
+      {summary.has_warning && <span className="error-inline">over expected</span>}
+    </div>
   );
 }

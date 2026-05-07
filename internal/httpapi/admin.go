@@ -162,9 +162,16 @@ func (a *AdminHandlers) HandleListBoatTrips(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
+	summaries, err := a.Store.TripManifestSummaries(r.Context(), u.OrganizationID, tripIDs, time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
 	out := make([]map[string]any, 0, len(trips))
 	for _, t := range trips {
-		out = append(out, tripView(t, boat.DisplayName, directorsByTrip[t.ID], directorNames))
+		v := tripView(t, boat.DisplayName, directorsByTrip[t.ID], directorNames)
+		v["manifest_summary"] = manifestSummaryView(summaries[t.ID])
+		out = append(out, v)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"trips": out})
 }
@@ -211,9 +218,16 @@ func (a *AdminHandlers) HandleListTrips(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
+	summaries, err := a.Store.TripManifestSummaries(ctx, u.OrganizationID, tripIDs, time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
 	out := make([]map[string]any, 0, len(trips))
 	for _, t := range trips {
-		out = append(out, tripView(t, boatNames[t.BoatID], directorsByTrip[t.ID], directorNames))
+		v := tripView(t, boatNames[t.BoatID], directorsByTrip[t.ID], directorNames)
+		v["manifest_summary"] = manifestSummaryView(summaries[t.ID])
+		out = append(out, v)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"trips": out, "scope": tripScopeFor(u.Role)})
 }

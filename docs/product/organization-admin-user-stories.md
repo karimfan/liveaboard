@@ -55,6 +55,7 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 | Soft deletion | Boats, trips, catalog items, and users are deactivated/archived rather than hard-deleted. | Preserves historical trip and ledger integrity. |
 | Reporting (Org Admin) | Setup completeness and operational status are `Must`. Revenue summaries are `Should`. Cross-trip analytics deferred (post-MVP). | Matches persona boundaries. |
 | Inventory tracking | Per-boat counted stock ships with catalog. Non-stocked services stay in catalog with `stock_mode = none`. | Needed before Cruise Directors can add stock-tracked items to guest folios. |
+| Guest registration | Guests use separate guest accounts and sessions. Registration can be saved as a draft and completed later. | Keeps staff auth clean and supports long forms that are hard to complete in one transaction. |
 | Trip booking fees | Out of scope. Catalog covers onboard consumption only. | |
 
 ---
@@ -66,7 +67,7 @@ The following are explicitly out of scope for the Organization Admin backlog:
 - Live ledger entry / mid-trip consumption flows (Cruise Director).
 - Mid-trip manifest operations (Cruise Director).
 - Trip start / complete lifecycle transitions (Cruise Director).
-- Guest self-service portal.
+- Full guest self-service portal beyond trip registration.
 - Cross-organization visibility of any kind.
 - Deep analytics and reporting beyond setup + operational status + per-trip revenue.
 - Billing and org-deletion controls (post-MVP).
@@ -360,21 +361,24 @@ Acceptance Criteria:
 - [ ] Updated dates must not overlap with other trips on the same boat.
 - [ ] Start date must remain in the future.
 
-### US-4.5: Prepare initial manifest — add a guest (pre-departure)
+### US-4.5: Prepare initial manifest and registration — add a guest
 
-> As an Organization Admin, I want to add guests to a planned trip so that the manifest is ready before departure.
+> As an Organization Admin, I want to add guests to a trip and send registration links so that the manifest is ready before departure.
 
 Priority: Must
 Area: Trips
 Depends on: US-4.1
 
 Acceptance Criteria:
-- [ ] Available only while trip status is `planned`.
-- [ ] Admin provides guest name (required) and email (optional).
-- [ ] Manifest size cannot exceed the boat's capacity.
-- [ ] Guest count and remaining capacity update on the trip view.
+- [ ] Admin provides guest name and email.
+- [ ] Guest receives an expiring registration invitation email.
+- [ ] Invite send failures are visible and retryable.
+- [ ] Guest can create or reuse a guest account with email and password.
+- [ ] Guest can save a draft registration and return later to complete it.
+- [ ] Guest submits generic trip-registration sections, not Gaia- or Indonesia-specific fields.
+- [ ] Guest count and expected-count warning update on the trip view; imported `num_guests` is not a hard capacity cap.
 
-Notes: Mid-trip add/remove once the trip is `active` is Cruise Director scope. Spatial cabin assignment is deferred — the manifest is a flat list of guests.
+Notes: Assigned Cruise Directors can add guests only to trips assigned to them. Spatial cabin assignment is deferred; the manifest is a flat list of guests.
 
 ### US-4.6: Prepare initial manifest — remove a guest (pre-departure)
 

@@ -86,6 +86,35 @@ export type Trip = {
   num_guests: number | null;
   cruise_director_user_ids: string[];
   cruise_director_names: string[];
+  manifest_summary?: ManifestSummary;
+};
+
+export type ManifestSummary = {
+  guest_count: number;
+  submitted_count: number;
+  expected_count: number | null;
+  has_warning: boolean;
+};
+
+export type TripGuest = {
+  id: string;
+  full_name: string;
+  email: string;
+  status: string;
+  invite_send_status: string;
+  invite_last_error: string | null;
+  invite_last_sent_at: string | null;
+  invite_expires_at: string | null;
+  account_created_at: string | null;
+  revoked_at: string | null;
+  registration_status: string | null;
+  registration_submitted_at: string | null;
+};
+
+export type TripManifest = {
+  trip: Trip;
+  summary: ManifestSummary;
+  guests: TripGuest[];
 };
 
 // Sprint 013 — assign/unassign endpoints return the updated director
@@ -214,6 +243,21 @@ export const adminApi = {
 
   listTrips: () =>
     call<{ trips: Trip[]; scope: "all" | "assigned_to_me" }>("GET", "/admin/trips"),
+
+  tripManifest: (tripId: string) =>
+    call<TripManifest>("GET", `/admin/trips/${encodeURIComponent(tripId)}/manifest`),
+
+  addTripGuest: (tripId: string, input: { full_name: string; email: string }) =>
+    call<TripGuest>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests`, input),
+
+  resendTripGuestInvite: (tripId: string, guestId: string) =>
+    call<TripGuest>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/resend`),
+
+  revokeTripGuestInvite: (tripId: string, guestId: string) =>
+    call<{ status: string }>("DELETE", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/invite`),
+
+  guestRegistration: (tripId: string, guestId: string) =>
+    call<{ id: string; status: string; payload: unknown; submitted_at: string | null }>("GET", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/registration`),
 
   // Sprint 013 — 1:N director assignment.
   addCruiseDirector: (tripId: string, userId: string) =>

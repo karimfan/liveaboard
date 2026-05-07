@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -29,6 +30,7 @@ type Server struct {
 	Log          *slog.Logger
 	Auth         *auth.Service
 	Session      *auth.SessionMiddleware
+	GuestSession *auth.GuestSessionMiddleware
 	AdminAPI     *AdminHandlers
 	ImportRunner *imports.Runner
 	CookieSecure bool
@@ -54,10 +56,20 @@ func (s *Server) Router() http.Handler {
 		// Public invitation accept (token-bearing, no cookie).
 		r.Get("/invitations/lookup", s.handleLookupInvitation)
 		r.Post("/invitations/accept", s.handleAcceptInvitation)
+		r.Get("/guest/invitations/{token}", s.handleLookupGuestInvitation)
+		r.Post("/guest/invitations/{token}/accept", s.handleAcceptGuestInvitation)
 
 		// Logout works whether you have a valid cookie or not — it always
 		// returns 200 and best-effort deletes the row.
 		r.Post("/auth/logout", s.handleLogout)
+
+		r.Group(func(r chi.Router) {
+			r.Use(s.guestSessionMiddleware().Wrap)
+			r.Post("/guest/logout", s.handleGuestLogout)
+			r.Get("/guest/trip-registrations/{trip_guest_id}", s.handleGetGuestRegistration)
+			r.Patch("/guest/trip-registrations/{trip_guest_id}", s.handleSaveGuestRegistration)
+			r.Post("/guest/trip-registrations/{trip_guest_id}/submit", s.handleSubmitGuestRegistration)
+		})
 
 		// Authenticated routes.
 		r.Group(func(r chi.Router) {
@@ -93,6 +105,11 @@ func (s *Server) Router() http.Handler {
 			// assignment handler.
 			r.Route("/admin", func(r chi.Router) {
 				r.Get("/trips", s.AdminAPI.HandleListTrips)
+				r.Get("/trips/{id}/manifest", s.handleTripManifest)
+				r.Post("/trips/{id}/guests", s.handleAddTripGuest)
+				r.Post("/trips/{id}/guests/{guest_id}/resend", s.handleResendTripGuestInvite)
+				r.Delete("/trips/{id}/guests/{guest_id}/invite", s.handleRevokeTripGuestInvite)
+				r.Get("/trips/{id}/guests/{guest_id}/registration", s.handleStaffGuestRegistration)
 
 				// Cruise-director-only landing payload (profile + stats
 				// + trips). The handler enforces the role itself; we
@@ -153,6 +170,13 @@ func (s *Server) Router() http.Handler {
 
 // --- core handlers ---
 
+func (s *Server) guestSessionMiddleware() *auth.GuestSessionMiddleware {
+	if s.GuestSession != nil {
+		return s.GuestSession
+	}
+	return &auth.GuestSessionMiddleware{Store: s.Auth.Store, Log: s.Log}
+}
+
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	u := auth.UserFromContext(r.Context())
 	writeJSON(w, http.StatusOK, authUserView(u))
@@ -202,7 +226,7 @@ func slogRequestLogger(log *slog.Logger) func(http.Handler) http.Handler {
 			next.ServeHTTP(ww, r)
 			log.Info("http",
 				"method", r.Method,
-				"path", r.URL.Path,
+				"path", redactedRequestPath(r.URL.Path),
 				"status", ww.Status(),
 				"bytes", ww.BytesWritten(),
 				"duration_ms", time.Since(start).Milliseconds(),
@@ -210,4 +234,18 @@ func slogRequestLogger(log *slog.Logger) func(http.Handler) http.Handler {
 			)
 		})
 	}
+}
+
+func redactedRequestPath(path string) string {
+	const prefix = "/api/guest/invitations/"
+	if strings.HasPrefix(path, prefix) {
+		rest := strings.TrimPrefix(path, prefix)
+		if rest == "" {
+			return path
+		}
+		parts := strings.Split(rest, "/")
+		parts[0] = "{token}"
+		return prefix + strings.Join(parts, "/")
+	}
+	return path
 }

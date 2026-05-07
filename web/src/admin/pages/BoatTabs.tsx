@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 
 import { adminApi, type Boat, type BoatInventoryItem, type CatalogItem, type Trip } from "../api";
 import { useMe } from "../useMe";
@@ -94,8 +94,10 @@ export function BoatTrips() {
               <th className="col-dates">Dates</th>
               <th>Itinerary</th>
               <th>Director</th>
+              <th>Guests</th>
               <th>Price</th>
               <th>Availability</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -113,6 +115,13 @@ export function BoatTrips() {
                     onChanged={onChanged}
                   />
                 </td>
+                <td>
+                  {t.manifest_summary ? (
+                    <span>{t.manifest_summary.guest_count} guests</span>
+                  ) : (
+                    <span className="muted">0 guests</span>
+                  )}
+                </td>
                 <td className="num">{t.price_text ?? "—"}</td>
                 <td>
                   {t.availability_text ? (
@@ -129,6 +138,9 @@ export function BoatTrips() {
                   ) : (
                     <span className="muted">—</span>
                   )}
+                </td>
+                <td className="actions-cell">
+                  <Link to={`/admin/trips/${t.id}/manifest`}>Manifest</Link>
                 </td>
               </tr>
             ))}

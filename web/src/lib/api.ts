@@ -87,6 +87,26 @@ export type CruiseDirectorOverview = {
   }>;
 };
 
+export type GuestInviteLookup = {
+  trip_guest_id: string;
+  email: string;
+  full_name: string;
+  organization_name: string;
+  boat_name: string;
+  itinerary: string;
+  start_date: string;
+  end_date: string;
+  expires_at: string;
+};
+
+export type GuestRegistration = {
+  id?: string;
+  trip_guest_id?: string;
+  status: "draft" | "submitted";
+  payload: Record<string, unknown>;
+  submitted_at?: string | null;
+};
+
 export const api = {
   // --- Public auth ---
   signup: (input: {
@@ -184,4 +204,25 @@ export const api = {
 
   cruiseDirectorOverview: () =>
     call<CruiseDirectorOverview>("GET", "/admin/cruise-director-overview"),
+
+  lookupGuestInvite: (token: string) =>
+    call<GuestInviteLookup>("GET", `/guest/invitations/${encodeURIComponent(token)}`),
+
+  acceptGuestInvite: (token: string, password: string) =>
+    call<{ guest: { id: string; email: string }; trip_guest_id: string }>(
+      "POST",
+      `/guest/invitations/${encodeURIComponent(token)}/accept`,
+      { password },
+    ),
+
+  guestLogout: () => call<{ status: "ok" }>("POST", "/guest/logout"),
+
+  guestRegistration: (tripGuestId: string) =>
+    call<GuestRegistration>("GET", `/guest/trip-registrations/${encodeURIComponent(tripGuestId)}`),
+
+  saveGuestRegistration: (tripGuestId: string, payload: Record<string, unknown>) =>
+    call<GuestRegistration>("PATCH", `/guest/trip-registrations/${encodeURIComponent(tripGuestId)}`, payload),
+
+  submitGuestRegistration: (tripGuestId: string, payload: Record<string, unknown>) =>
+    call<GuestRegistration>("POST", `/guest/trip-registrations/${encodeURIComponent(tripGuestId)}/submit`, payload),
 };

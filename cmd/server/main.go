@@ -75,6 +75,10 @@ func main() {
 		Store: pool,
 		Log:   log,
 	}
+	guestSession := &auth.GuestSessionMiddleware{
+		Store: pool,
+		Log:   log,
+	}
 
 	// Sprint 012 — liveaboard.com import runner. The same Client
 	// constructor used by the scrape CLI; rate-limited and
@@ -109,6 +113,7 @@ func main() {
 		Log:          log,
 		Auth:         authSvc,
 		Session:      session,
+		GuestSession: guestSession,
 		AdminAPI:     &httpapi.AdminHandlers{Store: pool},
 		ImportRunner: importRunner,
 		CookieSecure: cfg.CookieSecure,

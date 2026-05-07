@@ -56,6 +56,7 @@ type Service struct {
 	VerificationDuration  time.Duration
 	PasswordResetDuration time.Duration
 	InvitationDuration    time.Duration
+	GuestSessionDuration  time.Duration
 	EmailChangeDuration   time.Duration
 }
 
@@ -74,6 +75,7 @@ func New(p *store.Pool, sender email.Sender, log *slog.Logger, baseURL, senderFr
 		VerificationDuration:  24 * time.Hour,
 		PasswordResetDuration: time.Hour,
 		InvitationDuration:    7 * 24 * time.Hour,
+		GuestSessionDuration:  30 * 24 * time.Hour,
 		EmailChangeDuration:   time.Hour,
 	}
 }

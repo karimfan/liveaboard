@@ -1036,3 +1036,164 @@ select.select-inline:focus {
 .admin-nav__link--child:hover {
   color: var(--c-700);
 }
+
+/* Sprint 014 — guest manifest and registration */
+.manifest-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+  align-items: center;
+  color: var(--c-700);
+  font-size: var(--fs-sm);
+}
+.manifest-summary > div {
+  min-width: 112px;
+  padding: var(--sp-sm) var(--sp-md);
+  background: white;
+  border: 1px solid var(--c-200);
+  border-radius: var(--r-md);
+}
+.manifest-summary strong {
+  display: block;
+  color: var(--c-900);
+  font-size: var(--fs-xl);
+  line-height: 1.1;
+}
+.manifest-summary span {
+  display: block;
+}
+.manifest-warning {
+  color: var(--c-error);
+  background: var(--c-error-bg) !important;
+  border-color: rgba(185, 28, 28, 0.18) !important;
+  font-weight: 600;
+}
+.manifest-add {
+  margin: var(--sp-lg) 0;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-md);
+  align-items: end;
+}
+.actions-cell {
+  white-space: nowrap;
+  text-align: right;
+}
+.actions-cell > * {
+  margin-left: var(--sp-xs);
+}
+.error-inline {
+  color: var(--c-error);
+  font-size: var(--fs-sm);
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-lg);
+  background: rgba(15, 23, 42, 0.48);
+}
+.modal-panel {
+  width: min(760px, 100%);
+  max-height: min(720px, 90vh);
+  overflow: auto;
+  background: white;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--c-200);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+}
+.modal-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding: var(--sp-md) var(--sp-lg);
+  background: white;
+  border-bottom: 1px solid var(--c-200);
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: var(--fs-xl);
+}
+.registration-json {
+  margin: 0;
+  padding: var(--sp-lg);
+  white-space: pre-wrap;
+  color: var(--c-800);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+.guest-registration-shell {
+  min-height: 100vh;
+  padding: var(--sp-xl) var(--sp-lg);
+}
+.guest-registration {
+  max-width: 980px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--r-lg);
+  padding: var(--sp-xl);
+  box-shadow: 0 8px 32px rgba(17, 81, 74, 0.18);
+}
+.guest-registration__header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  align-items: flex-start;
+  margin-bottom: var(--sp-lg);
+}
+.guest-registration__header h1 {
+  margin-bottom: var(--sp-xs);
+}
+.registration-section {
+  padding: var(--sp-lg) 0;
+  border-top: 1px solid var(--c-200);
+}
+.registration-section h2 {
+  margin-bottom: var(--sp-md);
+  font-size: var(--fs-xl);
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin: 0 0 var(--sp-md);
+  color: var(--c-700);
+}
+.check-row input {
+  width: auto;
+}
+.guest-registration__actions {
+  position: sticky;
+  bottom: var(--sp-md);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-sm);
+  padding-top: var(--sp-lg);
+}
+
+@media (max-width: 720px) {
+  .guest-registration {
+    padding: var(--sp-lg);
+  }
+  .guest-registration__header,
+  .guest-registration__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .actions-cell {
+    text-align: left;
+    white-space: normal;
+  }
+  .actions-cell > * {
+    margin: var(--sp-xs) var(--sp-xs) 0 0;
+  }
+}

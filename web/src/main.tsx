@@ -11,6 +11,8 @@ import { VerifyEmail } from "./pages/VerifyEmail";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
 import { AcceptInvitation } from "./pages/AcceptInvitation";
+import { GuestInvitation } from "./pages/GuestInvitation";
+import { GuestRegistration } from "./pages/GuestRegistration";
 import { RequireSession } from "./lib/RequireSession";
 
 import { AdminShell, RequireAdmin } from "./admin/Shell";
@@ -20,6 +22,7 @@ import { Fleet } from "./admin/pages/Fleet";
 import { BoatDetail } from "./admin/pages/BoatDetail";
 import { BoatTrips, BoatInventory, BoatNotes } from "./admin/pages/BoatTabs";
 import { Trips } from "./admin/pages/Trips";
+import { TripManifest } from "./admin/pages/TripManifest";
 import { Inventory } from "./admin/pages/Inventory";
 import { Users } from "./admin/pages/Users";
 import { Organization } from "./admin/pages/Organization";
@@ -40,6 +43,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/invitations/:token/accept" element={<AcceptInvitation />} />
+        <Route path="/guest/invitations/:token" element={<GuestInvitation />} />
+        <Route path="/guest/trips/:tripGuestId/register" element={<GuestRegistration />} />
 
         {/* Root redirects to the admin chrome — that's the only authenticated
             surface. RequireSession on /admin handles the unauthenticated case. */}
@@ -57,6 +62,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           {/* Both roles */}
           <Route index element={<Overview />} />
           <Route path="trips" element={<Trips />} />
+          <Route path="trips/:id/manifest" element={<TripManifest />} />
           <Route path="account" element={<Account />} />
 
           {/* Org-admin-only routes — RequireAdmin redirects directors to /admin */}

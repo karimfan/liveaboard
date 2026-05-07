@@ -1,0 +1,15 @@
+Hi {{.RecipientName}},
+
+{{.OrganizationName}} invited you to complete registration for your upcoming liveaboard trip.
+
+Trip: {{.TripBoatName}}
+Itinerary: {{.TripItinerary}}
+Dates: {{fmtdate .TripStartDate}} to {{fmtdate .TripEndDate}}
+
+Create your guest account and complete registration:
+
+  {{.ActionURL}}
+
+This link expires on {{fmtdate .ExpiresAt}}.
+
+-- {{.AppName}}
