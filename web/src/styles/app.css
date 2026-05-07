@@ -69,6 +69,21 @@ button.ghost {
 button.ghost:hover {
   background: var(--c-100);
 }
+button.secondary {
+  background: white;
+  color: var(--c-700);
+  border-color: var(--c-200);
+}
+button.secondary:hover {
+  background: var(--c-100);
+}
+button:disabled,
+button:disabled:hover {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--c-100);
+  color: var(--c-500);
+}
 
 input,
 select,
@@ -566,6 +581,30 @@ h3 { font-size: var(--fs-xl); }
   color: var(--c-primary);
   border-bottom-color: var(--c-primary);
 }
+.trips-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-md);
+  min-height: 40px;
+}
+.tab {
+  background: transparent;
+  color: var(--c-500);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+}
+.tab:hover {
+  background: transparent;
+  color: var(--c-900);
+}
+.tab.is-active {
+  color: var(--c-primary);
+  border-bottom-color: var(--c-primary);
+}
 
 .inline-num {
   width: 80px;
@@ -597,6 +636,69 @@ h3 { font-size: var(--fs-xl); }
 }
 .filter-bar__spacer {
   flex: 1;
+}
+
+.click-row {
+  cursor: pointer;
+}
+.click-row:hover {
+  background: var(--c-50);
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: var(--sp-lg);
+  align-items: start;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-md);
+}
+
+.checkline {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+.checkline input {
+  width: auto;
+  max-width: none;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 25, 23, 0.45);
+  padding: var(--sp-lg);
+}
+.modal {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  background: white;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--c-200);
+  padding: var(--sp-lg);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+}
+.modal h2 {
+  font-family: var(--font-display);
+  margin: 0 0 var(--sp-md);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-md);
 }
 
 .empty-state {

@@ -114,6 +114,94 @@ export type Organization = {
   updated_at: string;
 };
 
+export type CatalogCategory = {
+  id: string;
+  template_key: string | null;
+  name: string;
+  sort_order: number;
+  is_default_seed: boolean;
+  archived_at: string | null;
+  item_count: number;
+};
+
+export type CatalogItem = {
+  id: string;
+  category_id: string;
+  category_name: string;
+  template_key: string | null;
+  name: string;
+  description: string | null;
+  unit: string;
+  charge_type: string;
+  stock_mode: "none" | "counted";
+  price_usd_cents: number;
+  is_taxable: boolean;
+  is_required_fee: boolean;
+  is_active: boolean;
+  archived_at: string | null;
+};
+
+export type BoatInventoryItem = {
+  id: string;
+  boat_id: string;
+  catalog_item_id: string;
+  item_name: string;
+  category_name: string;
+  unit: string;
+  stock_mode: "counted";
+  price_usd_cents: number;
+  quantity_on_hand: number;
+  quantity_reserved: number;
+  reorder_level: number | null;
+  par_level: number | null;
+  last_counted_at: string | null;
+  notes: string | null;
+  status: "ok" | "low" | "out";
+};
+
+export type InventoryBoatSummary = {
+  boat_id: string;
+  boat_name: string;
+  low_stock_count: number;
+  out_stock_count: number;
+};
+
+export type FXRate = {
+  id: string;
+  provider: string;
+  base_currency: string;
+  quote_currency: string;
+  rate_numerator: number;
+  rate_denominator: number;
+  as_of: string;
+  fetched_at: string;
+  expires_at: string;
+};
+
+export type CheckoutQuote = {
+  id: string;
+  source_currency: string;
+  target_currency: string;
+  source_amount_cents: number;
+  target_amount_minor: number;
+  currency_exponent: number;
+  rate_provider: string;
+  rate_numerator: number;
+  rate_denominator: number;
+  rate_as_of: string;
+  expires_at: string;
+  created_at: string;
+  lines: {
+    id: string;
+    catalog_item_id: string | null;
+    item_name: string;
+    quantity: number;
+    unit_price_usd_cents: number;
+    line_total_usd_cents: number;
+    sort_order: number;
+  }[];
+};
+
 // --- endpoints ---
 
 export const adminApi = {
@@ -143,6 +231,72 @@ export const adminApi = {
 
   patchOrganization: (input: { name: string; currency: string | null }) =>
     call<Organization>("PATCH", "/organization", input),
+
+  listCatalogCategories: () =>
+    call<{ categories: CatalogCategory[] }>("GET", "/admin/catalog/categories"),
+  createCatalogCategory: (input: { name: string; sort_order: number }) =>
+    call<CatalogCategory>("POST", "/admin/catalog/categories", input),
+  updateCatalogCategory: (id: string, input: { name: string; sort_order: number; archived?: boolean }) =>
+    call<CatalogCategory>("PATCH", `/admin/catalog/categories/${id}`, input),
+
+  listCatalogItems: () => call<{ items: CatalogItem[] }>("GET", "/admin/catalog/items"),
+  createCatalogItem: (input: {
+    category_id: string;
+    name: string;
+    description: string | null;
+    unit: string;
+    charge_type: string;
+    stock_mode: "none" | "counted";
+    price_usd_cents: number;
+    is_taxable: boolean;
+    is_required_fee: boolean;
+    is_active?: boolean;
+  }) => call<CatalogItem>("POST", "/admin/catalog/items", input),
+  updateCatalogItem: (id: string, input: {
+    category_id: string;
+    name: string;
+    description: string | null;
+    unit: string;
+    charge_type: string;
+    stock_mode: "none" | "counted";
+    price_usd_cents: number;
+    is_taxable: boolean;
+    is_required_fee: boolean;
+    is_active?: boolean;
+    archived?: boolean;
+  }) => call<CatalogItem>("PATCH", `/admin/catalog/items/${id}`, input),
+  applyCatalogDefaults: () =>
+    call<{ status: string }>("POST", "/admin/catalog/defaults/apply"),
+
+  inventoryBoatSummary: () =>
+    call<{ boats: InventoryBoatSummary[] }>("GET", "/admin/inventory/boats"),
+  listBoatInventory: (boatId: string) =>
+    call<{ items: BoatInventoryItem[] }>("GET", `/admin/boats/${boatId}/inventory`),
+  setBoatInventory: (boatId: string, itemId: string, input: {
+    quantity_on_hand: number;
+    reorder_level: number | null;
+    par_level: number | null;
+    notes: string | null;
+  }) => call<BoatInventoryItem>("PUT", `/admin/boats/${boatId}/inventory/${itemId}`, input),
+  adjustBoatInventory: (boatId: string, itemId: string, input: {
+    movement_type: string;
+    delta_quantity: number;
+    note: string | null;
+  }) => call<{ item: BoatInventoryItem }>("POST", `/admin/boats/${boatId}/inventory/${itemId}/adjustments`, input),
+
+  listFXRates: () => call<{ rates: FXRate[] }>("GET", "/admin/fx/rates"),
+  createFXRate: (input: {
+    provider: string;
+    base_currency: string;
+    quote_currency: string;
+    rate_numerator: number;
+    rate_denominator: number;
+    as_of: string;
+    expires_at: string;
+  }) => call<FXRate>("POST", "/admin/fx/rates", input),
+
+  checkoutQuote: (input: { target_currency: string; source_amount_cents: number }) =>
+    call<CheckoutQuote>("POST", "/checkout/quote", input),
 
   // --- Sprint 012 trip imports ---
 
@@ -230,4 +384,3 @@ export type SpreadsheetPreviewResponse = {
 export type VesselMappingChoice =
   | { mode: "existing"; boat_id: string }
   | { mode: "create_new" };
-

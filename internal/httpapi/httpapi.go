@@ -72,6 +72,7 @@ func (s *Server) Router() http.Handler {
 			r.Post("/account/request-email-change", s.handleRequestEmailChange)
 			r.Get("/account/pending-email-change", s.handlePendingEmailChange)
 			r.Post("/account/cancel-email-change", s.handleCancelEmailChange)
+			r.Post("/checkout/quote", s.handleCheckoutQuote)
 
 			// Confirm-email-change: authenticated when the user clicks
 			// the link in the same browser; if not we still accept it
@@ -105,7 +106,20 @@ func (s *Server) Router() http.Handler {
 					r.Get("/boats", s.AdminAPI.HandleListBoats)
 					r.Get("/boats/{id}", s.AdminAPI.HandleGetBoat)
 					r.Get("/boats/{id}/trips", s.AdminAPI.HandleListBoatTrips)
+					r.Get("/boats/{id}/inventory", s.handleListBoatInventory)
 					r.Get("/users", s.AdminAPI.HandleListUsers)
+					r.Get("/catalog/categories", s.handleListCatalogCategories)
+					r.Post("/catalog/categories", s.handleCreateCatalogCategory)
+					r.Patch("/catalog/categories/{id}", s.handleUpdateCatalogCategory)
+					r.Get("/catalog/items", s.handleListCatalogItems)
+					r.Post("/catalog/items", s.handleCreateCatalogItem)
+					r.Patch("/catalog/items/{id}", s.handleUpdateCatalogItem)
+					r.Post("/catalog/defaults/apply", s.handleApplyCatalogDefaults)
+					r.Get("/inventory/boats", s.handleInventoryBoatSummary)
+					r.Put("/boats/{id}/inventory/{item_id}", s.handleSetBoatInventory)
+					r.Post("/boats/{id}/inventory/{item_id}/adjustments", s.handleAdjustBoatInventory)
+					r.Get("/fx/rates", s.handleListFXRates)
+					r.Post("/fx/rates", s.handleCreateFXRate)
 
 					// Sprint 013 — 1:N trip cruise-director assignment.
 					// Replaces the Sprint 008/010 PATCH that took a

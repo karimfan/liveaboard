@@ -48,13 +48,13 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 | Decision | Choice | Rationale |
 |---|---|---|
 | MVP user management | Minimal subset only: invite Cruise Director, deactivate user, assign trip leadership. Advanced role admin deferred. | Cruise Director workflows depend on the ability to invite and assign — full deferral would block the next implementation sprints. |
-| Catalog pricing | Org-level flat per-item pricing for MVP. Per-boat / per-trip overrides captured as `Could` follow-ups. | Simplest pricing model that supports a real first release. |
+| Catalog pricing | Catalog prices are canonical in USD. `organizations.currency` is a display/default checkout preference, and guest checkout quotes convert from USD using stored rate snapshots. Per-boat / per-trip overrides captured as `Could` follow-ups. | Operators compare most onboard extras in USD, while guests may settle in a different currency. |
 | Manifest ownership | Org Admin prepares the initial manifest pre-departure. Mid-trip manifest mutations belong to Cruise Director. | Matches `personas.md` and the README. |
 | Cabin model | Cabin layouts are not modeled. A boat has a single capacity number; the manifest is a flat list of guests (no spatial assignment). | Simplifies the model. Per-cabin assignment can be revisited as a `Could` follow-up if operators ask for it. |
 | Trip lifecycle | Org Admin creates, configures, cancels (planned only), and monitors trips. Cruise Director performs `planned → active` and `active → completed` transitions. | Reflects who is on the boat at the moment of the transition. |
 | Soft deletion | Boats, trips, catalog items, and users are deactivated/archived rather than hard-deleted. | Preserves historical trip and ledger integrity. |
 | Reporting (Org Admin) | Setup completeness and operational status are `Must`. Revenue summaries are `Should`. Cross-trip analytics deferred (post-MVP). | Matches persona boundaries. |
-| Inventory tracking | Deferred. Captured as `Could`. | Out of scope for first release. |
+| Inventory tracking | Per-boat counted stock ships with catalog. Non-stocked services stay in catalog with `stock_mode = none`. | Needed before Cruise Directors can add stock-tracked items to guest folios. |
 | Trip booking fees | Out of scope. Catalog covers onboard consumption only. | |
 
 ---
@@ -71,7 +71,7 @@ The following are explicitly out of scope for the Organization Admin backlog:
 - Deep analytics and reporting beyond setup + operational status + per-trip revenue.
 - Billing and org-deletion controls (post-MVP).
 - Advanced role administration (multi-admin, custom roles, granular permissions).
-- Inventory tracking, per-boat/per-trip pricing overrides, trip booking fees.
+- Per-boat/per-trip pricing overrides, trip booking fees.
 - Offline / sync.
 - Cloud deployment and infrastructure concerns.
 
@@ -218,10 +218,11 @@ Depends on: US-2.1
 
 Acceptance Criteria:
 - [ ] Admin selects from a list of common currencies (USD, EUR, GBP, IDR, THB, AUD, ...).
-- [ ] Currency applies to all catalog prices and ledger entries org-wide.
-- [ ] Changing currency does not retroactively rewrite historical prices; admin is warned and must confirm.
+- [ ] Currency is used as the organization's default display/checkout preference.
+- [ ] Catalog prices remain stored in USD.
+- [ ] Changing currency does not retroactively rewrite historical prices or quote snapshots.
 
-Notes: Multi-currency support and FX conversion are out of scope.
+Notes: Sprint 013 introduces checkout quote conversion from USD to a target guest currency.
 
 ---
 
@@ -457,7 +458,7 @@ Depends on: US-2.3
 Acceptance Criteria:
 - [ ] Admin provides item name (required), category (required), description (optional), and price (required, positive decimal).
 - [ ] Item name is unique within the organization.
-- [ ] Price is in the org's default currency.
+- [ ] Price is stored in USD cents.
 - [ ] Item is active by default.
 
 ### US-5.2: View catalog
@@ -524,15 +525,21 @@ Depends on: US-5.3
 
 Acceptance Criteria: Deferred — captured so it is not lost. Will be expanded if/when prioritized.
 
-### US-5.7: Inventory tracking for catalog items (deferred)
+### US-5.7: Inventory tracking for catalog items
 
 > As an Organization Admin, I want to track stock for items so that the system can warn or block sales when stock is exhausted.
 
-Priority: Could
+Priority: Must
 Area: Catalog
 Depends on: US-5.1
 
-Acceptance Criteria: Deferred — captured so it is not lost. Will be expanded if/when prioritized.
+Acceptance Criteria:
+- [ ] Items declare whether they are stock-tracked (`counted`) or non-stocked (`none`).
+- [ ] Admin can set per-boat on-hand quantity, reorder level, par level, and notes for counted items.
+- [ ] Admin can record stock movements such as restock, breakage, spoilage, correction, and internal use.
+- [ ] Stock movements are auditable and preserve actor, before/after quantity, and note.
+- [ ] Stock cannot go negative.
+- [ ] Future Cruise Director folio entries can decrement counted stock through the same movement path.
 
 ---
 
@@ -642,12 +649,12 @@ The story IDs below feed proposed implementation sprints (003+). Final sprint sc
 
 1. **Sprint 003 — Auth + Org foundation:** US-1.1, US-1.2, US-1.3, US-2.1.
 2. **Sprint 004 — Fleet:** US-3.1, US-3.2, US-3.3, US-3.4, US-3.5.
-3. **Sprint 005 — Catalog + currency:** US-2.3, US-5.1, US-5.2, US-5.3, US-5.4, US-5.5.
+3. **Sprint 005 — Catalog + currency:** US-2.3, US-5.1, US-5.2, US-5.3, US-5.4, US-5.5, US-5.7.
 4. **Sprint 006 — Trips + Cruise Director invitation:** US-4.1, US-4.2, US-4.3, US-4.4, US-4.9, US-4.10, US-6.1, US-6.2.
 5. **Sprint 007 — Pre-departure manifest + oversight:** US-4.5, US-4.6, US-4.7, US-4.8, US-7.1, US-7.2.
 6. **Sprint 008 — Polish:** US-1.4, US-1.5, US-2.2, US-6.3, US-7.3.
 
-Deferred (no sprint assignment): US-5.6, US-5.7, US-7.4.
+Deferred (no sprint assignment): US-5.6, US-7.4.
 
 ---
 

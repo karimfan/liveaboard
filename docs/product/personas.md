@@ -21,8 +21,8 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 **Owns:**
 - Organization profile and defaults (name, currency).
 - Fleet: boats (name, image, source linkage). Cabin layouts are not modeled; capacity is a single number per boat.
-- Catalog: items, categories, pricing (org-level flat).
-- Per-boat inventory: how many of each catalog item each boat carries (quantity tracking).
+- Catalog: items, categories, USD pricing, checkout currency defaults, and sellable services/fees.
+- Per-boat inventory: how many counted catalog items each boat carries (quantity tracking).
 - Trip planning: create trip shell, set dates, assign Cruise Director, cancel planned trips.
 - Pre-departure manifest preparation: initial guest list before the trip starts.
 - User management (MVP subset): invite Cruise Directors, deactivate users, assign trip leadership.
@@ -53,6 +53,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 **Does not own:**
 - Boat configuration (Org Admin).
 - Catalog/pricing (Org Admin).
+- Per-boat inventory configuration (Org Admin).
 - Cross-trip or org-wide reporting (Org Admin).
 - User invitation or role management (Org Admin).
 
@@ -87,7 +88,8 @@ For features that could belong to multiple personas, the table below records the
 | Start trip (`planned` → `active`) | Cruise Director | Org Admin cannot. |
 | Complete trip (`active` → `completed`) | Cruise Director | Org Admin cannot. |
 | Cancel trip (`planned` only) | Org Admin | Cruise Director cannot. |
-| Catalog item add/edit/deactivate | Org Admin | |
+| Catalog item add/edit/deactivate | Org Admin | Prices are canonical in USD; checkout may quote another currency. |
+| Per-boat stock setup and adjustment | Org Admin | Cruise Director folio entries can later decrement stock automatically. |
 | Record consumption / ledger entries | Cruise Director | |
 | Invite Cruise Director | Org Admin | MVP user-mgmt subset. |
 | Deactivate user | Org Admin | MVP user-mgmt subset. |

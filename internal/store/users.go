@@ -116,6 +116,10 @@ func (p *Pool) CreateOrgAndAdmin(
 		return nil, nil, err
 	}
 
+	if err := seedDefaultCatalogTx(ctx, tx, org.ID); err != nil {
+		return nil, nil, err
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, nil, err
 	}

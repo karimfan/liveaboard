@@ -49,9 +49,9 @@ type Config struct {
 	SMTPPassword string `env:"LIVEABOARD_SMTP_PASSWORD" secret:"true"`
 	SMTPFrom     string `env:"LIVEABOARD_SMTP_FROM"`
 
-	// Scraper knobs (Sprint 006). The scrape-boat CLI reads these to
-	// politely fetch liveaboard.com boat detail pages. None are
-	// secrets; all have defaults that fit the dev workflow.
+	// Scraper knobs. The liveaboard import runner reads these to politely
+	// fetch liveaboard.com boat detail pages. None are secrets; all have
+	// defaults that fit the dev workflow.
 	ScraperUserAgent     string        `env:"LIVEABOARD_SCRAPER_USER_AGENT" default:"Liveaboard-Operator-Tool/0.1 (+local-dev)"`
 	ScraperMinIntervalMS int           `env:"LIVEABOARD_SCRAPER_MIN_INTERVAL_MS" default:"1000"`
 	ScraperMaxRetries    int           `env:"LIVEABOARD_SCRAPER_MAX_RETRIES" default:"3"`

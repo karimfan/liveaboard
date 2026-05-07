@@ -1,11 +1,11 @@
 ---
 name: kplan
-description: Multi-agent collaborative sprint planning workflow  (orient, intent, draft, interview, compete with Codex, merge).
+description: Multi-agent collaborative sprint planning workflow (orient, intent, draft with Codex, interview, critique with Claude Code, merge).
 ---
 
 # K Plan: Collaborative Multi-Agent Planning
 
-You are orchestrating a sophisticated planning workflow that produces high-quality sprint documents through competitive ideation and synthesis with Codex.
+You are orchestrating a sophisticated planning workflow that produces high-quality sprint documents through competitive ideation, independent critique, and synthesis across Codex and Claude Code.
 
 ## Seed Prompt
 
@@ -14,12 +14,13 @@ $ARGUMENTS
 ## Workflow Overview
 
 This is a **6-phase workflow**:
+
 1. **Orient** - Review project and recent sprints
 2. **Intent** - Write concentrated intent document
-3. **Draft** - Create your draft plan
+3. **Draft** - Codex creates the primary draft plan
 4. **Interview** - Clarify with the human planner
-5. **Compete** - Codex creates competing draft + critiques yours
-6. **Merge** - Synthesize best ideas into final sprint document
+5. **Critique** - Claude Code critiques Codex's draft
+6. **Merge** - Synthesize the draft, critique, and interview refinements into final sprint document
 
 Use TodoWrite to track progress through each phase.
 
@@ -29,23 +30,35 @@ Use TodoWrite to track progress through each phase.
 
 **Goal**: Understand current project state and recent direction.
 
-### Steps:
-1. Read `CLAUDE.md` for project conventions
+### Steps
+
+1. Read `CLAUDE.md` for project conventions.
+
 2. Check sprint ledger status:
+
    ```bash
    go run docs/sprints/tracker.go stats
    ```
+
 3. Read the **3 highest-numbered sprint documents** to understand recent work:
-   - Use `ls docs/sprints/SPRINT-*.md | tail -3` to find them
-   - Read each one to understand recent trajectory
+
+   ```bash
+   ls docs/sprints/SPRINT-*.md | sort | tail -3
+   ```
+
+   Read each returned sprint document to understand recent trajectory.
+
 4. Identify relevant code areas for the seed prompt:
    - Search for related modules, types, or patterns
    - Note existing implementations that this plan might extend
+   - Note architectural constraints, naming conventions, test conventions, and existing abstractions
 
-### Deliverable:
-Write a brief **Orientation Summary** (3-5 bullet points) covering:
+### Deliverable
+
+Write a brief **Orientation Summary** covering:
+
 - Current project state relevant to the seed
-- Recent sprint themes/direction
+- Recent sprint themes and direction
 - Key modules/files likely involved
 - Constraints or patterns to respect
 
@@ -55,127 +68,95 @@ Write a brief **Orientation Summary** (3-5 bullet points) covering:
 
 **Goal**: Create a concentrated intent document that both agents will use.
 
-### Steps:
+### Steps
 
 1. Determine the next sprint number:
+
    ```bash
-   ls docs/sprints/SPRINT-*.md | tail -1
+   ls docs/sprints/SPRINT-*.md | sort | tail -1
    ```
-   Extract NNN and increment.
+
+   Extract `NNN` and increment.
 
 2. Create the drafts directory if needed:
+
    ```bash
    mkdir -p docs/sprints/drafts
    ```
 
 3. Write the intent document to `docs/sprints/drafts/SPRINT-NNN-INTENT.md`:
 
-```markdown
-# Sprint NNN Intent: [Title]
+   ```markdown
+   # Sprint NNN Intent: [Title]
 
-## Seed
+   ## Seed
 
-[The original $ARGUMENTS prompt]
+   [The original $ARGUMENTS prompt]
 
-## Context
+   ## Context
 
-[Your orientation summary from Phase 1]
+   [Your orientation summary from Phase 1]
 
-## Recent Sprint Context
+   ## Recent Sprint Context
 
-[Brief summaries of the 3 recent sprints you reviewed]
+   [Brief summaries of the 3 recent sprints you reviewed]
 
-## Relevant Codebase Areas
+   ## Relevant Codebase Areas
 
-[Key modules, files, patterns identified during orientation]
+   [Key modules, files, patterns identified during orientation]
 
-## Constraints
+   ## Constraints
 
-- Must follow project conventions in CLAUDE.md
-- Must integrate with existing architecture
-- [Any other constraints identified]
+   - Must follow project conventions in CLAUDE.md
+   - Must integrate with existing architecture
+   - Must follow sprint conventions in docs/sprints/README.md
+   - [Any other constraints identified]
 
-## Success Criteria
+   ## Success Criteria
 
-What would make this sprint successful?
+   What would make this sprint successful?
 
-## Open Questions
+   ## Open Questions
 
-Questions that the drafts should attempt to answer.
-```
+   Questions that the draft and critique should attempt to answer.
+   ```
 
 ---
 
-## Phase 3: Draft (Claude)
+## Phase 3: Draft (Codex)
 
-**Goal**: Create your comprehensive draft plan.
+**Goal**: Have Codex create the primary comprehensive sprint plan.
 
-### Write to: `docs/sprints/drafts/SPRINT-NNN-CLAUDE-DRAFT.md`
+### Execute Codex
 
-Follow the standard sprint template from `docs/sprints/README.md`:
+Run this command, substituting the actual sprint number for `NNN`:
 
-```markdown
-# Sprint NNN: [Title]
+```bash
+codex exec \
+  --model gpt-5.5 \
+  --sandbox workspace-write \
+  "Please read docs/sprints/drafts/SPRINT-NNN-INTENT.md. This is the concentrated intent for our next sprint.
 
-## Overview
+Fully familiarize yourself with our sprint planning style by reading docs/sprints/README.md. Then read CLAUDE.md for project conventions and project goals. Review the recent sprint context referenced in the intent document, and inspect the relevant codebase areas before drafting.
 
-2-3 paragraphs on the "why" and high-level approach.
+Write a comprehensive sprint plan to docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md.
 
-## Use Cases
+Follow the standard sprint template from docs/sprints/README.md. Include overview, use cases, architecture, implementation plan, files summary, definition of done, risks and mitigations, security considerations, dependencies, and open questions.
 
-1. **Use case name**: Description
-2. ...
-
-## Architecture
-
-Diagrams (ASCII art), component descriptions, data flow.
-
-## Implementation Plan
-
-### Phase 1: [Name] (~X%)
-
-**Files:**
-- `path/to/file.rs` - Description
-
-**Tasks:**
-- [ ] Task 1
-- [ ] Task 2
-
-### Phase 2: ...
-
-## Files Summary
-
-| File | Action | Purpose |
-|------|--------|---------|
-| `path/to/file` | Create/Modify | Description |
-
-## Definition of Done
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Tests pass
-- [ ] No compiler warnings
-
-## Risks & Mitigations
-
-| Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|------------|
-| ... | ... | ... | ... |
-
-## Security Considerations
-
-- Item 1
-- Item 2
-
-## Dependencies
-
-- Sprint NNN (if any)
-- External requirements
-
-## Open Questions
-
-Uncertainties needing resolution.
+Do not write the final sprint document. Only write the Codex draft."
 ```
+
+### Wait for Codex to complete
+
+Codex should produce:
+
+```text
+docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md
+```
+
+### Read the output
+
+Read `docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md`.
 
 ---
 
@@ -183,42 +164,60 @@ Uncertainties needing resolution.
 
 **Goal**: Refine understanding through human dialogue.
 
-### Conduct the interview:
+### Conduct the interview
 
 Use AskUserQuestion to ask **2-4 targeted questions** covering:
 
-1. **Scope validation**: "Does this scope match your intent, or should we expand/narrow?"
-2. **Priority/trade-offs**: "Which aspects are most critical vs. nice-to-have?"
-3. **Technical preferences**: Any strong opinions on approach?
-4. **Sequencing**: Any external dependencies or ordering constraints?
+1. **Scope validation**: Does the Codex draft match the planner's intent, or should the sprint expand/narrow?
+2. **Priority/trade-offs**: Which aspects are critical versus nice-to-have?
+3. **Technical preferences**: Are there strong opinions on architecture, sequencing, naming, or implementation approach?
+4. **Sequencing**: Are there external dependencies, ordering constraints, or risks the draft missed?
 
-Note the answers - incorporate refinements in the merge phase.
+Note the answers and incorporate refinements in the merge phase.
 
 ---
 
-## Phase 5: Compete (Codex)
+## Phase 5: Critique (Claude Code)
 
-**Goal**: Get Codex's independent draft and critique of your draft.
+**Goal**: Have Claude Code independently critique Codex's draft.
 
-### Execute Codex:
+### Execute Claude Code
 
-Run this command (substitute the actual sprint number for NNN):
+Run this command, substituting the actual sprint number for `NNN`:
 
 ```bash
-codex --model gpt-5.4 --full-auto exec "Please read docs/sprints/drafts/SPRINT-NNN-INTENT.md - this is a concentrated intent for our next sprint. Fully familiarize yourself with our sprint planning style (see docs/sprints/README.md) and project structure (see CLAUDE.md) and project goals. Then I want you to draft docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md. Only AFTER your draft is complete, I want you to read Claude's draft at docs/sprints/drafts/SPRINT-NNN-CLAUDE-DRAFT.md and write docs/sprints/drafts/SPRINT-NNN-CLAUDE-DRAFT-CODEX-CRITIQUE.md"
+claude -p \
+  "Please read docs/sprints/drafts/SPRINT-NNN-INTENT.md, docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md, docs/sprints/README.md, and CLAUDE.md.
+
+Your job is to critique Codex's sprint draft, not to rewrite it.
+
+Evaluate the draft for correctness, architectural fit, implementation sequencing, missing files or modules, over-scoping, under-scoping, unclear definition of done, testing gaps, security gaps, dependency risks, and mismatch with project conventions.
+
+Write your critique to docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT-CLAUDE-CRITIQUE.md.
+
+The critique should be specific and actionable. Include:
+- Valid strengths worth preserving
+- Major concerns
+- Missing implementation details
+- Suggested changes
+- Risks the final merge should address
+- Any parts of the Codex draft that should be rejected or simplified
+
+Do not edit the Codex draft. Do not write the final sprint document." \
+  --allowedTools "Read,Write,Glob,Grep"
 ```
 
-### Wait for Codex to complete.
+### Wait for Claude Code to complete
 
-Codex will produce:
-- `docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md` - Its independent draft
-- `docs/sprints/drafts/SPRINT-NNN-CLAUDE-DRAFT-CODEX-CRITIQUE.md` - Its critique of your draft
+Claude Code should produce:
 
-### Read the outputs:
+```text
+docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT-CLAUDE-CRITIQUE.md
+```
 
-Once Codex completes, read both files:
-1. `docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md`
-2. `docs/sprints/drafts/SPRINT-NNN-CLAUDE-DRAFT-CODEX-CRITIQUE.md`
+### Read the output
+
+Read `docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT-CLAUDE-CRITIQUE.md`.
 
 ---
 
@@ -226,73 +225,82 @@ Once Codex completes, read both files:
 
 **Goal**: Synthesize the best ideas into a final sprint document.
 
-### Merge process:
+### Merge process
 
-1. **Analyze Codex's critique** of your draft:
+1. Analyze Claude Code's critique of Codex's draft:
    - Which criticisms are valid?
-   - What did you miss?
-   - What should you defend?
+   - What did Codex miss?
+   - What should be preserved from Codex's draft?
+   - What should be simplified, rejected, or resequenced?
 
-2. **Compare the two drafts**:
-   - Architecture approach differences
-   - Phasing/ordering differences
-   - Risk identification gaps
+2. Compare the draft, critique, and interview answers:
+   - Architecture fit
+   - Phasing and ordering
+   - Risk identification
    - Definition of Done completeness
+   - Testing strategy
+   - Security considerations
+   - Project convention alignment
 
-3. **Document the synthesis**:
+3. Write merge notes to `docs/sprints/drafts/SPRINT-NNN-MERGE-NOTES.md`:
 
-   Write to `docs/sprints/drafts/SPRINT-NNN-MERGE-NOTES.md`:
    ```markdown
    # Sprint NNN Merge Notes
 
-   ## Claude Draft Strengths
+   ## Codex Draft Strengths
+
    - ...
 
-   ## Codex Draft Strengths
+   ## Claude Code Critique Strengths
+
    - ...
 
    ## Valid Critiques Accepted
+
    - ...
 
-   ## Critiques Rejected (with reasoning)
+   ## Critiques Rejected or Modified
+
    - ...
 
    ## Interview Refinements Applied
+
    - ...
 
    ## Final Decisions
+
    - ...
    ```
 
-4. **Write the final sprint document**:
-
-   Create `docs/sprints/SPRINT-NNN.md` incorporating:
-   - Best ideas from both drafts
-   - Responses to valid critiques
+4. Write the final sprint document to `docs/sprints/SPRINT-NNN.md`, incorporating:
+   - Best ideas from Codex's draft
+   - Valid critique from Claude Code
    - Interview refinements
+   - Project conventions from CLAUDE.md
+   - Sprint conventions from docs/sprints/README.md
 
-5. **Update the ledger**:
+5. Update the ledger:
+
    ```bash
    go run docs/sprints/tracker.go sync
    ```
 
-6. **Show the user** the final document and ask for approval.
+6. Show the user the final document and ask for approval.
 
 ---
 
 ## File Structure
 
-After megaplan completes, you'll have:
+After kplan completes, you'll have:
 
-```
+```text
 docs/sprints/
 ├── drafts/
-│   ├── SPRINT-NNN-INTENT.md                    # Concentrated intent (Phase 2)
-│   ├── SPRINT-NNN-CLAUDE-DRAFT.md              # Your draft (Phase 3)
-│   ├── SPRINT-NNN-CODEX-DRAFT.md               # Codex draft (Phase 5)
-│   ├── SPRINT-NNN-CLAUDE-DRAFT-CODEX-CRITIQUE.md  # Codex critique (Phase 5)
-│   └── SPRINT-NNN-MERGE-NOTES.md               # Synthesis notes (Phase 6)
-└── SPRINT-NNN.md                               # Final merged sprint
+│   ├── SPRINT-NNN-INTENT.md                         # Concentrated intent
+│   ├── SPRINT-NNN-CODEX-DRAFT.md                    # Codex primary draft
+│   ├── SPRINT-NNN-CODEX-DRAFT-CLAUDE-CRITIQUE.md    # Claude Code critique
+│   └── SPRINT-NNN-MERGE-NOTES.md                    # Synthesis notes
+└── SPRINT-NNN.md                                    # Final merged sprint
 ```
 
 ---
@@ -300,15 +308,14 @@ docs/sprints/
 ## Output Checklist
 
 At the end of this workflow, you should have:
+
 - [ ] Orientation summary complete
-- [ ] Intent document written (`drafts/SPRINT-NNN-INTENT.md`)
-- [ ] Claude draft written (`drafts/SPRINT-NNN-CLAUDE-DRAFT.md`)
-- [ ] Interview conducted (2-4 questions answered)
-- [ ] Codex executed and completed
-- [ ] Codex draft received (`drafts/SPRINT-NNN-CODEX-DRAFT.md`)
-- [ ] Codex critique received (`drafts/SPRINT-NNN-CLAUDE-DRAFT-CODEX-CRITIQUE.md`)
-- [ ] Merge notes written (`drafts/SPRINT-NNN-MERGE-NOTES.md`)
-- [ ] Final sprint document written (`SPRINT-NNN.md`)
+- [ ] Intent document written (`docs/sprints/drafts/SPRINT-NNN-INTENT.md`)
+- [ ] Codex draft written (`docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md`)
+- [ ] Interview conducted with 2-4 questions answered
+- [ ] Claude Code critique written (`docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT-CLAUDE-CRITIQUE.md`)
+- [ ] Merge notes written (`docs/sprints/drafts/SPRINT-NNN-MERGE-NOTES.md`)
+- [ ] Final sprint document written (`docs/sprints/SPRINT-NNN.md`)
 - [ ] Ledger updated via `go run docs/sprints/tracker.go sync`
 - [ ] User approved the final document
 
@@ -318,4 +325,6 @@ At the end of this workflow, you should have:
 
 - Sprint conventions: `docs/sprints/README.md`
 - Project overview: `CLAUDE.md`
-- Recent sprints: `docs/sprints/SPRINT-*.md` (highest numbers)
+- Recent sprints: `docs/sprints/SPRINT-*.md` using the highest numbers
+- Codex draft: `docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md`
+- Claude Code critique: `docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT-CLAUDE-CRITIQUE.md`

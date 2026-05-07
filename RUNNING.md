@@ -26,8 +26,6 @@ make lint        # gofmt + go vet + secret-scan of config/*.env
 make fmt         # gofmt -w
 make clean       # remove bin/, web/dist contents, web/.env.local
 make dev-reset   # truncate local auth + tenancy tables (users/orgs/sessions/etc.)
-make scrape-boat # seed a boat + its 18-month trip schedule from liveaboard.com
-                 # see internal/scrape/README.md for usage
 ```
 
 Open http://localhost:5173 after `make dev`.

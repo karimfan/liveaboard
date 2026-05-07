@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useParams } from "react-router-dom";
 
 import { adminApi, type Boat, type Trip } from "../api";
@@ -9,20 +9,34 @@ export function BoatDetail() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadBoatData = useCallback(async () => {
     if (!id) return;
+    const [b, t] = await Promise.all([adminApi.getBoat(id), adminApi.listBoatTrips(id)]);
+    return { boat: b, trips: t.trips ?? [] };
+  }, [id]);
+
+  const refreshBoat = useCallback(async () => {
+    const data = await loadBoatData();
+    if (!data) return;
+    setError(null);
+    const { boat: b, trips: nextTrips } = data;
+    setBoat(b);
+    setTrips(nextTrips);
+  }, [loadBoatData]);
+
+  useEffect(() => {
     let cancelled = false;
-    Promise.all([adminApi.getBoat(id), adminApi.listBoatTrips(id)])
-      .then(([b, t]) => {
-        if (cancelled) return;
-        setBoat(b);
-        setTrips(t.trips ?? []);
+    loadBoatData()
+      .then((data) => {
+        if (cancelled || !data) return;
+        setBoat(data.boat);
+        setTrips(data.trips);
       })
       .catch((e) => !cancelled && setError(e?.message ?? "Failed to load boat."));
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [loadBoatData]);
 
   if (error) {
     return (
@@ -104,7 +118,7 @@ export function BoatDetail() {
         </NavLink>
       </nav>
 
-      <Outlet context={{ boat, trips: trips ?? [] }} />
+      <Outlet context={{ boat, trips: trips ?? [], refreshBoat }} />
     </>
   );
 }

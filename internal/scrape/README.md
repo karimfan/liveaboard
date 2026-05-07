@@ -1,30 +1,18 @@
 # internal/scrape
 
-Dev-time scrapers that seed the `boats` and `trips` tables from public
+Scrapers that refresh the `boats` and `trips` tables from public
 listings on third-party sites. Currently one provider:
 [`liveaboard`](liveaboard/) (liveaboard.com).
 
-## CLI usage
+## App Usage
 
-```bash
-# Single boat, full 18-month window:
-make scrape-boat \
-    URL='https://www.liveaboard.com/diving/indonesia/gaia-love' \
-    ORG='Acme Diving'
+The production path is the authenticated admin import flow:
 
-# Or directly:
-./scripts/scrape-boat.sh \
-    --url 'https://www.liveaboard.com/diving/indonesia/gaia-love' \
-    --org 'Acme Diving' \
-    --months 18
+- Import a new boat from `/admin/import/liveaboard`.
+- Refresh an existing boat from its Fleet > Boat > Trips page.
 
-# Dry run — print parsed trips, don't write the DB:
-./scripts/scrape-boat.sh --url '...' --org '...' --dry-run
-```
-
-The CLI refuses `LIVEABOARD_MODE=production` and refuses missing
-organizations (the org must already exist via the SPA signup flow —
-that's how the matching Clerk org gets created).
+Both paths create an `import_jobs` row and run asynchronously through
+`internal/imports.Runner`.
 
 ## Politeness
 
@@ -35,8 +23,8 @@ that's how the matching Clerk org gets created).
 - Best-effort `robots.txt` check at startup (logs only; not a hard
   gate). `robots.txt` does not currently disallow boat detail pages
   for the default user-agent.
-- Hard 18-month cap on month iteration even if the source links further
-  forward.
+- The app runner currently refreshes up to 36 months; empty months past
+  the source's last published trip are harmless.
 
 ## Verified boats
 
@@ -75,13 +63,13 @@ expectations).
 ## Selector drift
 
 If a month returns >0 trip-shaped DOM nodes but 0 successfully parsed
-trips, `RunBoat` returns `ErrSelectorDrift` and the CLI exits non-zero
-with the offending URL. That's the signal that the source HTML
-changed in a way the selectors no longer match — refresh fixtures and
-update `parse.go`.
+trips, `RunBoat` returns `ErrSelectorDrift` and the import job fails
+with the offending URL. That's the signal that the source HTML changed
+in a way the selectors no longer match — refresh fixtures and update
+`parse.go`.
 
 ## TOS / consent
 
-This scraper is for **internal seeding** during dev. Before any wider
-use (admin endpoint, scheduled cron, multi-boat batch), add a per-source
+This scraper is for operator-controlled imports and refreshes. Before
+adding scheduled cron or multi-boat batch refreshes, add a per-source
 consent gate (operator allow-list) and revisit `robots.txt` policy.

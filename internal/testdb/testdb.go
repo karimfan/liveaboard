@@ -118,6 +118,13 @@ func Pool(t *testing.T) *store.Pool {
 	t.Cleanup(p.Close)
 	if _, err := p.Exec(ctx, `
 		TRUNCATE TABLE
+			checkout_quote_lines,
+			checkout_quotes,
+			exchange_rates,
+			stock_movements,
+			boat_inventory_items,
+			catalog_items,
+			catalog_categories,
 			import_previews,
 			import_jobs,
 			trip_cruise_directors,
