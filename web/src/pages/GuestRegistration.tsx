@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 
-import { api } from "../lib/api";
+import { api, type GuestDocument } from "../lib/api";
+import { appConfig } from "../lib/config";
 import {
   RegistrationSections,
   emptyRegistrationPayload,
@@ -17,14 +18,21 @@ export function GuestRegistration() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [documents, setDocuments] = useState<GuestDocument[]>([]);
+  const [docCategory, setDocCategory] = useState("travel_document");
+  const [docDisplayName, setDocDisplayName] = useState("");
+  const [docNotes, setDocNotes] = useState("");
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    api.guestRegistration(tripGuestId)
-      .then((res) => {
+    Promise.all([api.guestRegistration(tripGuestId), api.guestDocuments(tripGuestId)])
+      .then(([res, docs]) => {
         if (cancelled) return;
         setPayload(mergeRegistrationPayload(res.payload as RegistrationPayload));
         setStatus(res.status);
+        setDocuments(docs.documents);
       })
       .catch((err) => !cancelled && setError((err as { message?: string })?.message ?? "Could not load registration."));
     return () => {
@@ -70,6 +78,37 @@ export function GuestRegistration() {
     }
   }
 
+  async function uploadDocument() {
+    if (!docFile) {
+      setError("Choose a file to upload.");
+      return;
+    }
+    if (docFile.size > 10 * 1024 * 1024) {
+      setError("Documents must be 10 MiB or smaller.");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const doc = await api.uploadGuestDocument(tripGuestId, {
+        file: docFile,
+        category: docCategory,
+        display_name: docDisplayName,
+        notes: docNotes,
+      });
+      setDocuments((prev) => [doc, ...prev]);
+      setDocDisplayName("");
+      setDocNotes("");
+      setDocFile(null);
+      setMessage("Document uploaded.");
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? "Could not upload document.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   const alreadySubmitted = status === "submitted";
 
   return (
@@ -91,6 +130,45 @@ export function GuestRegistration() {
 
         <RegistrationSections mode="edit" payload={payload} onChange={update} />
 
+        <section className="registration-section">
+          <div className="registration-section__header">
+            <div>
+              <h2>Documents</h2>
+              <p className="muted">Upload passport or travel document, dive certification, insurance, waiver, medical notes, or other trip documents. PDF, JPEG, PNG, HEIC, and HEIF are accepted up to 10 MiB.</p>
+            </div>
+          </div>
+          <div className="document-upload">
+            <label>
+              Category
+              <select value={docCategory} onChange={(e) => setDocCategory(e.target.value)}>
+                {documentCategories.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Display name
+              <input value={docDisplayName} onChange={(e) => setDocDisplayName(e.target.value)} placeholder="Optional" />
+            </label>
+            <label>
+              Notes
+              <input value={docNotes} onChange={(e) => setDocNotes(e.target.value)} placeholder="Optional" />
+            </label>
+            <label>
+              File
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,application/pdf,image/jpeg,image/png,image/heic,image/heif"
+                onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+            <button type="button" className="secondary" disabled={uploading} onClick={uploadDocument}>
+              {uploading ? "Uploading..." : "Upload document"}
+            </button>
+          </div>
+          <DocumentList documents={documents} />
+        </section>
+
         <div className="guest-registration__actions">
           {!alreadySubmitted && (
             <button type="button" className="secondary" onClick={saveDraft} disabled={saving}>
@@ -108,4 +186,47 @@ export function GuestRegistration() {
       </form>
     </div>
   );
+}
+
+const documentCategories = [
+  { value: "travel_document", label: "Travel document" },
+  { value: "dive_certification", label: "Dive certification" },
+  { value: "dive_insurance", label: "Dive insurance" },
+  { value: "liability_waiver", label: "Liability waiver" },
+  { value: "medical", label: "Medical" },
+  { value: "other", label: "Other" },
+];
+
+function DocumentList({ documents }: { documents: GuestDocument[] }) {
+  if (documents.length === 0) {
+    return <div className="muted">No documents uploaded yet.</div>;
+  }
+  return (
+    <div className="document-list">
+      {documents.map((doc) => (
+        <div key={doc.id} className="document-row">
+          <div>
+            <strong>{doc.display_name}</strong>
+            <div className="muted">
+              {categoryLabel(doc.category)} · {doc.original_filename} · {formatBytes(doc.size_bytes)}
+            </div>
+          </div>
+          <div className="document-row__actions">
+            <a className="secondary" href={`${appConfig.apiBase}${doc.view_url}`} target="_blank" rel="noreferrer">View</a>
+            <a className="secondary" href={`${appConfig.apiBase}${doc.download_url}`}>Download</a>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function categoryLabel(value: string): string {
+  return documentCategories.find((c) => c.value === value)?.label ?? value;
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KiB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MiB`;
 }

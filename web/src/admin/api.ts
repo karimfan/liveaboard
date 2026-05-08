@@ -393,6 +393,32 @@ export type GuestFolio = {
   guest_email: string;
 };
 
+export type GuestDocument = {
+  id: string;
+  category: string;
+  display_name: string;
+  original_filename: string;
+  content_type: string;
+  size_bytes: number;
+  notes: string | null;
+  archived_at: string | null;
+  created_at: string;
+  view_url: string;
+  download_url: string;
+};
+
+export type AuditEvent = {
+  id: string;
+  actor_type: "staff" | "guest" | "system";
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  trip_id: string | null;
+  trip_guest_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
 // --- endpoints ---
 
 export const adminApi = {
@@ -420,6 +446,35 @@ export const adminApi = {
 
   guestRegistration: (tripId: string, guestId: string) =>
     call<GuestRegistrationDetail>("GET", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/registration`),
+
+  guestDocuments: (tripId: string, guestId: string) =>
+    call<{ documents: GuestDocument[] }>("GET", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/documents`),
+  uploadGuestDocument: async (
+    tripId: string,
+    guestId: string,
+    input: { file: File; category: string; display_name?: string; notes?: string },
+  ): Promise<GuestDocument> => {
+    const fd = new FormData();
+    fd.append("file", input.file);
+    fd.append("category", input.category);
+    if (input.display_name) fd.append("display_name", input.display_name);
+    if (input.notes) fd.append("notes", input.notes);
+    const resp = await fetch(`${appConfig.apiBase}/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/documents`, {
+      method: "POST",
+      credentials: "include",
+      body: fd,
+    });
+    return parseResponse<GuestDocument>(resp, "POST guest document");
+  },
+  archiveGuestDocument: (tripId: string, guestId: string, documentId: string) =>
+    call<GuestDocument>("DELETE", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/documents/${encodeURIComponent(documentId)}`),
+  guestActivity: (tripId: string, guestId: string) =>
+    call<{ events: AuditEvent[] }>("GET", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/activity`),
+  auditEvents: (params: Record<string, string>) => {
+    const qs = new URLSearchParams(params);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return call<{ events: AuditEvent[] }>("GET", `/admin/audit-events${suffix}`);
+  },
 
   boatCabins: (boatId: string) =>
     call<CabinLayout>("GET", `/admin/boats/${encodeURIComponent(boatId)}/cabins`),

@@ -85,10 +85,16 @@ func (s *Server) handleAddTripGuest(w http.ResponseWriter, r *http.Request) {
 	rows, _ := s.Auth.Store.TripManifest(r.Context(), u.OrganizationID, tripID, time.Now().UTC())
 	for _, row := range rows {
 		if row.Guest.ID == g.ID {
+			meta := map[string]any{"guest_email_domain": emailDomain(g.Email)}
+			if row.CabinAssignment != nil {
+				meta["berth_label"] = row.CabinAssignment.DisplayLabelSnapshot
+			}
+			s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.invited", "trip_guest", &g.ID, &tripID, &g.ID, meta)
 			writeJSON(w, http.StatusCreated, manifestRowView(row))
 			return
 		}
 	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.invited", "trip_guest", &g.ID, &tripID, &g.ID, map[string]any{"guest_email_domain": emailDomain(g.Email)})
 	writeJSON(w, http.StatusCreated, tripGuestView(g, "invited"))
 }
 
@@ -104,6 +110,9 @@ func (s *Server) handleResendTripGuestInvite(w http.ResponseWriter, r *http.Requ
 	if _, err := s.Auth.ResendTripGuestInvite(r.Context(), u.OrganizationID, tripID, guestID); err != nil {
 		writeGuestServiceError(w, err)
 		return
+	}
+	if g, err := s.Auth.Store.TripGuestByID(r.Context(), u.OrganizationID, tripID, guestID); err == nil {
+		s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.invite_resent", "trip_guest", &guestID, &tripID, &guestID, map[string]any{"guest_email_domain": emailDomain(g.Email)})
 	}
 	rows, _ := s.Auth.Store.TripManifest(r.Context(), u.OrganizationID, tripID, time.Now().UTC())
 	for _, row := range rows {
@@ -128,6 +137,7 @@ func (s *Server) handleRevokeTripGuestInvite(w http.ResponseWriter, r *http.Requ
 		writeGuestServiceError(w, err)
 		return
 	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.invite_revoked", "trip_guest", &guestID, &tripID, &guestID, map[string]any{})
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 

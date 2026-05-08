@@ -107,6 +107,20 @@ export type GuestRegistration = {
   submitted_at?: string | null;
 };
 
+export type GuestDocument = {
+  id: string;
+  category: string;
+  display_name: string;
+  original_filename: string;
+  content_type: string;
+  size_bytes: number;
+  notes: string | null;
+  archived_at: string | null;
+  created_at: string;
+  view_url: string;
+  download_url: string;
+};
+
 export const api = {
   // --- Public auth ---
   signup: (input: {
@@ -225,4 +239,27 @@ export const api = {
 
   submitGuestRegistration: (tripGuestId: string, payload: Record<string, unknown>) =>
     call<GuestRegistration>("POST", `/guest/trip-registrations/${encodeURIComponent(tripGuestId)}/submit`, payload),
+
+  guestDocuments: (tripGuestId: string) =>
+    call<{ documents: GuestDocument[] }>("GET", `/guest/trip-registrations/${encodeURIComponent(tripGuestId)}/documents`),
+
+  uploadGuestDocument: async (
+    tripGuestId: string,
+    input: { file: File; category: string; display_name?: string; notes?: string },
+  ): Promise<GuestDocument> => {
+    const fd = new FormData();
+    fd.append("file", input.file);
+    fd.append("category", input.category);
+    if (input.display_name) fd.append("display_name", input.display_name);
+    if (input.notes) fd.append("notes", input.notes);
+    const resp = await fetch(url(`/guest/trip-registrations/${encodeURIComponent(tripGuestId)}/documents`), {
+      method: "POST",
+      credentials: "include",
+      body: fd,
+    });
+    const text = await resp.text();
+    const parsed = text ? JSON.parse(text) : null;
+    if (!resp.ok) throw parsed as ApiError;
+    return parsed as GuestDocument;
+  },
 };

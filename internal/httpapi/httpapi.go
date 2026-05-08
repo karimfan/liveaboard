@@ -33,6 +33,7 @@ type Server struct {
 	GuestSession *auth.GuestSessionMiddleware
 	AdminAPI     *AdminHandlers
 	ImportRunner *imports.Runner
+	DocumentsDir string
 	CookieSecure bool
 }
 
@@ -69,6 +70,9 @@ func (s *Server) Router() http.Handler {
 			r.Get("/guest/trip-registrations/{trip_guest_id}", s.handleGetGuestRegistration)
 			r.Patch("/guest/trip-registrations/{trip_guest_id}", s.handleSaveGuestRegistration)
 			r.Post("/guest/trip-registrations/{trip_guest_id}/submit", s.handleSubmitGuestRegistration)
+			r.Get("/guest/trip-registrations/{trip_guest_id}/documents", s.handleListGuestDocuments)
+			r.Post("/guest/trip-registrations/{trip_guest_id}/documents", s.handleUploadGuestDocument)
+			r.Get("/guest/trip-registrations/{trip_guest_id}/documents/{document_id}", s.handleOpenGuestDocument)
 		})
 
 		// Authenticated routes.
@@ -113,6 +117,11 @@ func (s *Server) Router() http.Handler {
 				r.Put("/trips/{id}/guests/{guest_id}/cabin-assignment", s.handleAssignGuestCabin)
 				r.Delete("/trips/{id}/guests/{guest_id}/cabin-assignment", s.handleUnassignGuestCabin)
 				r.Get("/trips/{id}/guests/{guest_id}/registration", s.handleStaffGuestRegistration)
+				r.Get("/trips/{id}/guests/{guest_id}/documents", s.handleListStaffGuestDocuments)
+				r.Post("/trips/{id}/guests/{guest_id}/documents", s.handleUploadStaffGuestDocument)
+				r.Get("/trips/{id}/guests/{guest_id}/documents/{document_id}", s.handleOpenStaffGuestDocument)
+				r.Delete("/trips/{id}/guests/{guest_id}/documents/{document_id}", s.handleArchiveStaffGuestDocument)
+				r.Get("/trips/{id}/guests/{guest_id}/activity", s.handleGuestActivity)
 				r.Get("/trips/{id}/guests/{guest_id}/folio", s.handleGetGuestFolio)
 				r.Post("/trips/{id}/guests/{guest_id}/folio", s.handleOpenGuestFolio)
 				r.Post("/trips/{id}/guests/{guest_id}/folio/lines", s.handleAddGuestFolioLine)
@@ -133,6 +142,7 @@ func (s *Server) Router() http.Handler {
 				// mount it inside the authenticated group, not the
 				// admin-only group.
 				r.Get("/cruise-director-overview", s.handleCruiseDirectorOverview)
+				r.Get("/audit-events", s.handleAuditEvents)
 
 				r.Group(func(r chi.Router) {
 					r.Use(auth.RequireOrgAdmin)

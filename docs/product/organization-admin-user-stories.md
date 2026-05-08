@@ -397,14 +397,30 @@ Acceptance Criteria:
 - [ ] Invite send failures are visible and retryable.
 - [ ] Guest can create or reuse a guest account with email and password.
 - [ ] Guest can save a draft registration and return later to complete it.
+- [ ] Guest can upload required trip documents during registration.
 - [ ] Guest submits generic trip-registration sections, not Gaia- or Indonesia-specific fields.
 - [ ] Guest count and expected-count warning update on the trip view; imported `num_guests` is not a hard capacity cap.
 
 Notes: Assigned Cruise Directors can add guests only to trips assigned to them. Cabin assignment is required at guest enrollment and can be changed later by an Admin or assigned Cruise Director.
 
-### US-4.6: Prepare initial manifest — remove a guest (pre-departure)
+### US-4.5a: Manage guest registration documents
 
-> As an Organization Admin, I want to remove a guest from a planned trip so the slot is freed up.
+> As an Organization Admin, I want guests and staff to attach trip documents to a guest profile so that readiness checks have the files needed before departure.
+
+Priority: Must
+Area: Trips
+Depends on: US-4.5
+
+Acceptance Criteria:
+- [ ] Guest can upload PDF, JPEG, PNG, HEIC, and HEIF documents up to 10 MiB during trip registration.
+- [ ] Admin or assigned Cruise Director can view, upload, download, and archive documents from the guest profile.
+- [ ] Documents are scoped to the guest's organization, trip, and trip guest row.
+- [ ] Archived documents remain visible to staff as historical records.
+- [ ] Files open inline when browser-supported and always provide an explicit download action.
+
+### US-4.6: Prepare initial manifest — revoke a guest (pre-departure)
+
+> As an Organization Admin, I want to revoke a guest from a planned trip so the slot is freed up while preserving the historical guest record.
 
 Priority: Must
 Area: Trips
@@ -412,7 +428,7 @@ Depends on: US-4.5
 
 Acceptance Criteria:
 - [ ] Available only while trip status is `planned`.
-- [ ] Guest is removed from the manifest.
+- [ ] Guest is marked revoked and hidden from active manifest counts, but the database record is retained.
 - [ ] Confirmation is required.
 
 ### US-4.7: Reassign guest cabin/berth
@@ -661,6 +677,22 @@ Acceptance Criteria:
 - [ ] For each trip: total charges, total settled, total outstanding.
 - [ ] Aggregations are reproducible from the underlying ledger.
 
+### US-7.3a: Operational audit log
+
+> As an Organization Admin, I want an audit log of operational changes so that I can understand who changed guest, registration, cabin, folio, inventory, payment, and document records.
+
+Priority: Must
+Area: Oversight
+Depends on: US-4.5, US-7.5
+
+Acceptance Criteria:
+- [ ] Audit events include organization, actor type, action, entity, trip and guest context when available, metadata, and timestamp.
+- [ ] Audit rows are append-only.
+- [ ] Admin can search org-wide audit events.
+- [ ] Assigned Cruise Directors can view audit events only for assigned trips.
+- [ ] Guest profiles show a guest-specific activity timeline.
+- [ ] Audit metadata excludes raw tokens, passwords, storage keys, local paths, and full registration payloads.
+
 ### US-7.5: Close guest folio at checkout
 
 > As a Cruise Director, I want to review and close a guest's end-of-trip
@@ -730,6 +762,7 @@ Deferred (no sprint assignment): US-5.6, US-7.4.
 | US-4.3 | US-4.2 |
 | US-4.4 | US-4.1 |
 | US-4.5 | US-4.1 |
+| US-4.5a | US-4.5 |
 | US-4.6 | US-4.5 |
 | US-4.7 | US-4.5 |
 | US-4.8 | US-4.3 |
@@ -748,4 +781,5 @@ Deferred (no sprint assignment): US-5.6, US-7.4.
 | US-7.1 | US-2.1 |
 | US-7.2 | US-4.2 |
 | US-7.3 | US-4.3 |
+| US-7.3a | US-4.5, US-7.5 |
 | US-7.4 | US-7.3 |

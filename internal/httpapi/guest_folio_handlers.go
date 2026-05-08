@@ -67,6 +67,7 @@ func (s *Server) handleOpenGuestFolio(w http.ResponseWriter, r *http.Request) {
 		writeFolioError(w, err)
 		return
 	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.folio_opened", "guest_folio", &view.Folio.ID, &tripID, &guestID, map[string]any{"status": view.Folio.Status})
 	writeJSON(w, http.StatusCreated, guestFolioView(view))
 }
 
@@ -104,6 +105,7 @@ func (s *Server) handleAddGuestFolioLine(w http.ResponseWriter, r *http.Request)
 		writeFolioError(w, err)
 		return
 	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.folio_line_added", "guest_folio", &view.Folio.ID, &tripID, &guestID, map[string]any{"line_type": req.LineType, "quantity": req.Quantity})
 	writeJSON(w, http.StatusOK, guestFolioView(view))
 }
 
@@ -135,6 +137,11 @@ func (s *Server) handleUpdateGuestFolioLine(w http.ResponseWriter, r *http.Reque
 		writeFolioError(w, err)
 		return
 	}
+	meta := map[string]any{"line_type": "unknown"}
+	if req.Quantity != nil {
+		meta["quantity"] = *req.Quantity
+	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.folio_line_updated", "guest_folio_line", &lineID, &tripID, &guestID, meta)
 	writeJSON(w, http.StatusOK, guestFolioView(view))
 }
 
@@ -157,6 +164,7 @@ func (s *Server) handleDeleteGuestFolioLine(w http.ResponseWriter, r *http.Reque
 		writeFolioError(w, err)
 		return
 	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.folio_line_deleted", "guest_folio_line", &lineID, &tripID, &guestID, map[string]any{"line_type": "unknown"})
 	writeJSON(w, http.StatusOK, guestFolioView(view))
 }
 
@@ -194,6 +202,13 @@ func (s *Server) handleCloseGuestFolio(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		view = refreshed
 	}
+	meta := map[string]any{
+		"payment_method":        req.PaymentMethod,
+		"settlement_currency":   req.SettlementCurrency,
+		"total_usd_cents":       view.Folio.TotalUSDCents,
+		"card_fee_basis_points": view.Folio.CardFeeBasisPoints,
+	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.folio_closed", "guest_folio", &view.Folio.ID, &tripID, &guestID, meta)
 	writeJSON(w, http.StatusOK, guestFolioView(view))
 }
 

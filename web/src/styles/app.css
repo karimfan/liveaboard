@@ -1385,3 +1385,78 @@ select.select-inline:focus {
   background: var(--c-warning-bg);
   color: var(--c-warning);
 }
+
+/* Sprint 017 — guest documents and audit */
+.document-upload {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-sm);
+  align-items: end;
+  margin-bottom: var(--sp-md);
+}
+.document-list,
+.activity-list {
+  display: grid;
+  gap: var(--sp-sm);
+}
+.document-row,
+.activity-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  align-items: center;
+  border-top: 1px solid var(--c-100);
+  padding-top: var(--sp-sm);
+}
+.document-row.is-archived {
+  opacity: 0.62;
+}
+.document-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-xs);
+}
+.audit-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-sm);
+  align-items: end;
+}
+.audit-table {
+  display: grid;
+  gap: 0;
+  font-size: var(--fs-sm);
+}
+.audit-table__head,
+.audit-table__row {
+  display: grid;
+  grid-template-columns: 170px 90px 1.2fr 1fr 1.5fr;
+  gap: var(--sp-sm);
+  align-items: center;
+  padding: var(--sp-sm) 0;
+  border-bottom: 1px solid var(--c-100);
+}
+.audit-table__head {
+  color: var(--c-500);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 880px) {
+  .document-row,
+  .activity-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .document-row__actions {
+    justify-content: flex-start;
+  }
+  .audit-table__head {
+    display: none;
+  }
+  .audit-table__row {
+    grid-template-columns: 1fr;
+  }
+}

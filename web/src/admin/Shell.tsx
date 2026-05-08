@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
       { to: "/admin/organization/payments", label: "Payments", adminOnly: true },
     ],
   },
+  { to: "/admin/audit", label: "Audit" },
   {
     to: "/admin/fleet",
     label: "Fleet",

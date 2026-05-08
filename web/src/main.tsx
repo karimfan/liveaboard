@@ -30,6 +30,7 @@ import { Inventory } from "./admin/pages/Inventory";
 import { Users } from "./admin/pages/Users";
 import { Organization } from "./admin/pages/Organization";
 import { OrganizationPayments } from "./admin/pages/OrganizationPayments";
+import { AuditEvents } from "./admin/pages/AuditEvents";
 import { GuestFolio } from "./admin/pages/GuestFolio";
 import { Reports } from "./admin/pages/Reports";
 import { Account } from "./admin/pages/Account";
@@ -72,6 +73,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="trips/:id/guests/:guestId" element={<TripGuestDetail />} />
           <Route path="trips/:id/guests/:guestId/folio" element={<GuestFolio />} />
           <Route path="account" element={<Account />} />
+          <Route path="audit" element={<AuditEvents />} />
 
           {/* Org-admin-only routes — RequireAdmin redirects directors to /admin */}
           <Route

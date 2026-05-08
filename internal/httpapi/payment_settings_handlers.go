@@ -44,6 +44,12 @@ func (s *Server) handleUpdatePaymentSettings(w http.ResponseWriter, r *http.Requ
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 		return
 	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "organization.payment_settings_updated", "organization_payment_settings", &u.OrganizationID, nil, nil, map[string]any{
+		"default_currency":        settings.DefaultCurrency,
+		"supported_currencies":    settings.SupportedCurrencies,
+		"card_fee_basis_points":   settings.CardFeeBasisPoints,
+		"enabled_payment_methods": settings.EnabledPaymentMethods,
+	})
 	writeJSON(w, http.StatusOK, paymentSettingsView(settings))
 }
 

@@ -195,6 +195,7 @@ func (s *Server) handleAssignGuestCabin(w http.ResponseWriter, r *http.Request) 
 		writeCabinError(w, err)
 		return
 	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.cabin_assigned", "trip_cabin_assignment", &assignment.ID, &tripID, &guestID, map[string]any{"display_label": assignment.DisplayLabelSnapshot})
 	writeJSON(w, http.StatusOK, cabinAssignmentView(assignment))
 }
 
@@ -207,10 +208,21 @@ func (s *Server) handleUnassignGuestCabin(w http.ResponseWriter, r *http.Request
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
 		return
 	}
+	var previous string
+	if board, err := s.Auth.Store.TripCabinBoard(r.Context(), u.OrganizationID, tripID, time.Now().UTC()); err == nil {
+		for _, cabin := range board.Cabins {
+			for _, berth := range cabin.Berths {
+				if berth.Guest != nil && berth.Guest.ID == guestID {
+					previous = berth.DisplayLabel
+				}
+			}
+		}
+	}
 	if err := s.Auth.Store.UnassignTripGuestBerth(r.Context(), u.OrganizationID, tripID, guestID, u.ID); err != nil {
 		writeCabinError(w, err)
 		return
 	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.cabin_unassigned", "trip_cabin_assignment", nil, &tripID, &guestID, map[string]any{"previous_display_label": previous})
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 

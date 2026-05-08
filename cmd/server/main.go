@@ -116,6 +116,7 @@ func main() {
 		GuestSession: guestSession,
 		AdminAPI:     &httpapi.AdminHandlers{Store: pool},
 		ImportRunner: importRunner,
+		DocumentsDir: cfg.DocumentsDir,
 		CookieSecure: cfg.CookieSecure,
 	}
 

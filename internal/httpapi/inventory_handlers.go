@@ -107,6 +107,11 @@ func (s *Server) handleAdjustBoatInventory(w http.ResponseWriter, r *http.Reques
 		writeInventoryError(w, err)
 		return
 	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "inventory.adjusted", "stock_movement", &mv.ID, nil, nil, map[string]any{
+		"movement_type":   mv.MovementType,
+		"delta_quantity":  mv.DeltaQuantity,
+		"catalog_item_id": mv.CatalogItemID,
+	})
 	writeJSON(w, http.StatusOK, map[string]any{
 		"movement": stockMovementView(mv),
 		"item":     inventoryItemView(row),

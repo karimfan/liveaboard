@@ -29,13 +29,16 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Trip planning: create trip shell, set dates, assign Cruise Director, cancel planned trips.
 - Pre-departure manifest preparation: initial guest list before the trip starts.
 - Guest registration readiness: invite guests, resend/revoke registration links, and review submitted registration details.
+- Guest document readiness: review, upload on behalf of guests, download,
+  and archive trip registration documents.
 - Cabin and berth assignments for any organization trip.
 - User management (MVP subset): invite Cruise Directors, deactivate users, assign trip leadership.
+- Audit visibility across the organization for operational accountability.
 - Reporting and oversight: setup completeness, operational trip status, revenue summaries, cross-trip analytics, financial reports.
 
 **Does not own:**
 - Starting or completing active trips (Cruise Director).
-- Mid-trip manifest changes — adding/removing/reassigning guests once a trip is `active` (Cruise Director).
+- Mid-trip manifest changes — adding/revoking/reassigning guests once a trip is `active` (Cruise Director).
 - Recording guest consumption / ledger entries (Cruise Director).
 - Billing and org-deletion controls — deferred (post-MVP).
 - Advanced role administration (multi-admin, custom roles) — deferred.
@@ -50,8 +53,10 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 
 **Owns:**
 - Their own profile: full name, contact phone (free-text). Editable from `/admin/account`.
-- Mid-trip manifest operations: add/remove/reassign guests once the trip is `active`.
+- Mid-trip manifest operations: add/revoke/reassign guests once the trip is `active`.
 - Guest registration readiness for assigned trips: invite guests, resend/revoke registration links, and review submitted registration details.
+- Guest document readiness for assigned trips: review, upload, download,
+  and archive documents from the guest profile.
 - Cabin layout and berth assignments for boats/trips assigned to them.
 - Assigned-trip guest checkout: review/correct purchased items, add an
   optional crew-tip line when requested, close the one end-of-trip
@@ -82,6 +87,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Creating or reusing a guest account with email and password.
 - Saving draft trip registration and returning later to complete it.
 - Submitting their own identity, travel, emergency contact, diving, dietary/allergy, rental gear, and notes information.
+- Uploading their own trip registration documents before the trip starts.
 - Future: read access to their own tab, dive schedule, and trip details.
 
 **Does not own:**
@@ -104,8 +110,10 @@ For features that could belong to multiple personas, the table below records the
 | Cabin layout management | Org Admin or assigned Cruise Director | Admin org-wide; Cruise Director only for boats tied to assigned trips. |
 | Guest berth assignment | Org Admin or assigned Cruise Director | Required when binding a guest to a trip; can be changed later. |
 | Guest registration draft/submit | Guest | Guests can save and return later before final submission. |
+| Guest document upload | Guest | Guests upload their own documents during trip registration. |
+| Guest document review/manage | Org Admin or assigned Cruise Director | Staff manage documents from the per-guest profile. |
 | Submitted registration review | Org Admin or assigned Cruise Director | Registration detail is fetched explicitly for the relevant trip. |
-| Mid-trip manifest changes | Cruise Director | Add/remove/reassign once trip is `active`. |
+| Mid-trip manifest changes | Cruise Director | Add/revoke/reassign once trip is `active`; guest records are retained. |
 | Start trip (`planned` → `active`) | Cruise Director | Org Admin cannot. |
 | Complete trip (`active` → `completed`) | Cruise Director | Org Admin cannot. |
 | Cancel trip (`planned` only) | Org Admin | Cruise Director cannot. |
@@ -114,6 +122,7 @@ For features that could belong to multiple personas, the table below records the
 | Payment settings | Org Admin | Supported currencies, payment methods, card fee, folio email footer. |
 | Record consumption / ledger entries | Cruise Director | |
 | Guest checkout / close folio | Cruise Director | Assigned trips only; one end-of-trip folio per guest/trip. |
+| Operational audit log | Org Admin or assigned Cruise Director | Admin sees org-wide events; Cruise Directors see assigned-trip events. |
 | Invite Cruise Director | Org Admin | MVP user-mgmt subset. |
 | Deactivate user | Org Admin | MVP user-mgmt subset. |
 | Setup completeness dashboard | Org Admin | What is misconfigured. |

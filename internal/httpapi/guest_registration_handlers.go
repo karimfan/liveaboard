@@ -112,6 +112,7 @@ func (s *Server) handleSaveGuestRegistration(w http.ResponseWriter, r *http.Requ
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
+	s.recordGuestAudit(r.Context(), tripGuest.OrganizationID, guest.ID, "guest.registration_saved", "guest_registration", &reg.ID, &tripGuest.TripID, &tripGuest.ID, map[string]any{"status": reg.Status})
 	writeJSON(w, http.StatusOK, registrationView(reg))
 }
 
@@ -139,6 +140,7 @@ func (s *Server) handleSubmitGuestRegistration(w http.ResponseWriter, r *http.Re
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
+	s.recordGuestAudit(r.Context(), tripGuest.OrganizationID, guest.ID, "guest.registration_submitted", "guest_registration", &reg.ID, &tripGuest.TripID, &tripGuest.ID, map[string]any{"status": reg.Status})
 	writeJSON(w, http.StatusOK, registrationView(reg))
 }
 

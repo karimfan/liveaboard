@@ -40,6 +40,10 @@ type Config struct {
 	// reset, change-email confirm). No trailing slash.
 	AppBaseURL string `env:"LIVEABOARD_APP_BASE_URL" default:"http://localhost:5173"`
 
+	// DocumentsDir stores private guest document uploads. It must not be
+	// mounted by the SPA/static file handler.
+	DocumentsDir string `env:"LIVEABOARD_DOCUMENTS_DIR" default:"var/uploads/guest-documents"`
+
 	// Brevo / SMTP relay settings. Empty in test mode (handlers use a
 	// MockSender). Required at server startup in dev/prod (validated by
 	// cmd/server/main).
