@@ -50,7 +50,7 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 | MVP user management | Minimal subset only: invite Cruise Director, deactivate user, assign trip leadership. Advanced role admin deferred. | Cruise Director workflows depend on the ability to invite and assign — full deferral would block the next implementation sprints. |
 | Catalog pricing | Catalog prices are canonical in USD. `organizations.currency` is a display/default checkout preference, and guest checkout quotes convert from USD using stored rate snapshots. Per-boat / per-trip overrides captured as `Could` follow-ups. | Operators compare most onboard extras in USD, while guests may settle in a different currency. |
 | Manifest ownership | Org Admin prepares the initial manifest pre-departure. Mid-trip manifest mutations belong to Cruise Director. | Matches `personas.md` and the README. |
-| Cabin model | Cabin layouts are not modeled. A boat has a single capacity number; the manifest is a flat list of guests (no spatial assignment). | Simplifies the model. Per-cabin assignment can be revisited as a `Could` follow-up if operators ask for it. |
+| Cabin model | Boats have reusable cabin layouts made of cabins and berth slots. Binding a guest to a trip requires selecting a berth; Admins and assigned Cruise Directors can change assignments later. | Liveaboard manifests need spatial rooming control, and alphanumeric berth labels such as `1A`/`1B` are common. |
 | Trip lifecycle | Org Admin creates, configures, cancels (planned only), and monitors trips. Cruise Director performs `planned → active` and `active → completed` transitions. | Reflects who is on the boat at the moment of the transition. |
 | Soft deletion | Boats, trips, catalog items, and users are deactivated/archived rather than hard-deleted. | Preserves historical trip and ledger integrity. |
 | Reporting (Org Admin) | Setup completeness and operational status are `Must`. Revenue summaries are `Should`. Cross-trip analytics deferred (post-MVP). | Matches persona boundaries. |
@@ -249,11 +249,9 @@ Acceptance Criteria:
 
 ## Group 3: Fleet Management — Boats
 
-> Cabin layouts are not modeled in the MVP. A boat is name +
-> description + image + capacity (single number) + source linkage.
-> Spatial cabin assignment on the manifest is deferred and will be
-> revisited in a future sprint dedicated to designing the cabin model
-> properly (it needs more thought than a quick add-in).
+> Boats include reusable cabin layouts. Layout setup can be generated
+> by range, pasted as structured rows, or uploaded as CSV using the
+> `cabin_label,berth_label,deck,sort_order,notes` schema.
 
 ### US-3.1: Add a boat to the fleet
 
@@ -265,6 +263,7 @@ Depends on: US-2.1
 
 Acceptance Criteria:
 - [ ] Admin provides boat name (required), description (optional), and capacity (required, total guest seats).
+- [ ] Admin configures a cabin layout during or immediately after boat setup.
 - [ ] Boat name is unique within the organization.
 - [ ] Boat appears in the fleet list.
 
@@ -277,7 +276,7 @@ Area: Fleet
 Depends on: US-3.1
 
 Acceptance Criteria:
-- [ ] List shows boat name, capacity, and number of active/upcoming trips.
+- [ ] List shows boat name, cabin-layout status, capacity/berth count, and number of active/upcoming trips.
 - [ ] Sorted alphabetically by name; only active (non-archived) boats by default.
 
 ### US-3.3: View boat details
@@ -290,6 +289,7 @@ Depends on: US-3.2
 
 Acceptance Criteria:
 - [ ] Detail view shows name, description, capacity, and image.
+- [ ] Detail view includes a Cabins tab with active cabins and berths.
 - [ ] Lists upcoming and past trips for this boat.
 
 ### US-3.4: Update boat details
@@ -302,6 +302,7 @@ Depends on: US-3.3
 
 Acceptance Criteria:
 - [ ] Admin can edit name, description, and capacity.
+- [ ] Admin and assigned Cruise Director can edit cabin/berth labels, decks, order, and notes within their permitted scope.
 - [ ] Capacity cannot be reduced below the highest guest count of any active or upcoming trip on this boat.
 - [ ] Updated boat name remains unique within the organization.
 
@@ -364,7 +365,7 @@ Depends on: US-4.2
 Acceptance Criteria:
 - [ ] Shows name, boat, dates, status, assigned Cruise Director.
 - [ ] Shows guest count and remaining capacity.
-- [ ] Shows the manifest (flat list of guests).
+- [ ] Shows the manifest with each guest's cabin/berth assignment.
 - [ ] Shows revenue summary (charges, settled, outstanding) — read-only.
 
 ### US-4.4: Update trip details
@@ -391,6 +392,7 @@ Depends on: US-4.1
 
 Acceptance Criteria:
 - [ ] Admin provides guest name and email.
+- [ ] Admin selects an active cabin berth; guest creation is rejected without one.
 - [ ] Guest receives an expiring registration invitation email.
 - [ ] Invite send failures are visible and retryable.
 - [ ] Guest can create or reuse a guest account with email and password.
@@ -398,7 +400,7 @@ Acceptance Criteria:
 - [ ] Guest submits generic trip-registration sections, not Gaia- or Indonesia-specific fields.
 - [ ] Guest count and expected-count warning update on the trip view; imported `num_guests` is not a hard capacity cap.
 
-Notes: Assigned Cruise Directors can add guests only to trips assigned to them. Spatial cabin assignment is deferred; the manifest is a flat list of guests.
+Notes: Assigned Cruise Directors can add guests only to trips assigned to them. Cabin assignment is required at guest enrollment and can be changed later by an Admin or assigned Cruise Director.
 
 ### US-4.6: Prepare initial manifest — remove a guest (pre-departure)
 
@@ -413,15 +415,19 @@ Acceptance Criteria:
 - [ ] Guest is removed from the manifest.
 - [ ] Confirmation is required.
 
-### US-4.7: Reassign guest (pre-departure) — DEFERRED
+### US-4.7: Reassign guest cabin/berth
 
 > As an Organization Admin, I want to move a guest to a different cabin so that I can adjust the planned manifest.
 
-Priority: Could (Deferred)
+Priority: Must
 Area: Trips
 Depends on: US-4.5
 
-Acceptance Criteria: Deferred. The cabin model will be designed properly in a dedicated future sprint; cabin reassignment becomes meaningful once the model exists. Captured here so it is not lost.
+Acceptance Criteria:
+- [ ] Admin or assigned Cruise Director can move a guest from one berth to another available berth on the same trip boat.
+- [ ] The system prevents two active guests from occupying the same berth on the same trip.
+- [ ] Revoking a guest frees their active berth assignment.
+- [ ] The trip cabin board shows occupied, available, and needs-cabin states.
 
 ### US-4.8: Monitor trip lifecycle (read-only for active/completed)
 

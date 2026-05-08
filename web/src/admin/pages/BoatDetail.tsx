@@ -105,6 +105,12 @@ export function BoatDetail() {
           Trips
         </NavLink>
         <NavLink
+          to={`/admin/fleet/${boat.id}/cabins`}
+          className={({ isActive }) => "tabs__link" + (isActive ? " is-active" : "")}
+        >
+          Cabins
+        </NavLink>
+        <NavLink
           to={`/admin/fleet/${boat.id}/inventory`}
           className={({ isActive }) => "tabs__link" + (isActive ? " is-active" : "")}
         >

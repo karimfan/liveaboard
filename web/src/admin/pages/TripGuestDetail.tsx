@@ -80,6 +80,9 @@ export function TripGuestDetail() {
           </div>
         </div>
         <div className="admin-page-actions">
+          <Link className="secondary" to={`/admin/trips/${id}/cabins`}>
+            Change cabin
+          </Link>
           <Link className="secondary" to={`/admin/trips/${id}/guests/${guestId}/folio`}>
             Open checkout
           </Link>
@@ -96,6 +99,12 @@ export function TripGuestDetail() {
             <label>Status</label>
             <div className="field__readout">
               <span className="chip chip--active">{guest.status.replaceAll("_", " ")}</span>
+            </div>
+          </div>
+          <div className="field field--read">
+            <label>Cabin</label>
+            <div className="field__readout">
+              {guest.cabin_assignment?.display_label ?? <span className="chip chip--warning">Needs cabin</span>}
             </div>
           </div>
           <div className="field field--read">

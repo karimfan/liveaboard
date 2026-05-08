@@ -17,6 +17,7 @@ import (
 type InviteTripGuestInput struct {
 	TripID   uuid.UUID
 	ActorID  uuid.UUID
+	BerthID  uuid.UUID
 	FullName string
 	Email    string
 }
@@ -54,7 +55,7 @@ func (s *Service) InviteTripGuest(ctx context.Context, orgID uuid.UUID, in Invit
 	if err != nil {
 		return nil, err
 	}
-	g, inv, err := s.Store.CreateTripGuestInvite(ctx, orgID, in.TripID, in.ActorID, full, em, tokenHash, s.now().Add(s.InvitationDuration))
+	g, inv, err := s.Store.CreateTripGuestInvite(ctx, orgID, in.TripID, in.ActorID, full, em, tokenHash, s.now().Add(s.InvitationDuration), in.BerthID)
 	if err != nil {
 		return nil, err
 	}

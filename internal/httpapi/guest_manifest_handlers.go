@@ -15,6 +15,7 @@ import (
 type addTripGuestReq struct {
 	FullName string `json:"full_name"`
 	Email    string `json:"email"`
+	BerthID  string `json:"berth_id"`
 }
 
 func (s *Server) handleTripManifest(w http.ResponseWriter, r *http.Request) {
@@ -65,9 +66,15 @@ func (s *Server) handleAddTripGuest(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 		return
 	}
+	berthID, err := uuid.Parse(req.BerthID)
+	if err != nil || berthID == uuid.Nil {
+		writeError(w, http.StatusBadRequest, "invalid_input", "berth_id must be a uuid")
+		return
+	}
 	g, err := s.Auth.InviteTripGuest(r.Context(), u.OrganizationID, auth.InviteTripGuestInput{
 		TripID:   tripID,
 		ActorID:  u.ID,
+		BerthID:  berthID,
 		FullName: req.FullName,
 		Email:    req.Email,
 	})
@@ -216,6 +223,10 @@ func writeGuestServiceError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusBadRequest, "token_invalid", "This link is invalid or has expired.")
 	case errors.Is(err, store.ErrTripGuestExists):
 		writeError(w, http.StatusConflict, "guest_exists", "A guest with this email is already on this trip.")
+	case errors.Is(err, store.ErrCabinAssignmentConflict):
+		writeError(w, http.StatusConflict, "berth_unavailable", "That berth is already assigned on this trip.")
+	case errors.Is(err, store.ErrInvalidInput):
+		writeError(w, http.StatusBadRequest, "invalid_input", trimSentinel(err.Error()))
 	case errors.Is(err, store.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", "not found")
 	default:
@@ -236,7 +247,29 @@ func manifestRowView(row *store.TripGuestManifestRow) map[string]any {
 	v["invite_expires_at"] = row.InviteExpiresAt
 	v["registration_status"] = row.RegistrationStatus
 	v["registration_submitted_at"] = row.RegistrationSubmitted
+	v["cabin_assignment"] = nil
+	if row.CabinAssignment != nil {
+		v["cabin_assignment"] = cabinAssignmentView(row.CabinAssignment)
+	}
 	return v
+}
+
+func cabinAssignmentView(a *store.TripCabinAssignment) map[string]any {
+	if a == nil {
+		return nil
+	}
+	return map[string]any{
+		"id":            a.ID,
+		"trip_id":       a.TripID,
+		"trip_guest_id": a.TripGuestID,
+		"boat_id":       a.BoatID,
+		"berth_id":      a.BerthID,
+		"cabin_label":   a.CabinLabelSnapshot,
+		"berth_label":   a.BerthLabelSnapshot,
+		"display_label": a.DisplayLabelSnapshot,
+		"assigned_at":   a.AssignedAt,
+		"notes":         a.Notes,
+	}
 }
 
 func tripGuestView(g *store.TripGuest, status string) map[string]any {

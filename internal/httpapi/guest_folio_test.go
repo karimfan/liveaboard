@@ -36,6 +36,7 @@ func TestGuestFolioCheckoutClosesWithCardFeeStockAndEmail(t *testing.T) {
 	resp, body = doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
 		"full_name": "Folio Guest",
 		"email":     "folio@example.test",
+		"berth_id":  nextBerthForTrip(t, h, tripID).String(),
 	}, adminCookie)
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("add guest: %d %v", resp.StatusCode, body)
@@ -115,6 +116,7 @@ func TestGuestFolioDirectorScopingAndStockRollback(t *testing.T) {
 	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
 		"full_name": "Scoped Guest",
 		"email":     "scoped@example.test",
+		"berth_id":  nextBerthForTrip(t, h, tripID).String(),
 	}, adminCookie)
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("add guest: %d %v", resp.StatusCode, body)

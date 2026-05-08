@@ -48,6 +48,7 @@ type TripGuestManifestRow struct {
 	InviteExpiresAt       *time.Time
 	RegistrationStatus    *string
 	RegistrationSubmitted *time.Time
+	CabinAssignment       *TripCabinAssignment
 }
 
 type TripManifestSummary struct {
@@ -86,7 +87,7 @@ func scanGuestInvitation(row interface{ Scan(dest ...any) error }, inv *GuestTri
 	return row.Scan(&inv.ID, &inv.OrganizationID, &inv.TripID, &inv.TripGuestID, &inv.Email, &inv.ExpiresAt, &inv.AcceptedAt, &inv.RevokedAt, &inv.CreatedAt, &inv.UpdatedAt)
 }
 
-func (p *Pool) CreateTripGuestInvite(ctx context.Context, orgID, tripID, invitedBy uuid.UUID, fullName, email string, tokenHash []byte, expiresAt time.Time) (*TripGuest, *GuestTripInvitation, error) {
+func (p *Pool) CreateTripGuestInvite(ctx context.Context, orgID, tripID, invitedBy uuid.UUID, fullName, email string, tokenHash []byte, expiresAt time.Time, berthID uuid.UUID) (*TripGuest, *GuestTripInvitation, error) {
 	tx, err := p.Begin(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -132,6 +133,12 @@ func (p *Pool) CreateTripGuestInvite(ctx context.Context, orgID, tripID, invited
 		orgID, tripID, g.ID, email, tokenHash, expiresAt,
 	), inv)
 	if err != nil {
+		return nil, nil, err
+	}
+	if berthID == uuid.Nil {
+		return nil, nil, fmt.Errorf("%w: berth_id", ErrInvalidInput)
+	}
+	if _, err := assignTripGuestBerthTx(ctx, tx, orgID, tripID, g.ID, berthID, invitedBy, nil); err != nil {
 		return nil, nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -206,6 +213,13 @@ func (p *Pool) RevokeTripGuestInvite(ctx context.Context, orgID, tripID, guestID
 		SET revoked_at = $2, updated_at = now()
 		WHERE trip_guest_id = $1 AND accepted_at IS NULL AND revoked_at IS NULL
 	`, guestID, at); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE trip_cabin_assignments
+		SET unassigned_at = $4, unassigned_by_user_id = NULL, updated_at = now()
+		WHERE organization_id = $1 AND trip_id = $2 AND trip_guest_id = $3 AND unassigned_at IS NULL
+	`, orgID, tripID, guestID, at); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
@@ -303,7 +317,9 @@ func (p *Pool) TripManifest(ctx context.Context, orgID, tripID uuid.UUID, now ti
 			g.revoked_at, g.created_at, g.updated_at,
 			i.expires_at,
 			r.status,
-			r.submitted_at
+			r.submitted_at,
+			a.id, a.boat_id, a.berth_id, a.cabin_label_snapshot, a.berth_label_snapshot,
+			a.display_label_snapshot, a.assigned_by_user_id, a.assigned_at, a.unassigned_by_user_id, a.unassigned_at, a.notes
 		FROM trip_guests g
 		LEFT JOIN LATERAL (
 			SELECT expires_at, accepted_at, revoked_at
@@ -313,6 +329,7 @@ func (p *Pool) TripManifest(ctx context.Context, orgID, tripID uuid.UUID, now ti
 			LIMIT 1
 		) i ON true
 		LEFT JOIN guest_trip_registrations r ON r.trip_guest_id = g.id
+		LEFT JOIN trip_cabin_assignments a ON a.trip_guest_id = g.id AND a.unassigned_at IS NULL
 		WHERE g.organization_id = $1 AND g.trip_id = $2
 		ORDER BY lower(g.full_name), g.created_at
 	`, orgID, tripID)
@@ -325,15 +342,41 @@ func (p *Pool) TripManifest(ctx context.Context, orgID, tripID uuid.UUID, now ti
 	for rows.Next() {
 		g := &TripGuest{}
 		row := &TripGuestManifestRow{Guest: g}
+		var assignmentID, assignmentBoatID, berthID *uuid.UUID
+		var cabinLabel, berthLabel, displayLabel *string
+		var assignedBy, unassignedBy *uuid.UUID
+		var assignedAt, unassignedAt *time.Time
+		var notes *string
 		if err := rows.Scan(
 			&g.ID, &g.OrganizationID, &g.TripID, &g.GuestUserID, &g.InvitedByUserID, &g.FullName, &g.Email,
 			&g.InviteSendStatus, &g.InviteLastSentAt, &g.InviteLastError, &g.AccountCreatedAt, &g.RegistrationSubmittedAt,
 			&g.RevokedAt, &g.CreatedAt, &g.UpdatedAt,
 			&row.InviteExpiresAt, &row.RegistrationStatus, &row.RegistrationSubmitted,
+			&assignmentID, &assignmentBoatID, &berthID, &cabinLabel, &berthLabel, &displayLabel, &assignedBy, &assignedAt, &unassignedBy, &unassignedAt, &notes,
 		); err != nil {
 			return nil, err
 		}
+		if assignmentID != nil && assignmentBoatID != nil && berthID != nil && cabinLabel != nil && berthLabel != nil && displayLabel != nil && assignedAt != nil {
+			row.CabinAssignment = &TripCabinAssignment{
+				ID:                   *assignmentID,
+				TripID:               tripID,
+				TripGuestID:          g.ID,
+				BoatID:               *assignmentBoatID,
+				BerthID:              *berthID,
+				CabinLabelSnapshot:   *cabinLabel,
+				BerthLabelSnapshot:   *berthLabel,
+				DisplayLabelSnapshot: *displayLabel,
+				AssignedByUserID:     assignedBy,
+				AssignedAt:           *assignedAt,
+				UnassignedByUserID:   unassignedBy,
+				UnassignedAt:         unassignedAt,
+				Notes:                notes,
+			}
+		}
 		row.Status = computedManifestStatus(g, row.InviteExpiresAt, row.RegistrationStatus, now)
+		if g.RevokedAt == nil && row.CabinAssignment == nil {
+			row.Status = "needs_cabin"
+		}
 		out = append(out, row)
 	}
 	return out, rows.Err()
@@ -412,6 +455,19 @@ func (p *Pool) AssertTripGuestAccess(ctx context.Context, guestUserID, tripGuest
 func (p *Pool) UserAssignedToTrip(ctx context.Context, tripID, userID uuid.UUID) (bool, error) {
 	var ok bool
 	err := p.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM trip_cruise_directors WHERE trip_id = $1 AND user_id = $2)`, tripID, userID).Scan(&ok)
+	return ok, err
+}
+
+func (p *Pool) UserAssignedToBoat(ctx context.Context, orgID, boatID, userID uuid.UUID) (bool, error) {
+	var ok bool
+	err := p.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT 1
+			FROM trips t
+			JOIN trip_cruise_directors d ON d.trip_id = t.id
+			WHERE t.organization_id = $1 AND t.boat_id = $2 AND d.user_id = $3
+		)
+	`, orgID, boatID, userID).Scan(&ok)
 	return ok, err
 }
 

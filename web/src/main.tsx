@@ -21,9 +21,11 @@ import { Overview } from "./admin/pages/Overview";
 import { Fleet } from "./admin/pages/Fleet";
 import { BoatDetail } from "./admin/pages/BoatDetail";
 import { BoatTrips, BoatInventory, BoatNotes } from "./admin/pages/BoatTabs";
+import { BoatCabins } from "./admin/pages/BoatCabins";
 import { Trips } from "./admin/pages/Trips";
 import { TripManifest } from "./admin/pages/TripManifest";
 import { TripGuestDetail } from "./admin/pages/TripGuestDetail";
+import { TripCabins } from "./admin/pages/TripCabins";
 import { Inventory } from "./admin/pages/Inventory";
 import { Users } from "./admin/pages/Users";
 import { Organization } from "./admin/pages/Organization";
@@ -66,6 +68,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route index element={<Overview />} />
           <Route path="trips" element={<Trips />} />
           <Route path="trips/:id/manifest" element={<TripManifest />} />
+          <Route path="trips/:id/cabins" element={<TripCabins />} />
           <Route path="trips/:id/guests/:guestId" element={<TripGuestDetail />} />
           <Route path="trips/:id/guests/:guestId/folio" element={<GuestFolio />} />
           <Route path="account" element={<Account />} />
@@ -88,6 +91,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             element={<RequireAdmin><BoatDetail /></RequireAdmin>}
           >
             <Route index element={<BoatTrips />} />
+            <Route path="cabins" element={<BoatCabins />} />
             <Route path="inventory" element={<BoatInventory />} />
             <Route path="notes" element={<BoatNotes />} />
           </Route>

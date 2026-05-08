@@ -109,6 +109,7 @@ export type TripGuest = {
   revoked_at: string | null;
   registration_status: string | null;
   registration_submitted_at: string | null;
+  cabin_assignment: CabinAssignment | null;
 };
 
 export type TripManifest = {
@@ -127,6 +128,95 @@ export type GuestRegistrationDetail = {
     created_at: string;
     updated_at: string;
   } | null;
+};
+
+export type CabinAssignment = {
+  id: string;
+  trip_id: string;
+  trip_guest_id: string;
+  boat_id: string;
+  berth_id: string;
+  cabin_label: string;
+  berth_label: string;
+  display_label: string;
+  assigned_at: string;
+  notes: string | null;
+};
+
+export type BoatCabinBerth = {
+  id: string;
+  boat_id: string;
+  cabin_id: string;
+  berth_label: string;
+  display_label: string;
+  sort_order: number;
+  notes: string | null;
+  is_active: boolean;
+};
+
+export type BoatCabin = {
+  id: string;
+  boat_id: string;
+  label: string;
+  deck: string | null;
+  sort_order: number;
+  notes: string | null;
+  is_active: boolean;
+  berths: BoatCabinBerth[];
+};
+
+export type CabinLayout = {
+  boat_id: string;
+  active_cabin_count: number;
+  active_berth_count: number;
+  cabins: BoatCabin[];
+};
+
+export type CabinLayoutInput = {
+  source: "ranges" | "paste" | "csv" | "cabins";
+  ranges?: { from: number; to: number; berths: string[]; deck?: string | null }[];
+  paste?: string;
+  csv?: string;
+  cabins?: {
+    label: string;
+    deck?: string | null;
+    sort_order?: number;
+    notes?: string | null;
+    berths: { berth_label: string; sort_order?: number; notes?: string | null }[];
+  }[];
+};
+
+export type CabinLayoutPreview = {
+  cabins: NonNullable<CabinLayoutInput["cabins"]>;
+  warnings: string[];
+};
+
+export type TripCabinGuest = {
+  id: string;
+  full_name: string;
+  email: string;
+  status: string;
+};
+
+export type TripCabinBoard = {
+  trip_id: string;
+  boat_id: string;
+  cabins: {
+    id: string;
+    label: string;
+    deck: string | null;
+    sort_order: number;
+    berths: {
+      id: string;
+      cabin_id: string;
+      berth_label: string;
+      display_label: string;
+      sort_order: number;
+      guest: TripCabinGuest | null;
+      assignment_id: string | null;
+    }[];
+  }[];
+  unassigned_guests: TripCabinGuest[];
 };
 
 // Sprint 013 — assign/unassign endpoints return the updated director
@@ -319,7 +409,7 @@ export const adminApi = {
   tripManifest: (tripId: string) =>
     call<TripManifest>("GET", `/admin/trips/${encodeURIComponent(tripId)}/manifest`),
 
-  addTripGuest: (tripId: string, input: { full_name: string; email: string }) =>
+  addTripGuest: (tripId: string, input: { full_name: string; email: string; berth_id: string }) =>
     call<TripGuest>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests`, input),
 
   resendTripGuestInvite: (tripId: string, guestId: string) =>
@@ -330,6 +420,27 @@ export const adminApi = {
 
   guestRegistration: (tripId: string, guestId: string) =>
     call<GuestRegistrationDetail>("GET", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/registration`),
+
+  boatCabins: (boatId: string) =>
+    call<CabinLayout>("GET", `/admin/boats/${encodeURIComponent(boatId)}/cabins`),
+  previewBoatCabins: (boatId: string, input: CabinLayoutInput) =>
+    call<CabinLayoutPreview>("POST", `/admin/boats/${encodeURIComponent(boatId)}/cabins/preview`, input),
+  replaceBoatCabins: (boatId: string, input: CabinLayoutInput) =>
+    call<CabinLayout>("PUT", `/admin/boats/${encodeURIComponent(boatId)}/cabins`, input),
+  updateBoatCabin: (boatId: string, cabinId: string, input: { label: string; deck: string | null; sort_order: number; notes: string | null }) =>
+    call<BoatCabin>("PATCH", `/admin/boats/${encodeURIComponent(boatId)}/cabins/${encodeURIComponent(cabinId)}`, input),
+  deactivateBoatCabin: (boatId: string, cabinId: string) =>
+    call<{ status: string }>("DELETE", `/admin/boats/${encodeURIComponent(boatId)}/cabins/${encodeURIComponent(cabinId)}`),
+  updateBoatBerth: (boatId: string, cabinId: string, berthId: string, input: { berth_label: string; sort_order: number; notes: string | null }) =>
+    call<BoatCabinBerth>("PATCH", `/admin/boats/${encodeURIComponent(boatId)}/cabins/${encodeURIComponent(cabinId)}/berths/${encodeURIComponent(berthId)}`, input),
+  deactivateBoatBerth: (boatId: string, cabinId: string, berthId: string) =>
+    call<{ status: string }>("DELETE", `/admin/boats/${encodeURIComponent(boatId)}/cabins/${encodeURIComponent(cabinId)}/berths/${encodeURIComponent(berthId)}`),
+  tripCabinBoard: (tripId: string) =>
+    call<TripCabinBoard>("GET", `/admin/trips/${encodeURIComponent(tripId)}/cabins`),
+  assignGuestCabin: (tripId: string, guestId: string, input: { berth_id: string; notes?: string | null }) =>
+    call<CabinAssignment>("PUT", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/cabin-assignment`, input),
+  unassignGuestCabin: (tripId: string, guestId: string) =>
+    call<{ status: string }>("DELETE", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/cabin-assignment`),
 
   // Sprint 013 — 1:N director assignment.
   addCruiseDirector: (tripId: string, userId: string) =>
@@ -495,6 +606,7 @@ export type ImportJob = {
   trips_updated?: number;
   trips_deleted?: number;
   error_message?: string;
+  unconfigured_boats?: { id: string; name: string; active_berth_count: number }[];
 };
 
 export type SpreadsheetRow = {

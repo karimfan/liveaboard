@@ -2,7 +2,9 @@ package httpapi_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
@@ -20,6 +22,7 @@ func TestGuestRegistrationHappyPathAndDraftReturn(t *testing.T) {
 	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
 		"full_name": "Ada Guest",
 		"email":     "ada.guest@example.test",
+		"berth_id":  nextBerthForTrip(t, h, tripID).String(),
 	}, adminCookie)
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("add guest: %d %v", resp.StatusCode, body)
@@ -29,6 +32,7 @@ func TestGuestRegistrationHappyPathAndDraftReturn(t *testing.T) {
 	resp, _ = doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
 		"full_name": "Ada Guest",
 		"email":     "ada.guest@example.test",
+		"berth_id":  nextBerthForTrip(t, h, tripID).String(),
 	}, adminCookie)
 	if resp.StatusCode != http.StatusConflict {
 		t.Fatalf("duplicate add: %d want 409", resp.StatusCode)
@@ -110,6 +114,7 @@ func TestGuestRegistrationPostSubmitEdits(t *testing.T) {
 	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
 		"full_name": "Bea Diver",
 		"email":     "bea.diver@example.test",
+		"berth_id":  nextBerthForTrip(t, h, tripID).String(),
 	}, adminCookie)
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("add guest: %d %v", resp.StatusCode, body)
@@ -187,6 +192,7 @@ func TestStaffRegistrationDetailExposesDraftAndTripGuest(t *testing.T) {
 	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
 		"full_name": "Carl Diver",
 		"email":     "carl.diver@example.test",
+		"berth_id":  nextBerthForTrip(t, h, tripID).String(),
 	}, adminCookie)
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("add guest: %d %v", resp.StatusCode, body)
@@ -251,6 +257,7 @@ func TestGuestManifestDirectorScopingAndExpectedWarning(t *testing.T) {
 		resp, body := doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
 			"full_name": "Trip Guest",
 			"email":     guest,
+			"berth_id":  nextBerthForTrip(t, h, tripID).String(),
 		}, dirCookie)
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatalf("director add guest %s: %d %v", guest, resp.StatusCode, body)
@@ -294,7 +301,51 @@ func seedManifestTrip(t *testing.T, h *harness, orgID uuid.UUID, expectedGuests 
 	`, orgID, boatID, expectedGuests, uuid.NewString(), time.Now().UTC()).Scan(&tripID); err != nil {
 		t.Fatalf("insert trip: %v", err)
 	}
+	seedBoatCabins(t, h, orgID, boatID, 8)
 	return tripID
+}
+
+func seedBoatCabins(t *testing.T, h *harness, orgID, boatID uuid.UUID, count int) {
+	t.Helper()
+	ctx := context.Background()
+	for i := 1; i <= count; i++ {
+		var cabinID uuid.UUID
+		if err := h.pool.QueryRow(ctx, `
+			INSERT INTO boat_cabins (organization_id, boat_id, label, sort_order)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id
+		`, orgID, boatID, strconv.Itoa(i), i*10).Scan(&cabinID); err != nil {
+			t.Fatalf("insert cabin: %v", err)
+		}
+		for j, berth := range []string{"A", "B"} {
+			if _, err := h.pool.Exec(ctx, `
+				INSERT INTO boat_cabin_berths (organization_id, boat_id, cabin_id, berth_label, display_label, sort_order)
+				VALUES ($1, $2, $3, $4, $5, $6)
+			`, orgID, boatID, cabinID, berth, fmt.Sprintf("%d%s", i, berth), i*10+j); err != nil {
+				t.Fatalf("insert berth: %v", err)
+			}
+		}
+	}
+}
+
+func nextBerthForTrip(t *testing.T, h *harness, tripID uuid.UUID) uuid.UUID {
+	t.Helper()
+	var id uuid.UUID
+	if err := h.pool.QueryRow(context.Background(), `
+		SELECT b.id
+		FROM trips t
+		JOIN boat_cabin_berths b ON b.boat_id = t.boat_id
+		WHERE t.id = $1 AND b.is_active
+		  AND NOT EXISTS (
+		    SELECT 1 FROM trip_cabin_assignments a
+		    WHERE a.trip_id = t.id AND a.berth_id = b.id AND a.unassigned_at IS NULL
+		  )
+		ORDER BY b.sort_order, b.display_label
+		LIMIT 1
+	`, tripID).Scan(&id); err != nil {
+		t.Fatalf("nextBerthForTrip: %v", err)
+	}
+	return id
 }
 
 func validGuestRegistrationPayload() map[string]any {

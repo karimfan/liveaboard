@@ -106,9 +106,12 @@ func (s *Server) Router() http.Handler {
 			r.Route("/admin", func(r chi.Router) {
 				r.Get("/trips", s.AdminAPI.HandleListTrips)
 				r.Get("/trips/{id}/manifest", s.handleTripManifest)
+				r.Get("/trips/{id}/cabins", s.handleTripCabinBoard)
 				r.Post("/trips/{id}/guests", s.handleAddTripGuest)
 				r.Post("/trips/{id}/guests/{guest_id}/resend", s.handleResendTripGuestInvite)
 				r.Delete("/trips/{id}/guests/{guest_id}/invite", s.handleRevokeTripGuestInvite)
+				r.Put("/trips/{id}/guests/{guest_id}/cabin-assignment", s.handleAssignGuestCabin)
+				r.Delete("/trips/{id}/guests/{guest_id}/cabin-assignment", s.handleUnassignGuestCabin)
 				r.Get("/trips/{id}/guests/{guest_id}/registration", s.handleStaffGuestRegistration)
 				r.Get("/trips/{id}/guests/{guest_id}/folio", s.handleGetGuestFolio)
 				r.Post("/trips/{id}/guests/{guest_id}/folio", s.handleOpenGuestFolio)
@@ -117,6 +120,13 @@ func (s *Server) Router() http.Handler {
 				r.Delete("/trips/{id}/guests/{guest_id}/folio/lines/{line_id}", s.handleDeleteGuestFolioLine)
 				r.Post("/trips/{id}/guests/{guest_id}/folio/close", s.handleCloseGuestFolio)
 				r.Post("/trips/{id}/guests/{guest_id}/folio/resend-email", s.handleResendGuestFolioEmail)
+				r.Get("/boats/{id}/cabins", s.handleGetBoatCabins)
+				r.Post("/boats/{id}/cabins/preview", s.handlePreviewBoatCabins)
+				r.Put("/boats/{id}/cabins", s.handleReplaceBoatCabins)
+				r.Patch("/boats/{id}/cabins/{cabin_id}", s.handlePatchBoatCabin)
+				r.Delete("/boats/{id}/cabins/{cabin_id}", s.handleDeleteBoatCabin)
+				r.Patch("/boats/{id}/cabins/{cabin_id}/berths/{berth_id}", s.handlePatchBoatBerth)
+				r.Delete("/boats/{id}/cabins/{cabin_id}/berths/{berth_id}", s.handleDeleteBoatBerth)
 
 				// Cruise-director-only landing payload (profile + stats
 				// + trips). The handler enforces the role itself; we

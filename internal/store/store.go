@@ -21,6 +21,7 @@ import (
 var migrationsFS embed.FS
 
 var ErrNotFound = errors.New("store: not found")
+var ErrInvalidInput = errors.New("store: invalid input")
 
 type Pool struct {
 	*pgxpool.Pool

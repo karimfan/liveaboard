@@ -1301,3 +1301,87 @@ select.select-inline:focus {
 .field--full {
   grid-column: 1 / -1;
 }
+
+/* Cabin layouts and trip cabin board */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--c-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: white;
+}
+.segmented button {
+  border: 0;
+  border-right: 1px solid var(--c-200);
+  background: white;
+  color: var(--c-700);
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: var(--fs-sm);
+}
+.segmented button:last-child {
+  border-right: 0;
+}
+.segmented button.is-active {
+  background: var(--c-primary-subtle);
+  color: var(--c-primary);
+}
+.cabin-layout__builder {
+  margin-bottom: var(--sp-lg);
+}
+.berth-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+}
+.berth-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  border: 1px solid var(--c-200);
+  border-radius: var(--radius-full);
+  padding: 2px 8px;
+  background: var(--c-50);
+  font-size: var(--fs-sm);
+}
+.berth-pill button {
+  border: 0;
+  background: transparent;
+  color: var(--c-500);
+  padding: 0;
+}
+.berth-pill.is-inactive,
+.is-muted {
+  opacity: 0.55;
+}
+.cabin-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-lg);
+}
+.cabin-card {
+  margin: 0;
+}
+.cabin-card__berths {
+  display: grid;
+  gap: var(--sp-sm);
+}
+.berth-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(120px, auto);
+  gap: var(--sp-sm);
+  align-items: center;
+  border-top: 1px solid var(--c-100);
+  padding-top: var(--sp-sm);
+}
+.berth-row__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.berth-row select {
+  max-width: 180px;
+}
+.chip--warning {
+  background: var(--c-warning-bg);
+  color: var(--c-warning);
+}

@@ -1,13 +1,15 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { adminApi, type TripManifest as TripManifestData } from "../api";
+import { adminApi, type TripCabinBoard, type TripManifest as TripManifestData } from "../api";
 
 export function TripManifest() {
   const { id = "" } = useParams<{ id: string }>();
   const [data, setData] = useState<TripManifestData | null>(null);
+  const [board, setBoard] = useState<TripCabinBoard | null>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [berthId, setBerthId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -16,7 +18,12 @@ export function TripManifest() {
     if (!id) return;
     setError(null);
     try {
-      setData(await adminApi.tripManifest(id));
+      const [manifest, cabins] = await Promise.all([
+        adminApi.tripManifest(id),
+        adminApi.tripCabinBoard(id),
+      ]);
+      setData(manifest);
+      setBoard(cabins);
     } catch (err) {
       setError((err as { message?: string })?.message ?? "Failed to load manifest.");
     }
@@ -32,9 +39,10 @@ export function TripManifest() {
     setError(null);
     setMessage(null);
     try {
-      await adminApi.addTripGuest(id, { full_name: fullName, email });
+      await adminApi.addTripGuest(id, { full_name: fullName, email, berth_id: berthId });
       setFullName("");
       setEmail("");
+      setBerthId("");
       setMessage("Registration invite sent.");
       await load();
     } catch (err) {
@@ -87,6 +95,7 @@ export function TripManifest() {
             {data.trip.boat_name} - {data.trip.start_date} to {data.trip.end_date} - {data.trip.itinerary}
           </div>
         </div>
+        <Link className="secondary" to={`/admin/trips/${id}/cabins`}>Cabin board</Link>
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -110,6 +119,15 @@ export function TripManifest() {
             <label htmlFor="guest-email">Email</label>
             <input id="guest-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
+          <div className="field">
+            <label htmlFor="guest-berth">Cabin berth</label>
+            <select id="guest-berth" value={berthId} onChange={(e) => setBerthId(e.target.value)} required>
+              <option value="">Select berth...</option>
+              {availableBerths(board).map((b) => (
+                <option key={b.id} value={b.id}>{b.label}</option>
+              ))}
+            </select>
+          </div>
           <button className="primary" type="submit" disabled={submitting}>{submitting ? "Sending..." : "Send invite"}</button>
         </div>
       </form>
@@ -119,6 +137,7 @@ export function TripManifest() {
           <tr>
             <th>Guest</th>
             <th>Email</th>
+            <th>Cabin</th>
             <th>Status</th>
             <th>Invite</th>
             <th></th>
@@ -131,6 +150,7 @@ export function TripManifest() {
                 <Link to={`/admin/trips/${id}/guests/${g.id}`}>{g.full_name}</Link>
               </td>
               <td>{g.email}</td>
+              <td>{g.cabin_assignment?.display_label ?? <span className="chip chip--warning">Needs cabin</span>}</td>
               <td><span className="chip chip--active">{statusLabel(g.status)}</span></td>
               <td>{g.invite_last_error ? <span className="error-inline">{g.invite_last_error}</span> : g.invite_expires_at ?? "—"}</td>
               <td className="actions-cell">
@@ -149,4 +169,13 @@ export function TripManifest() {
 
 function statusLabel(s: string): string {
   return s.replaceAll("_", " ");
+}
+
+function availableBerths(board: TripCabinBoard | null): { id: string; label: string }[] {
+  if (!board) return [];
+  return board.cabins.flatMap((c) =>
+    c.berths
+      .filter((b) => !b.guest)
+      .map((b) => ({ id: b.id, label: `${c.label} - ${b.display_label}` })),
+  );
 }

@@ -22,12 +22,14 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Organization profile and defaults (name, currency).
 - Payment settings: supported checkout currencies, offline payment
   methods, card transaction fee percentage, and folio email footer.
-- Fleet: boats (name, image, source linkage). Cabin layouts are not modeled; capacity is a single number per boat.
+- Fleet: boats (name, image, source linkage) and reusable cabin layouts
+  with cabin/berth slots.
 - Catalog: items, categories, USD pricing, checkout currency defaults, and sellable services/fees.
 - Per-boat inventory: how many counted catalog items each boat carries (quantity tracking).
 - Trip planning: create trip shell, set dates, assign Cruise Director, cancel planned trips.
 - Pre-departure manifest preparation: initial guest list before the trip starts.
 - Guest registration readiness: invite guests, resend/revoke registration links, and review submitted registration details.
+- Cabin and berth assignments for any organization trip.
 - User management (MVP subset): invite Cruise Directors, deactivate users, assign trip leadership.
 - Reporting and oversight: setup completeness, operational trip status, revenue summaries, cross-trip analytics, financial reports.
 
@@ -50,6 +52,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Their own profile: full name, contact phone (free-text). Editable from `/admin/account`.
 - Mid-trip manifest operations: add/remove/reassign guests once the trip is `active`.
 - Guest registration readiness for assigned trips: invite guests, resend/revoke registration links, and review submitted registration details.
+- Cabin layout and berth assignments for boats/trips assigned to them.
 - Assigned-trip guest checkout: review/correct purchased items, add an
   optional crew-tip line when requested, close the one end-of-trip
   folio as paid, and resend the folio email.
@@ -58,7 +61,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Onboard operational coordination for the duration of the trip.
 
 **Does not own:**
-- Boat configuration (Org Admin).
+- Boat creation/source linkage (Org Admin).
 - Catalog/pricing (Org Admin).
 - Per-boat inventory configuration (Org Admin).
 - Payment settings and card fee waivers (Org Admin; Directors cannot
@@ -66,7 +69,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Cross-trip or org-wide reporting (Org Admin).
 - User invitation or role management (Org Admin).
 
-**Boundary with Org Admin:** Cruise Director takes the trip from a configured shell with an initial manifest and runs it. They cannot create trips, add boats, or change catalog items.
+**Boundary with Org Admin:** Cruise Director takes the trip from a configured shell with an initial manifest and runs it. They cannot create trips, add boats, or change catalog items, but they can adjust cabin layouts and berth assignments for boats tied to their assigned trips.
 
 ---
 
@@ -98,6 +101,8 @@ For features that could belong to multiple personas, the table below records the
 | Assign Cruise Director to trip | Org Admin | Required before trip can be started. |
 | Pre-departure manifest (planned trips) | Org Admin | Initial guest list. |
 | Guest registration invite | Org Admin or assigned Cruise Director | Trip-scoped registration link; Cruise Directors only for assigned trips. |
+| Cabin layout management | Org Admin or assigned Cruise Director | Admin org-wide; Cruise Director only for boats tied to assigned trips. |
+| Guest berth assignment | Org Admin or assigned Cruise Director | Required when binding a guest to a trip; can be changed later. |
 | Guest registration draft/submit | Guest | Guests can save and return later before final submission. |
 | Submitted registration review | Org Admin or assigned Cruise Director | Registration detail is fetched explicitly for the relevant trip. |
 | Mid-trip manifest changes | Cruise Director | Add/remove/reassign once trip is `active`. |

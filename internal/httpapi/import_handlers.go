@@ -87,7 +87,13 @@ func (s *Server) handleGetImportJob(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
-	writeJSON(w, http.StatusOK, importJobView(job))
+	out := importJobView(job)
+	if job.Status == store.ImportStatusSucceeded {
+		if boats, err := s.Auth.Store.UnconfiguredBoats(r.Context(), u.OrganizationID); err == nil {
+			out["unconfigured_boats"] = boatLayoutSummariesView(boats)
+		}
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // --- spreadsheet preview ---
@@ -394,6 +400,18 @@ func importJobView(j *store.ImportJob) map[string]any {
 	}
 	if j.ErrorMessage != nil {
 		out["error_message"] = *j.ErrorMessage
+	}
+	return out
+}
+
+func boatLayoutSummariesView(rows []store.BoatLayoutSummary) []map[string]any {
+	out := make([]map[string]any, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, map[string]any{
+			"id":                 row.BoatID,
+			"name":               row.BoatName,
+			"active_berth_count": row.ActiveBerthCount,
+		})
 	}
 	return out
 }
