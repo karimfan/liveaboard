@@ -1260,3 +1260,44 @@ select.select-inline:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* Per-guest staff detail page */
+.admin-page-actions {
+  display: flex;
+  gap: var(--sp-sm);
+}
+.admin-card__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-md);
+}
+.admin-card__title-row .admin-card__title {
+  margin: 0;
+}
+.guest-detail-summary {
+  margin-bottom: var(--sp-md);
+}
+.field--read {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.field--read label {
+  font-size: var(--fs-xs);
+  color: var(--c-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.field__readout {
+  color: var(--c-900);
+  font-size: var(--fs-sm);
+  min-height: 1.4em;
+}
+.field__readout--block {
+  white-space: pre-wrap;
+}
+.field--full {
+  grid-column: 1 / -1;
+}

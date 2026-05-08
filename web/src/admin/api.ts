@@ -117,6 +117,18 @@ export type TripManifest = {
   guests: TripGuest[];
 };
 
+export type GuestRegistrationDetail = {
+  trip_guest: TripGuest;
+  registration: {
+    id: string;
+    status: "draft" | "submitted";
+    payload: Record<string, unknown>;
+    submitted_at: string | null;
+    created_at: string;
+    updated_at: string;
+  } | null;
+};
+
 // Sprint 013 — assign/unassign endpoints return the updated director
 // list for the trip so the SPA can patch the row in place without an
 // extra fetch.
@@ -317,7 +329,7 @@ export const adminApi = {
     call<{ status: string }>("DELETE", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/invite`),
 
   guestRegistration: (tripId: string, guestId: string) =>
-    call<{ id: string; status: string; payload: unknown; submitted_at: string | null }>("GET", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/registration`),
+    call<GuestRegistrationDetail>("GET", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/registration`),
 
   // Sprint 013 — 1:N director assignment.
   addCruiseDirector: (tripId: string, userId: string) =>

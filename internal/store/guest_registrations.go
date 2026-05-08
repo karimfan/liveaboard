@@ -63,9 +63,12 @@ func (p *Pool) SaveGuestRegistration(ctx context.Context, guest *TripGuest, gues
 		return nil, err
 	}
 	if status == "submitted" {
+		// Preserve the original submission moment across re-submits so the
+		// manifest "Submitted" timestamp doesn't drift every time the
+		// guest edits their registration after first submit.
 		if _, err := tx.Exec(ctx, `
 			UPDATE trip_guests
-			SET registration_submitted_at = $2, updated_at = now()
+			SET registration_submitted_at = COALESCE(registration_submitted_at, $2), updated_at = now()
 			WHERE id = $1
 		`, guest.ID, submittedAt); err != nil {
 			return nil, err

@@ -91,8 +91,144 @@ func TestGuestRegistrationHappyPathAndDraftReturn(t *testing.T) {
 	}
 
 	resp, body = doJSON(t, c, "GET", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests/"+tripGuestID.String()+"/registration", nil, adminCookie)
-	if resp.StatusCode != http.StatusOK || body["status"] != "submitted" {
+	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("staff registration detail: %d %v", resp.StatusCode, body)
+	}
+	reg, ok := body["registration"].(map[string]any)
+	if !ok || reg["status"] != "submitted" {
+		t.Fatalf("staff registration detail: %v", body)
+	}
+}
+
+func TestGuestRegistrationPostSubmitEdits(t *testing.T) {
+	h := newHarness(t)
+	c := &http.Client{}
+	adminCookie, org, _ := signInAsAdmin(t, h)
+	tripID := seedManifestTrip(t, h, org.ID, 2)
+
+	// Add guest and accept invite to mint a guest session.
+	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
+		"full_name": "Bea Diver",
+		"email":     "bea.diver@example.test",
+	}, adminCookie)
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("add guest: %d %v", resp.StatusCode, body)
+	}
+	tripGuestID, _ := uuid.Parse(body["id"].(string))
+
+	token := tokenFromLink(t, h.mail.LinkFor("bea.diver@example.test", "guest/invitations"))
+	resp, _ = doJSON(t, c, "POST", h.server.URL+"/api/guest/invitations/"+token+"/accept", map[string]any{
+		"password": "Sup3rStrong!",
+	})
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("accept invite: %d", resp.StatusCode)
+	}
+	guestCookie := pickCookieFrom(resp.Cookies(), auth.GuestSessionCookieName)
+
+	regURL := h.server.URL + "/api/guest/trip-registrations/" + tripGuestID.String()
+
+	// First submission.
+	payload := validGuestRegistrationPayload()
+	resp, body = doJSON(t, c, "POST", regURL+"/submit", payload, guestCookie)
+	if resp.StatusCode != http.StatusOK || body["status"] != "submitted" {
+		t.Fatalf("submit: %d %v", resp.StatusCode, body)
+	}
+	firstSubmittedAt, _ := body["submitted_at"].(string)
+	if firstSubmittedAt == "" {
+		t.Fatalf("expected submitted_at on first submit, got %v", body)
+	}
+
+	// PATCH (draft) is rejected once submitted.
+	resp, body = doJSON(t, c, "PATCH", regURL, payload, guestCookie)
+	if resp.StatusCode != http.StatusConflict || body["error"] != "already_submitted" {
+		t.Fatalf("post-submit PATCH: %d %v want 409 already_submitted", resp.StatusCode, body)
+	}
+
+	// Edit a field and re-submit. Spend at least a millisecond so any
+	// timestamp drift would be observable.
+	time.Sleep(10 * time.Millisecond)
+	identity := payload["identity"].(map[string]any)
+	identity["preferred_name"] = "Bee"
+	resp, body = doJSON(t, c, "POST", regURL+"/submit", payload, guestCookie)
+	if resp.StatusCode != http.StatusOK || body["status"] != "submitted" {
+		t.Fatalf("re-submit: %d %v", resp.StatusCode, body)
+	}
+	if got, _ := body["submitted_at"].(string); got != firstSubmittedAt {
+		t.Fatalf("submitted_at drifted across re-submit: first %s, now %s", firstSubmittedAt, got)
+	}
+
+	// Re-submit with an invalidated payload still re-validates.
+	identity["legal_name"] = ""
+	resp, body = doJSON(t, c, "POST", regURL+"/submit", payload, guestCookie)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("re-submit invalid: %d %v want 400", resp.StatusCode, body)
+	}
+
+	// Manifest still reports submitted_at from the first submission.
+	resp, body = doJSON(t, c, "GET", h.server.URL+"/api/admin/trips/"+tripID.String()+"/manifest", nil, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("manifest: %d %v", resp.StatusCode, body)
+	}
+	guests := body["guests"].([]any)
+	if len(guests) != 1 {
+		t.Fatalf("manifest guests: %v", guests)
+	}
+	if got, _ := guests[0].(map[string]any)["registration_submitted_at"].(string); got != firstSubmittedAt {
+		t.Fatalf("manifest registration_submitted_at drifted: first %s, now %s", firstSubmittedAt, got)
+	}
+}
+
+func TestStaffRegistrationDetailExposesDraftAndTripGuest(t *testing.T) {
+	h := newHarness(t)
+	c := &http.Client{}
+	adminCookie, org, _ := signInAsAdmin(t, h)
+	tripID := seedManifestTrip(t, h, org.ID, 1)
+
+	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
+		"full_name": "Carl Diver",
+		"email":     "carl.diver@example.test",
+	}, adminCookie)
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("add guest: %d %v", resp.StatusCode, body)
+	}
+	tripGuestID, _ := uuid.Parse(body["id"].(string))
+	staffURL := h.server.URL + "/api/admin/trips/" + tripID.String() + "/guests/" + tripGuestID.String() + "/registration"
+
+	// Before any guest activity: registration is null but trip_guest is present.
+	resp, body = doJSON(t, c, "GET", staffURL, nil, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("staff registration (no guest activity): %d %v", resp.StatusCode, body)
+	}
+	if body["registration"] != nil {
+		t.Fatalf("expected nil registration, got %v", body["registration"])
+	}
+	tg, ok := body["trip_guest"].(map[string]any)
+	if !ok || tg["full_name"] != "Carl Diver" {
+		t.Fatalf("staff trip_guest block: %v", body["trip_guest"])
+	}
+
+	// Guest accepts and saves a draft.
+	token := tokenFromLink(t, h.mail.LinkFor("carl.diver@example.test", "guest/invitations"))
+	resp, _ = doJSON(t, c, "POST", h.server.URL+"/api/guest/invitations/"+token+"/accept", map[string]any{
+		"password": "Sup3rStrong!",
+	})
+	guestCookie := pickCookieFrom(resp.Cookies(), auth.GuestSessionCookieName)
+	regURL := h.server.URL + "/api/guest/trip-registrations/" + tripGuestID.String()
+	resp, _ = doJSON(t, c, "PATCH", regURL, map[string]any{
+		"identity": map[string]any{"legal_name": "Carl Diver"},
+	}, guestCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("save draft: %d", resp.StatusCode)
+	}
+
+	// Staff sees the draft.
+	resp, body = doJSON(t, c, "GET", staffURL, nil, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("staff registration (draft): %d %v", resp.StatusCode, body)
+	}
+	reg, ok := body["registration"].(map[string]any)
+	if !ok || reg["status"] != "draft" {
+		t.Fatalf("expected draft registration, got %v", body["registration"])
 	}
 }
 

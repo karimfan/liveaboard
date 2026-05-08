@@ -133,20 +133,36 @@ func (s *Server) handleStaffGuestRegistration(w http.ResponseWriter, r *http.Req
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
 		return
 	}
-	reg, err := s.Auth.Store.GuestRegistrationByTripGuest(r.Context(), guestID)
-	if errors.Is(err, store.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "not_found", "submitted registration not found")
-		return
-	}
+	rows, err := s.Auth.Store.TripManifest(r.Context(), u.OrganizationID, tripID, time.Now().UTC())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
-	if reg.Status != "submitted" {
-		writeError(w, http.StatusNotFound, "not_found", "submitted registration not found")
+	var manifestRow *store.TripGuestManifestRow
+	for _, row := range rows {
+		if row.Guest.ID == guestID {
+			manifestRow = row
+			break
+		}
+	}
+	if manifestRow == nil {
+		writeError(w, http.StatusNotFound, "not_found", "guest not found on this trip")
 		return
 	}
-	writeJSON(w, http.StatusOK, registrationView(reg))
+
+	reg, err := s.Auth.Store.GuestRegistrationByTripGuest(r.Context(), guestID)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
+	body := map[string]any{
+		"trip_guest":   manifestRowView(manifestRow),
+		"registration": nil,
+	}
+	if reg != nil {
+		body["registration"] = registrationView(reg)
+	}
+	writeJSON(w, http.StatusOK, body)
 }
 
 func (s *Server) authorizeManifestAccess(w http.ResponseWriter, r *http.Request, u *store.User, tripID uuid.UUID) (*store.Trip, bool) {

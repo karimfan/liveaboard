@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { adminApi, type TripGuest, type TripManifest as TripManifestData } from "../api";
+import { adminApi, type TripManifest as TripManifestData } from "../api";
 
 export function TripManifest() {
   const { id = "" } = useParams<{ id: string }>();
@@ -11,7 +11,6 @@ export function TripManifest() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [detail, setDetail] = useState<{ guest: TripGuest; payload: unknown } | null>(null);
 
   async function load() {
     if (!id) return;
@@ -66,16 +65,6 @@ export function TripManifest() {
       await load();
     } catch (err) {
       setError((err as { message?: string })?.message ?? "Failed to revoke invite.");
-    }
-  }
-
-  async function viewRegistration(guest: TripGuest) {
-    setError(null);
-    try {
-      const reg = await adminApi.guestRegistration(id, guest.id);
-      setDetail({ guest, payload: reg.payload });
-    } catch (err) {
-      setError((err as { message?: string })?.message ?? "Submitted registration is not available.");
     }
   }
 
@@ -138,32 +127,22 @@ export function TripManifest() {
         <tbody>
           {data.guests.map((g) => (
             <tr key={g.id}>
-              <td>{g.full_name}</td>
+              <td>
+                <Link to={`/admin/trips/${id}/guests/${g.id}`}>{g.full_name}</Link>
+              </td>
               <td>{g.email}</td>
               <td><span className="chip chip--active">{statusLabel(g.status)}</span></td>
               <td>{g.invite_last_error ? <span className="error-inline">{g.invite_last_error}</span> : g.invite_expires_at ?? "—"}</td>
               <td className="actions-cell">
+                <Link to={`/admin/trips/${id}/guests/${g.id}`}>Details</Link>
                 <button className="secondary" type="button" onClick={() => resend(g.id)}>Resend</button>
                 <button className="ghost" type="button" onClick={() => revoke(g.id)}>Revoke</button>
                 <Link to={`/admin/trips/${id}/guests/${g.id}/folio`}>Checkout</Link>
-                {g.status === "submitted" && <button className="secondary" type="button" onClick={() => viewRegistration(g)}>View</button>}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-
-      {detail && (
-        <div className="modal-backdrop" onClick={() => setDetail(null)}>
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{detail.guest.full_name}</h2>
-              <button className="ghost" onClick={() => setDetail(null)}>Close</button>
-            </div>
-            <pre className="registration-json">{JSON.stringify(detail.payload, null, 2)}</pre>
-          </div>
-        </div>
-      )}
     </>
   );
 }

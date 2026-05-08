@@ -23,6 +23,7 @@ import { BoatDetail } from "./admin/pages/BoatDetail";
 import { BoatTrips, BoatInventory, BoatNotes } from "./admin/pages/BoatTabs";
 import { Trips } from "./admin/pages/Trips";
 import { TripManifest } from "./admin/pages/TripManifest";
+import { TripGuestDetail } from "./admin/pages/TripGuestDetail";
 import { Inventory } from "./admin/pages/Inventory";
 import { Users } from "./admin/pages/Users";
 import { Organization } from "./admin/pages/Organization";
@@ -65,6 +66,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route index element={<Overview />} />
           <Route path="trips" element={<Trips />} />
           <Route path="trips/:id/manifest" element={<TripManifest />} />
+          <Route path="trips/:id/guests/:guestId" element={<TripGuestDetail />} />
           <Route path="trips/:id/guests/:guestId/folio" element={<GuestFolio />} />
           <Route path="account" element={<Account />} />
 

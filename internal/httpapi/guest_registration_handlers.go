@@ -91,6 +91,18 @@ func (s *Server) handleSaveGuestRegistration(w http.ResponseWriter, r *http.Requ
 	if !ok {
 		return
 	}
+	// Once a guest has submitted, drafts are no longer the right gesture:
+	// any further edit must re-validate via /submit so the persisted state
+	// stays a fully-valid submission. Reject PATCH from this state.
+	existing, err := s.Auth.Store.GuestRegistrationByTripGuest(r.Context(), tripGuest.ID)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
+	if existing != nil && existing.Status == "submitted" {
+		writeError(w, http.StatusConflict, "already_submitted", "Registration is already submitted; use submit to save further edits.")
+		return
+	}
 	payload, ok := readRegistrationPayload(w, r, false)
 	if !ok {
 		return
@@ -112,8 +124,17 @@ func (s *Server) handleSubmitGuestRegistration(w http.ResponseWriter, r *http.Re
 	if !ok {
 		return
 	}
-	now := time.Now().UTC()
-	reg, err := s.Auth.Store.SaveGuestRegistration(r.Context(), tripGuest, guest.ID, payload, "submitted", &now)
+	// Re-submits keep the original submission timestamp. The store also
+	// COALESCEs trip_guests.registration_submitted_at on the same key, but
+	// passing the existing value here keeps the registration row honest.
+	submittedAt := time.Now().UTC()
+	if existing, err := s.Auth.Store.GuestRegistrationByTripGuest(r.Context(), tripGuest.ID); err == nil && existing.SubmittedAt != nil {
+		submittedAt = *existing.SubmittedAt
+	} else if err != nil && !errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
+	reg, err := s.Auth.Store.SaveGuestRegistration(r.Context(), tripGuest, guest.ID, payload, "submitted", &submittedAt)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
