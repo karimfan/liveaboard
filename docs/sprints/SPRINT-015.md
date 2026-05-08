@@ -279,19 +279,19 @@ No PDF attachment in Sprint 015.
 
 **Tasks:**
 
-- [ ] Add payment settings, folio, and folio-line tables.
-- [ ] Add one-folio-per-`trip_guest` and one-tip-line indexes.
-- [ ] Add default payment settings creation/repair helper.
-- [ ] Validate currencies with `NormalizeCurrency`; validate close-time
+- [x] Add payment settings, folio, and folio-line tables.
+- [x] Add one-folio-per-`trip_guest` and one-tip-line indexes.
+- [x] Add default payment settings creation/repair helper.
+- [x] Validate currencies with `NormalizeCurrency`; validate close-time
       rate availability separately.
-- [ ] Validate default currency is enabled.
-- [ ] Validate enabled methods are `card`, `cash`, and/or `other`.
-- [ ] Add explicit org/trip/trip_guest ownership checks.
-- [ ] Add open folio creation through explicit POST semantics.
-- [ ] Add catalog line and crew-tip line CRUD for open folios.
-- [ ] Add `CloseGuestFolio` transaction with stock movement SQL inside
+- [x] Validate default currency is enabled.
+- [x] Validate enabled methods are `card`, `cash`, and/or `other`.
+- [x] Add explicit org/trip/trip_guest ownership checks.
+- [x] Add open folio creation through explicit POST semantics.
+- [x] Add catalog line and crew-tip line CRUD for open folios.
+- [x] Add `CloseGuestFolio` transaction with stock movement SQL inside
       the same transaction.
-- [ ] Persist closed snapshots and prevent mutation after close.
+- [x] Persist closed snapshots and prevent mutation after close.
 
 ### Phase 2: HTTP API and Email (~25%)
 
@@ -331,17 +331,17 @@ Close request:
 
 **Tasks:**
 
-- [ ] Mount payment settings under RequireOrgAdmin.
-- [ ] Mount folio endpoints under authenticated `/api/admin`.
-- [ ] Reuse `authorizeManifestAccess`, then verify `trip_guest_id`
+- [x] Mount payment settings under RequireOrgAdmin.
+- [x] Mount folio endpoints under authenticated `/api/admin`.
+- [x] Reuse `authorizeManifestAccess`, then verify `trip_guest_id`
       belongs to the same org/trip in store helpers.
-- [ ] Add errors for unsupported currency, currency not enabled,
+- [x] Add errors for unsupported currency, currency not enabled,
       missing FX rate, invalid payment method, no folio lines, duplicate
       folio, duplicate close, closed-folio mutation, and insufficient
       stock.
-- [ ] Send folio email after successful close and persist sent/failed
+- [x] Send folio email after successful close and persist sent/failed
       status.
-- [ ] Add resend endpoint and tests.
+- [x] Add resend endpoint and tests.
 
 ### Phase 3: Organization Payments UI (~15%)
 
@@ -356,15 +356,15 @@ Close request:
 
 **Tasks:**
 
-- [ ] Add Organization > Payments child route visible only to Org
+- [x] Add Organization > Payments child route visible only to Org
       Admin.
-- [ ] Keep Organization > Profile focused on name/display currency.
-- [ ] Build supported-currency controls.
-- [ ] Add default settlement currency select.
-- [ ] Add payment method toggles for card, cash, and other.
-- [ ] Add card transaction fee percentage input, stored as basis
+- [x] Keep Organization > Profile focused on name/display currency.
+- [x] Build supported-currency controls.
+- [x] Add default settlement currency select.
+- [x] Add payment method toggles for card, cash, and other.
+- [x] Add card transaction fee percentage input, stored as basis
       points.
-- [ ] Show rate readiness for enabled non-USD currencies from the
+- [x] Show rate readiness for enabled non-USD currencies from the
       payment settings response.
 
 ### Phase 4: Director Checkout UI (~15%)
@@ -379,14 +379,14 @@ Close request:
 
 **Tasks:**
 
-- [ ] Add Checkout action to manifest guest rows.
-- [ ] Build folio page with guest/trip context, line table, add catalog
+- [x] Add Checkout action to manifest guest rows.
+- [x] Build folio page with guest/trip context, line table, add catalog
       item controls, optional crew-tip controls, and totals.
-- [ ] Allow line quantity edits before close.
-- [ ] Add close panel with payment method and settlement currency.
-- [ ] Show automatic card-fee row only when card payment applies.
-- [ ] Show closed folio state, email status, and resend action.
-- [ ] Keep the UI dense and operational per `DESIGN.md`.
+- [x] Allow line quantity edits before close.
+- [x] Add close panel with payment method and settlement currency.
+- [x] Show automatic card-fee row only when card payment applies.
+- [x] Show closed folio state, email status, and resend action.
+- [x] Keep the UI dense and operational per `DESIGN.md`.
 
 ### Phase 5: Product Docs and Verification (~5%)
 
@@ -397,12 +397,12 @@ Close request:
 
 **Tasks:**
 
-- [ ] Clarify Org Admin owns payment settings.
-- [ ] Clarify Cruise Director owns assigned-trip checkout.
-- [ ] Add product stories for payment settings and guest checkout.
-- [ ] Run `npm run build`.
-- [ ] Run `go vet ./...`.
-- [ ] Run `go test ./...`.
+- [x] Clarify Org Admin owns payment settings.
+- [x] Clarify Cruise Director owns assigned-trip checkout.
+- [x] Add product stories for payment settings and guest checkout.
+- [x] Run `npm run build`.
+- [x] Run `go vet ./...`.
+- [x] Run `go test ./...`.
 
 ## Files Summary
 
@@ -431,45 +431,45 @@ Close request:
 
 ## Definition of Done
 
-- [ ] Org Admin can configure payment settings from Organization >
+- [x] Org Admin can configure payment settings from Organization >
       Payments.
-- [ ] Payment settings include supported currencies, default settlement
+- [x] Payment settings include supported currencies, default settlement
       currency, enabled methods, card fee basis points, and email
       footer.
-- [ ] Initial payment methods are card, cash, and other.
-- [ ] Supported currencies are org-specific and close-time FX
+- [x] Initial payment methods are card, cash, and other.
+- [x] Supported currencies are org-specific and close-time FX
       availability is validated.
-- [ ] Cruise Director can checkout only guests on assigned trips.
-- [ ] Org Admin can operate checkout for any org trip.
-- [ ] Guest sessions cannot access checkout APIs.
-- [ ] Exactly one folio can exist per guest/trip.
-- [ ] Staff can add catalog lines and one optional crew-tip line.
-- [ ] Staff can edit line quantities/amounts before close.
-- [ ] Server snapshots line names, prices, quantities, stock mode, and
+- [x] Cruise Director can checkout only guests on assigned trips.
+- [x] Org Admin can operate checkout for any org trip.
+- [x] Guest sessions cannot access checkout APIs.
+- [x] Exactly one folio can exist per guest/trip.
+- [x] Staff can add catalog lines and one optional crew-tip line.
+- [x] Staff can edit line quantities/amounts before close.
+- [x] Server snapshots line names, prices, quantities, stock mode, and
       totals.
-- [ ] Close recomputes all totals server-side.
-- [ ] Card fee is automatic for card payments and cannot be waived by
+- [x] Close recomputes all totals server-side.
+- [x] Card fee is automatic for card payments and cannot be waived by
       Cruise Directors.
-- [ ] Close snapshots payment method, settlement currency, card fee,
+- [x] Close snapshots payment method, settlement currency, card fee,
       FX rate metadata, total USD, settlement total, actor, and
       timestamp.
-- [ ] Closing counted stock lines creates `folio_charge` movements in
+- [x] Closing counted stock lines creates `folio_charge` movements in
       the same transaction.
-- [ ] Partial stock failure rolls back the entire close and moves no
+- [x] Partial stock failure rolls back the entire close and moves no
       stock.
-- [ ] Duplicate close is rejected and does not double-decrement stock.
-- [ ] Closed folios are immutable.
-- [ ] Closed folio email is sent after close; failure is visible and
+- [x] Duplicate close is rejected and does not double-decrement stock.
+- [x] Closed folios are immutable.
+- [x] Closed folio email is sent after close; failure is visible and
       retryable.
-- [ ] Backend tests cover settings validation, role authorization,
+- [x] Backend tests cover settings validation, role authorization,
       tenant isolation, org/trip/guest scoping, money rounding, folio
       lifecycle, stock rollback, duplicate close, email failure/resend,
       and guest-session rejection.
-- [ ] Product docs reflect payment settings and director checkout
+- [x] Product docs reflect payment settings and director checkout
       boundaries.
-- [ ] `npm run build` passes.
-- [ ] `go vet ./...` passes.
-- [ ] `go test ./...` passes.
+- [x] `npm run build` passes.
+- [x] `go vet ./...` passes.
+- [x] `go test ./...` passes.
 
 ## Risks and Mitigations
 

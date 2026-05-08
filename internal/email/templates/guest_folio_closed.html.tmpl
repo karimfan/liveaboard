@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <body>
+    <p>Hi {{if .RecipientName}}{{.RecipientName}}{{else}}{{.RecipientEmail}}{{end}},</p>
+    <p>Your folio for <strong>{{.TripBoatName}}</strong> ({{.TripItinerary}}, {{fmtdate .TripStartDate}} to {{fmtdate .TripEndDate}}) is closed.</p>
+    <table cellpadding="6" cellspacing="0" border="1">
+      <thead><tr><th align="left">Item</th><th>Qty</th><th align="right">Unit</th><th align="right">Total</th></tr></thead>
+      <tbody>
+        {{range .FolioLines}}<tr><td>{{.Name}}</td><td align="right">{{.Quantity}}</td><td align="right">{{.UnitPrice}}</td><td align="right">{{.Total}}</td></tr>{{end}}
+      </tbody>
+    </table>
+    <p>Subtotal: <strong>{{.FolioSubtotalUSD}}</strong></p>
+    {{if .FolioCardFeeUSD}}<p>Card fee: <strong>{{.FolioCardFeeUSD}}</strong></p>{{end}}
+    <p>Total USD: <strong>{{.FolioTotalUSD}}</strong></p>
+    <p>Paid by: <strong>{{.FolioPaymentMethod}}</strong></p>
+    <p>Settlement total: <strong>{{.FolioSettlementTotal}} {{.FolioSettlementCurrency}}</strong></p>
+    {{if .FolioFooter}}<p>{{.FolioFooter}}</p>{{end}}
+    <p>Thanks,<br>{{.OrganizationName}}</p>
+  </body>
+</html>

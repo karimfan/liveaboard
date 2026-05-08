@@ -128,4 +128,20 @@ type Vars struct {
 	TripItinerary string
 	TripStartDate time.Time
 	TripEndDate   time.Time
+
+	FolioLines              []FolioLineVar
+	FolioSubtotalUSD        string
+	FolioCardFeeUSD         string
+	FolioTotalUSD           string
+	FolioSettlementTotal    string
+	FolioSettlementCurrency string
+	FolioPaymentMethod      string
+	FolioFooter             string
+}
+
+type FolioLineVar struct {
+	Name      string
+	Quantity  int
+	UnitPrice string
+	Total     string
 }

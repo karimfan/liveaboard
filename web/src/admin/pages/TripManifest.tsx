@@ -145,6 +145,7 @@ export function TripManifest() {
               <td className="actions-cell">
                 <button className="secondary" type="button" onClick={() => resend(g.id)}>Resend</button>
                 <button className="ghost" type="button" onClick={() => revoke(g.id)}>Revoke</button>
+                <Link to={`/admin/trips/${id}/guests/${g.id}/folio`}>Checkout</Link>
                 {g.status === "submitted" && <button className="secondary" type="button" onClick={() => viewRegistration(g)}>View</button>}
               </td>
             </tr>

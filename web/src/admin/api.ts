@@ -231,6 +231,66 @@ export type CheckoutQuote = {
   }[];
 };
 
+export type PaymentSettings = {
+  organization_id: string;
+  default_currency: string;
+  supported_currencies: string[];
+  enabled_payment_methods: string[];
+  card_fee_basis_points: number;
+  folio_email_footer: string | null;
+  rate_readiness: {
+    currency: string;
+    ready: boolean;
+    rate?: FXRate;
+  }[];
+};
+
+export type GuestFolioLine = {
+  id: string;
+  catalog_item_id: string | null;
+  line_type: "catalog_item" | "crew_tip";
+  item_name: string;
+  quantity: number;
+  unit_price_usd_cents: number;
+  line_total_usd_cents: number;
+  stock_mode: "none" | "counted";
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type GuestFolio = {
+  id: string;
+  organization_id: string;
+  trip_id: string;
+  trip_guest_id: string;
+  status: "open" | "closed";
+  closed_at: string | null;
+  subtotal_usd_cents: number;
+  card_fee_usd_cents: number;
+  total_usd_cents: number;
+  settlement_currency: string | null;
+  settlement_total_minor: number | null;
+  currency_exponent: number | null;
+  rate_provider: string | null;
+  rate_numerator: number | null;
+  rate_denominator: number | null;
+  rate_as_of: string | null;
+  payment_method: string | null;
+  card_fee_basis_points: number;
+  email_send_status: "not_sent" | "sent" | "failed";
+  email_last_sent_at: string | null;
+  email_last_error: string | null;
+  lines: GuestFolioLine[];
+  organization_name: string;
+  boat_name: string;
+  itinerary: string;
+  start_date: string;
+  end_date: string;
+  guest_full_name: string;
+  guest_email: string;
+};
+
 // --- endpoints ---
 
 export const adminApi = {
@@ -275,6 +335,16 @@ export const adminApi = {
 
   patchOrganization: (input: { name: string; currency: string | null }) =>
     call<Organization>("PATCH", "/organization", input),
+
+  paymentSettings: () =>
+    call<PaymentSettings>("GET", "/admin/organization/payment-settings"),
+  updatePaymentSettings: (input: {
+    default_currency: string;
+    supported_currencies: string[];
+    enabled_payment_methods: string[];
+    card_fee_basis_points: number;
+    folio_email_footer: string | null;
+  }) => call<PaymentSettings>("PATCH", "/admin/organization/payment-settings", input),
 
   listCatalogCategories: () =>
     call<{ categories: CatalogCategory[] }>("GET", "/admin/catalog/categories"),
@@ -341,6 +411,27 @@ export const adminApi = {
 
   checkoutQuote: (input: { target_currency: string; source_amount_cents: number }) =>
     call<CheckoutQuote>("POST", "/checkout/quote", input),
+
+  getGuestFolio: (tripId: string, guestId: string) =>
+    call<GuestFolio>("GET", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio`),
+  openGuestFolio: (tripId: string, guestId: string) =>
+    call<GuestFolio>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio`),
+  addGuestFolioLine: (tripId: string, guestId: string, input: {
+    line_type: "catalog_item" | "crew_tip";
+    catalog_item_id?: string;
+    quantity?: number;
+    tip_usd_cents?: number;
+  }) => call<GuestFolio>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio/lines`, input),
+  updateGuestFolioLine: (tripId: string, guestId: string, lineId: string, input: {
+    quantity?: number;
+    tip_usd_cents?: number;
+  }) => call<GuestFolio>("PATCH", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio/lines/${encodeURIComponent(lineId)}`, input),
+  deleteGuestFolioLine: (tripId: string, guestId: string, lineId: string) =>
+    call<GuestFolio>("DELETE", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio/lines/${encodeURIComponent(lineId)}`),
+  closeGuestFolio: (tripId: string, guestId: string, input: { payment_method: string; settlement_currency: string }) =>
+    call<GuestFolio>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio/close`, input),
+  resendGuestFolioEmail: (tripId: string, guestId: string) =>
+    call<GuestFolio>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio/resend-email`),
 
   // --- Sprint 012 trip imports ---
 

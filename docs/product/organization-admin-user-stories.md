@@ -56,6 +56,7 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 | Reporting (Org Admin) | Setup completeness and operational status are `Must`. Revenue summaries are `Should`. Cross-trip analytics deferred (post-MVP). | Matches persona boundaries. |
 | Inventory tracking | Per-boat counted stock ships with catalog. Non-stocked services stay in catalog with `stock_mode = none`. | Needed before Cruise Directors can add stock-tracked items to guest folios. |
 | Guest registration | Guests use separate guest accounts and sessions. Registration can be saved as a draft and completed later. | Keeps staff auth clean and supports long forms that are hard to complete in one transaction. |
+| Guest checkout | Cruise Directors close one end-of-trip folio per guest/trip. Payments are handled offline; Liveaboard records the closed paid folio and sends the itemized email. | Avoids payment-processing scope while supporting real checkout operations. |
 | Trip booking fees | Out of scope. Catalog covers onboard consumption only. | |
 
 ---
@@ -224,6 +225,25 @@ Acceptance Criteria:
 - [ ] Changing currency does not retroactively rewrite historical prices or quote snapshots.
 
 Notes: Sprint 013 introduces checkout quote conversion from USD to a target guest currency.
+
+### US-2.4: Configure payment settings
+
+> As an Organization Admin, I want to configure checkout currencies,
+> offline payment methods, and card transaction fees so that Cruise
+> Directors can close guest folios consistently.
+
+Priority: Must
+Area: Organization
+Depends on: US-2.3, US-5.1
+
+Acceptance Criteria:
+- [ ] Admin chooses supported settlement currencies.
+- [ ] Admin chooses a default settlement currency.
+- [ ] Admin enables offline payment methods: card, cash, other.
+- [ ] Admin sets the card transaction fee percentage.
+- [ ] Card transaction fee is applied automatically to card payments
+      and cannot be waived by Cruise Directors.
+- [ ] Admin can configure a footer for closed-folio emails.
 
 ---
 
@@ -634,6 +654,26 @@ Depends on: US-4.3
 Acceptance Criteria:
 - [ ] For each trip: total charges, total settled, total outstanding.
 - [ ] Aggregations are reproducible from the underlying ledger.
+
+### US-7.5: Close guest folio at checkout
+
+> As a Cruise Director, I want to review and close a guest's end-of-trip
+> folio so that the guest can pay offline and receive an itemized folio.
+
+Priority: Must
+Area: Oversight
+Depends on: US-4.5, US-5.1, US-5.7, US-2.4
+
+Acceptance Criteria:
+- [ ] Cruise Director can access checkout only for assigned trips.
+- [ ] One folio exists per guest/trip.
+- [ ] Staff can add catalog item lines and correct quantities before close.
+- [ ] Staff can add one optional crew-tip line if the guest asks.
+- [ ] Closing records payment method, settlement currency, card fee,
+      FX snapshot, totals, actor, and timestamp.
+- [ ] Stock-tracked lines decrement boat inventory atomically.
+- [ ] Closing emails the itemized folio to the guest.
+- [ ] No online payment processing or POS confirmation data is stored.
 
 ### US-7.4: Cross-trip analytics (deferred)
 

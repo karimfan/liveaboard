@@ -1180,6 +1180,59 @@ select.select-inline:focus {
   padding-top: var(--sp-lg);
 }
 
+/* Sprint 015 — payment settings and checkout */
+.settings-card {
+  max-width: 760px;
+}
+.toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-sm);
+}
+.saved-inline {
+  margin-left: var(--sp-md);
+}
+.folio-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--sp-lg);
+  align-items: start;
+}
+.folio-tools {
+  margin-bottom: var(--sp-md);
+}
+.folio-tool-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px auto;
+  gap: var(--sp-sm);
+  align-items: center;
+  margin-bottom: var(--sp-sm);
+}
+.folio-tool-row:last-child {
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 0;
+}
+.folio-summary {
+  position: sticky;
+  top: var(--sp-lg);
+}
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) 0;
+  border-bottom: 1px solid var(--c-200);
+}
+.total-row--grand {
+  font-size: var(--fs-lg);
+  color: var(--c-900);
+}
+.qty-input {
+  width: 72px;
+  padding: 4px 8px;
+  text-align: right;
+}
+
 @media (max-width: 720px) {
   .guest-registration {
     padding: var(--sp-lg);
@@ -1195,5 +1248,15 @@ select.select-inline:focus {
   }
   .actions-cell > * {
     margin: var(--sp-xs) var(--sp-xs) 0 0;
+  }
+  .folio-layout {
+    grid-template-columns: 1fr;
+  }
+  .folio-summary {
+    position: static;
+  }
+  .folio-tool-row,
+  .folio-tool-row:last-child {
+    grid-template-columns: 1fr;
   }
 }

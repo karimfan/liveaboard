@@ -110,6 +110,13 @@ func (s *Server) Router() http.Handler {
 				r.Post("/trips/{id}/guests/{guest_id}/resend", s.handleResendTripGuestInvite)
 				r.Delete("/trips/{id}/guests/{guest_id}/invite", s.handleRevokeTripGuestInvite)
 				r.Get("/trips/{id}/guests/{guest_id}/registration", s.handleStaffGuestRegistration)
+				r.Get("/trips/{id}/guests/{guest_id}/folio", s.handleGetGuestFolio)
+				r.Post("/trips/{id}/guests/{guest_id}/folio", s.handleOpenGuestFolio)
+				r.Post("/trips/{id}/guests/{guest_id}/folio/lines", s.handleAddGuestFolioLine)
+				r.Patch("/trips/{id}/guests/{guest_id}/folio/lines/{line_id}", s.handleUpdateGuestFolioLine)
+				r.Delete("/trips/{id}/guests/{guest_id}/folio/lines/{line_id}", s.handleDeleteGuestFolioLine)
+				r.Post("/trips/{id}/guests/{guest_id}/folio/close", s.handleCloseGuestFolio)
+				r.Post("/trips/{id}/guests/{guest_id}/folio/resend-email", s.handleResendGuestFolioEmail)
 
 				// Cruise-director-only landing payload (profile + stats
 				// + trips). The handler enforces the role itself; we
@@ -120,6 +127,8 @@ func (s *Server) Router() http.Handler {
 				r.Group(func(r chi.Router) {
 					r.Use(auth.RequireOrgAdmin)
 					r.Get("/overview", s.AdminAPI.HandleOverview)
+					r.Get("/organization/payment-settings", s.handleGetPaymentSettings)
+					r.Patch("/organization/payment-settings", s.handleUpdatePaymentSettings)
 					r.Get("/boats", s.AdminAPI.HandleListBoats)
 					r.Get("/boats/{id}", s.AdminAPI.HandleGetBoat)
 					r.Get("/boats/{id}/trips", s.AdminAPI.HandleListBoatTrips)

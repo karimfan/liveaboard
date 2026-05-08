@@ -25,6 +25,7 @@ const (
 	KindTripAssigned            Kind = "trip_assigned"
 	KindTripUnassigned          Kind = "trip_unassigned"
 	KindGuestRegistrationInvite Kind = "guest_registration_invite"
+	KindGuestFolioClosed        Kind = "guest_folio_closed"
 )
 
 // Render renders the three parts of an email kind against the given vars

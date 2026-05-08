@@ -26,6 +26,8 @@ import { TripManifest } from "./admin/pages/TripManifest";
 import { Inventory } from "./admin/pages/Inventory";
 import { Users } from "./admin/pages/Users";
 import { Organization } from "./admin/pages/Organization";
+import { OrganizationPayments } from "./admin/pages/OrganizationPayments";
+import { GuestFolio } from "./admin/pages/GuestFolio";
 import { Reports } from "./admin/pages/Reports";
 import { Account } from "./admin/pages/Account";
 import { Import } from "./admin/pages/Import";
@@ -63,12 +65,17 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route index element={<Overview />} />
           <Route path="trips" element={<Trips />} />
           <Route path="trips/:id/manifest" element={<TripManifest />} />
+          <Route path="trips/:id/guests/:guestId/folio" element={<GuestFolio />} />
           <Route path="account" element={<Account />} />
 
           {/* Org-admin-only routes — RequireAdmin redirects directors to /admin */}
           <Route
             path="organization"
             element={<RequireAdmin><Organization /></RequireAdmin>}
+          />
+          <Route
+            path="organization/payments"
+            element={<RequireAdmin><OrganizationPayments /></RequireAdmin>}
           />
           <Route
             path="fleet"

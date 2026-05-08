@@ -118,6 +118,9 @@ func Pool(t *testing.T) *store.Pool {
 	t.Cleanup(p.Close)
 	if _, err := p.Exec(ctx, `
 		TRUNCATE TABLE
+			guest_folio_lines,
+			guest_folios,
+			organization_payment_settings,
 			guest_trip_registrations,
 			guest_trip_invitations,
 			trip_guests,

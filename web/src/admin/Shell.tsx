@@ -13,7 +13,14 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { to: "/admin", label: "Overview", end: true },
-  { to: "/admin/organization", label: "Organization", adminOnly: true },
+  {
+    to: "/admin/organization",
+    label: "Organization",
+    adminOnly: true,
+    children: [
+      { to: "/admin/organization/payments", label: "Payments", adminOnly: true },
+    ],
+  },
   {
     to: "/admin/fleet",
     label: "Fleet",

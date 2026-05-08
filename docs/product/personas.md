@@ -20,6 +20,8 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 
 **Owns:**
 - Organization profile and defaults (name, currency).
+- Payment settings: supported checkout currencies, offline payment
+  methods, card transaction fee percentage, and folio email footer.
 - Fleet: boats (name, image, source linkage). Cabin layouts are not modeled; capacity is a single number per boat.
 - Catalog: items, categories, USD pricing, checkout currency defaults, and sellable services/fees.
 - Per-boat inventory: how many counted catalog items each boat carries (quantity tracking).
@@ -48,6 +50,9 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Their own profile: full name, contact phone (free-text). Editable from `/admin/account`.
 - Mid-trip manifest operations: add/remove/reassign guests once the trip is `active`.
 - Guest registration readiness for assigned trips: invite guests, resend/revoke registration links, and review submitted registration details.
+- Assigned-trip guest checkout: review/correct purchased items, add an
+  optional crew-tip line when requested, close the one end-of-trip
+  folio as paid, and resend the folio email.
 - Trip lifecycle transitions: start (`planned` → `active`), complete (`active` → `completed`).
 - Guest consumption / ledger entries.
 - Onboard operational coordination for the duration of the trip.
@@ -56,6 +61,8 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Boat configuration (Org Admin).
 - Catalog/pricing (Org Admin).
 - Per-boat inventory configuration (Org Admin).
+- Payment settings and card fee waivers (Org Admin; Directors cannot
+  waive configured card fees).
 - Cross-trip or org-wide reporting (Org Admin).
 - User invitation or role management (Org Admin).
 
@@ -99,7 +106,9 @@ For features that could belong to multiple personas, the table below records the
 | Cancel trip (`planned` only) | Org Admin | Cruise Director cannot. |
 | Catalog item add/edit/deactivate | Org Admin | Prices are canonical in USD; checkout may quote another currency. |
 | Per-boat stock setup and adjustment | Org Admin | Cruise Director folio entries can later decrement stock automatically. |
+| Payment settings | Org Admin | Supported currencies, payment methods, card fee, folio email footer. |
 | Record consumption / ledger entries | Cruise Director | |
+| Guest checkout / close folio | Cruise Director | Assigned trips only; one end-of-trip folio per guest/trip. |
 | Invite Cruise Director | Org Admin | MVP user-mgmt subset. |
 | Deactivate user | Org Admin | MVP user-mgmt subset. |
 | Setup completeness dashboard | Org Admin | What is misconfigured. |

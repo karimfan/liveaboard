@@ -1,0 +1,17 @@
+Hi {{if .RecipientName}}{{.RecipientName}}{{else}}{{.RecipientEmail}}{{end}},
+
+Your folio for {{.TripBoatName}} ({{.TripItinerary}}, {{fmtdate .TripStartDate}} to {{fmtdate .TripEndDate}}) is closed.
+
+Items:
+{{range .FolioLines}}- {{.Name}} x{{.Quantity}} @ {{.UnitPrice}} = {{.Total}}
+{{end}}
+Subtotal: {{.FolioSubtotalUSD}}
+{{if .FolioCardFeeUSD}}Card fee: {{.FolioCardFeeUSD}}
+{{end}}Total USD: {{.FolioTotalUSD}}
+Paid by: {{.FolioPaymentMethod}}
+Settlement total: {{.FolioSettlementTotal}} {{.FolioSettlementCurrency}}
+
+{{if .FolioFooter}}{{.FolioFooter}}
+
+{{end}}Thanks,
+{{.OrganizationName}}
