@@ -129,7 +129,13 @@ Write a brief **Orientation Summary** covering:
 
 ### Execute Codex
 
-Run this command, substituting the actual sprint number for `NNN`:
+If the current agent is already Codex, do **not** shell out to
+`codex exec`. Write the draft directly yourself using the same prompt
+requirements below. This keeps the workflow fast and avoids recursive
+local agent invocation.
+
+If the current agent is not Codex, run this command, substituting the
+actual sprint number for `NNN`:
 
 ```bash
 codex exec \
@@ -148,7 +154,7 @@ Do not write the final sprint document. Only write the Codex draft."
 
 ### Wait for Codex to complete
 
-Codex should produce:
+Codex, whether current-agent or CLI, should produce:
 
 ```text
 docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md
