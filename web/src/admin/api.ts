@@ -84,9 +84,51 @@ export type Trip = {
   price_text: string | null;
   availability_text: string | null;
   num_guests: number | null;
+  status: "planned" | "active" | "completed" | "cancelled";
+  started_at: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  removed_from_source_at: string | null;
   cruise_director_user_ids: string[];
   cruise_director_names: string[];
   manifest_summary?: ManifestSummary;
+};
+
+export type TripReadinessIssue = {
+  code: string;
+  severity: "blocker" | "warning";
+  message: string;
+  trip_guest_id?: string;
+};
+
+export type TripLifecycle = {
+  trip: {
+    id: string;
+    status: Trip["status"];
+    started_at: string | null;
+    completed_at: string | null;
+    cancelled_at: string | null;
+    cancellation_reason: string | null;
+    removed_from_source_at: string | null;
+  };
+  readiness: {
+    trip_id: string;
+    status: Trip["status"];
+    can_start: boolean;
+    can_complete: boolean;
+    blockers: TripReadinessIssue[];
+    warnings: TripReadinessIssue[];
+    guests: {
+      trip_guest_id: string;
+      full_name: string;
+      email: string;
+      registration_status: string | null;
+      document_count: number;
+      has_cabin_assignment: boolean;
+      folio_status: string | null;
+      registration_complete: boolean;
+    }[];
+  };
 };
 
 export type ManifestSummary = {
@@ -434,6 +476,14 @@ export const adminApi = {
 
   tripManifest: (tripId: string) =>
     call<TripManifest>("GET", `/admin/trips/${encodeURIComponent(tripId)}/manifest`),
+  tripLifecycle: (tripId: string) =>
+    call<TripLifecycle>("GET", `/admin/trips/${encodeURIComponent(tripId)}/lifecycle`),
+  startTrip: (tripId: string, input: { acknowledged_warnings: string[]; reason: string }) =>
+    call<TripLifecycle["trip"]>("POST", `/admin/trips/${encodeURIComponent(tripId)}/start`, input),
+  completeTrip: (tripId: string, input: { acknowledged_warnings: string[]; reason: string }) =>
+    call<TripLifecycle["trip"]>("POST", `/admin/trips/${encodeURIComponent(tripId)}/complete`, input),
+  cancelTrip: (tripId: string, input: { reason: string }) =>
+    call<TripLifecycle["trip"]>("POST", `/admin/trips/${encodeURIComponent(tripId)}/cancel`, input),
 
   addTripGuest: (tripId: string, input: { full_name: string; email: string; berth_id: string }) =>
     call<TripGuest>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests`, input),

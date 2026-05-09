@@ -1385,6 +1385,29 @@ select.select-inline:focus {
   background: var(--c-warning-bg);
   color: var(--c-warning);
 }
+.chip--completed {
+  background: var(--c-100);
+  color: var(--c-700);
+}
+.chip--cancelled,
+.chip--removed {
+  background: var(--c-error-bg);
+  color: var(--c-error);
+}
+.lifecycle-panel {
+  margin-bottom: var(--sp-md);
+}
+.lifecycle-issues {
+  display: grid;
+  gap: var(--sp-xs);
+  margin-bottom: var(--sp-md);
+}
+.lifecycle-actions {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  gap: var(--sp-sm);
+  align-items: center;
+}
 
 /* Sprint 017 — guest documents and audit */
 .document-upload {

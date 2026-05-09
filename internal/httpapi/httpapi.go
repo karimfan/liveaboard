@@ -109,6 +109,10 @@ func (s *Server) Router() http.Handler {
 			// assignment handler.
 			r.Route("/admin", func(r chi.Router) {
 				r.Get("/trips", s.AdminAPI.HandleListTrips)
+				r.Get("/trips/{id}/lifecycle", s.handleTripLifecycle)
+				r.Post("/trips/{id}/start", s.handleStartTrip)
+				r.Post("/trips/{id}/complete", s.handleCompleteTrip)
+				r.Post("/trips/{id}/cancel", s.handleCancelTrip)
 				r.Get("/trips/{id}/manifest", s.handleTripManifest)
 				r.Get("/trips/{id}/cabins", s.handleTripCabinBoard)
 				r.Post("/trips/{id}/guests", s.handleAddTripGuest)

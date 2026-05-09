@@ -62,6 +62,9 @@ func (s *Server) handleOpenGuestFolio(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
 		return
 	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
+		return
+	}
 	view, err := s.Auth.Store.OpenGuestFolio(r.Context(), u.OrganizationID, tripID, guestID, u.ID)
 	if err != nil {
 		writeFolioError(w, err)
@@ -78,6 +81,9 @@ func (s *Server) handleAddGuestFolioLine(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
+		return
+	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
 		return
 	}
 	var req addFolioLineReq
@@ -118,6 +124,9 @@ func (s *Server) handleUpdateGuestFolioLine(w http.ResponseWriter, r *http.Reque
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
 		return
 	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
+		return
+	}
 	lineID, err := uuid.Parse(chi.URLParam(r, "line_id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", "line_id must be a uuid")
@@ -152,6 +161,9 @@ func (s *Server) handleDeleteGuestFolioLine(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
+		return
+	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
 		return
 	}
 	lineID, err := uuid.Parse(chi.URLParam(r, "line_id"))

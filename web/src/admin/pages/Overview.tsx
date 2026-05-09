@@ -169,16 +169,16 @@ function CruiseDirectorLanding() {
           <h2 className="admin-card__title">At a glance</h2>
           <ul className="counts">
             <li>
-              <span className="counts__value">{stats.upcoming}</span>
-              <span className="counts__label">Upcoming</span>
+              <span className="counts__value">{stats.planned}</span>
+              <span className="counts__label">Planned</span>
             </li>
             <li>
               <span className="counts__value">{stats.active}</span>
               <span className="counts__label">Active</span>
             </li>
             <li>
-              <span className="counts__value">{stats.past}</span>
-              <span className="counts__label">Past</span>
+              <span className="counts__value">{stats.completed}</span>
+              <span className="counts__label">Completed</span>
             </li>
           </ul>
         </div>
@@ -222,13 +222,15 @@ function CruiseDirectorLanding() {
   );
 }
 
-function orderRank(status: "upcoming" | "active" | "past"): number {
+function orderRank(status: "planned" | "active" | "completed" | "cancelled"): number {
   switch (status) {
     case "active":
       return 0;
-    case "upcoming":
+    case "planned":
       return 1;
-    case "past":
+    case "completed":
       return 2;
+    case "cancelled":
+      return 3;
   }
 }

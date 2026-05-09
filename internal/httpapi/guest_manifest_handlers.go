@@ -61,6 +61,9 @@ func (s *Server) handleAddTripGuest(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
 		return
 	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
+		return
+	}
 	var req addTripGuestReq
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
@@ -107,6 +110,9 @@ func (s *Server) handleResendTripGuestInvite(w http.ResponseWriter, r *http.Requ
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
 		return
 	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
+		return
+	}
 	if _, err := s.Auth.ResendTripGuestInvite(r.Context(), u.OrganizationID, tripID, guestID); err != nil {
 		writeGuestServiceError(w, err)
 		return
@@ -131,6 +137,9 @@ func (s *Server) handleRevokeTripGuestInvite(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
+		return
+	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
 		return
 	}
 	if err := s.Auth.Store.RevokeTripGuestInvite(r.Context(), u.OrganizationID, tripID, guestID, time.Now().UTC()); err != nil {
@@ -242,6 +251,19 @@ func writeGuestServiceError(w http.ResponseWriter, err error) {
 	default:
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 	}
+}
+
+func (s *Server) ensureTripMutable(w http.ResponseWriter, r *http.Request, orgID, tripID uuid.UUID) bool {
+	trip, err := s.Auth.Store.TripByID(r.Context(), orgID, tripID)
+	if err != nil {
+		writeGuestServiceError(w, err)
+		return false
+	}
+	if isTripOperationallyClosed(trip) {
+		writeError(w, http.StatusConflict, "trip_closed", "trip is completed or cancelled")
+		return false
+	}
+	return true
 }
 
 func manifestRowsView(rows []*store.TripGuestManifestRow) []map[string]any {

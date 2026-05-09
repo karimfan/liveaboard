@@ -39,6 +39,9 @@ func (s *Server) handleUploadGuestDocument(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
+	if !s.ensureTripMutable(w, r, tripGuest.OrganizationID, tripGuest.TripID) {
+		return
+	}
 	doc, err := s.uploadDocument(w, r, documentUploadAccess{
 		OrganizationID: tripGuest.OrganizationID,
 		TripID:         tripGuest.TripID,
@@ -112,6 +115,9 @@ func (s *Server) handleUploadStaffGuestDocument(w http.ResponseWriter, r *http.R
 	if !ok {
 		return
 	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
+		return
+	}
 	doc, err := s.uploadDocument(w, r, documentUploadAccess{
 		OrganizationID: u.OrganizationID,
 		TripID:         tripID,
@@ -165,6 +171,9 @@ func (s *Server) handleOpenStaffGuestDocument(w http.ResponseWriter, r *http.Req
 func (s *Server) handleArchiveStaffGuestDocument(w http.ResponseWriter, r *http.Request) {
 	u, tripID, guestID, ok := s.staffGuestAccess(w, r)
 	if !ok {
+		return
+	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
 		return
 	}
 	documentID, ok := uuidParam(w, r, "document_id")

@@ -163,6 +163,9 @@ func (s *Server) handleTripCabinBoard(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
 		return
 	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
+		return
+	}
 	board, err := s.Auth.Store.TripCabinBoard(r.Context(), u.OrganizationID, tripID, time.Now().UTC())
 	if err != nil {
 		writeCabinError(w, err)
@@ -178,6 +181,9 @@ func (s *Server) handleAssignGuestCabin(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
+		return
+	}
+	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
 		return
 	}
 	var req cabinAssignReq

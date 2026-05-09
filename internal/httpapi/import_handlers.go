@@ -293,7 +293,7 @@ func (s *Server) handleSpreadsheetCommit(w http.ResponseWriter, r *http.Request)
 		_ = s.Auth.Store.MarkImportJobSucceeded(r.Context(), job.ID, store.ImportResult{
 			TripsInserted: rep.Inserts,
 			TripsUpdated:  rep.Updates,
-			TripsDeleted:  rep.StaleDeletes,
+			TripsDeleted:  rep.RemovedFromSource,
 		})
 	}
 	_ = s.Auth.Store.DeleteImportPreview(r.Context(), u.OrganizationID, previewID)
@@ -301,7 +301,7 @@ func (s *Server) handleSpreadsheetCommit(w http.ResponseWriter, r *http.Request)
 	out := map[string]any{
 		"trips_inserted": rep.Inserts,
 		"trips_updated":  rep.Updates,
-		"trips_deleted":  rep.StaleDeletes,
+		"trips_deleted":  rep.RemovedFromSource,
 	}
 	if job != nil {
 		out["job_id"] = job.ID

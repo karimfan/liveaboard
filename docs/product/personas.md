@@ -114,8 +114,8 @@ For features that could belong to multiple personas, the table below records the
 | Guest document review/manage | Org Admin or assigned Cruise Director | Staff manage documents from the per-guest profile. |
 | Submitted registration review | Org Admin or assigned Cruise Director | Registration detail is fetched explicitly for the relevant trip. |
 | Mid-trip manifest changes | Cruise Director | Add/revoke/reassign once trip is `active`; guest records are retained. |
-| Start trip (`planned` → `active`) | Cruise Director | Org Admin cannot. |
-| Complete trip (`active` → `completed`) | Cruise Director | Org Admin cannot. |
+| Start trip (`planned` → `active`) | Cruise Director; Org Admin emergency override | Admin override requires a reason and audit record. |
+| Complete trip (`active` → `completed`) | Cruise Director; Org Admin emergency override | Open folios warn but do not block completion. |
 | Cancel trip (`planned` only) | Org Admin | Cruise Director cannot. |
 | Catalog item add/edit/deactivate | Org Admin | Prices are canonical in USD; checkout may quote another currency. |
 | Per-boat stock setup and adjustment | Org Admin | Cruise Director folio entries can later decrement stock automatically. |

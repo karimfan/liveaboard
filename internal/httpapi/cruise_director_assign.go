@@ -56,6 +56,10 @@ func (s *Server) handleAssignCruiseDirector(w http.ResponseWriter, r *http.Reque
 		writeTripLookupError(w, err)
 		return
 	}
+	if isTripOperationallyClosed(trip) {
+		writeError(w, http.StatusConflict, "trip_closed", "trip is completed or cancelled")
+		return
+	}
 	director, err := s.cruiseDirectorForOrg(r.Context(), admin.OrganizationID, directorID)
 	if err != nil {
 		writeDirectorLookupError(w, err)
@@ -99,6 +103,10 @@ func (s *Server) handleUnassignCruiseDirector(w http.ResponseWriter, r *http.Req
 	trip, err := s.tripForOrg(r.Context(), admin.OrganizationID, tripID)
 	if err != nil {
 		writeTripLookupError(w, err)
+		return
+	}
+	if isTripOperationallyClosed(trip) {
+		writeError(w, http.StatusConflict, "trip_closed", "trip is completed or cancelled")
 		return
 	}
 	director, err := s.cruiseDirectorForOrg(r.Context(), admin.OrganizationID, directorID)

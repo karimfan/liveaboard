@@ -52,6 +52,7 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 | Manifest ownership | Org Admin prepares the initial manifest pre-departure. Mid-trip manifest mutations belong to Cruise Director. | Matches `personas.md` and the README. |
 | Cabin model | Boats have reusable cabin layouts made of cabins and berth slots. Binding a guest to a trip requires selecting a berth; Admins and assigned Cruise Directors can change assignments later. | Liveaboard manifests need spatial rooming control, and alphanumeric berth labels such as `1A`/`1B` are common. |
 | Trip lifecycle | Org Admin creates, configures, cancels (planned only), and monitors trips. Cruise Director performs `planned → active` and `active → completed` transitions. | Reflects who is on the boat at the moment of the transition. |
+| Trip retention | Imported trips removed from their source disappear from default operational lists but remain retained for analytics, search, and history. | Operational ledgers should stay clean without losing historical records. |
 | Soft deletion | Boats, trips, catalog items, and users are deactivated/archived rather than hard-deleted. | Preserves historical trip and ledger integrity. |
 | Reporting (Org Admin) | Setup completeness and operational status are `Must`. Revenue summaries are `Should`. Cross-trip analytics deferred (post-MVP). | Matches persona boundaries. |
 | Inventory tracking | Per-boat counted stock ships with catalog. Non-stocked services stay in catalog with `stock_mode = none`. | Needed before Cruise Directors can add stock-tracked items to guest folios. |
@@ -455,6 +456,7 @@ Depends on: US-4.3
 
 Acceptance Criteria:
 - [ ] Trip detail view reflects status changes initiated by the Cruise Director (`planned → active`, `active → completed`).
+- [ ] Org Admin emergency start/complete overrides require a reason and appear in audit.
 - [ ] Org Admin cannot perform `start` or `complete` actions themselves.
 - [ ] Trip history view shows lifecycle timestamps.
 

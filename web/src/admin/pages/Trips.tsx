@@ -9,6 +9,7 @@ export function Trips() {
   const me = useMe();
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [scope, setScope] = useState<"all" | "assigned_to_me">("all");
+  const [statusFilter, setStatusFilter] = useState("operational");
   const [error, setError] = useState<string | null>(null);
 
   const isAdmin = me.loaded && me.me?.role === "org_admin";
@@ -79,10 +80,26 @@ export function Trips() {
           </p>
         </div>
       ) : (
+        <>
+        <div className="admin-toolbar">
+          <label>
+            Status
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="operational">Operational</option>
+              <option value="planned">Planned</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="removed">Removed from source</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+        </div>
         <table className="admin-table">
           <thead>
             <tr>
               <th className="col-dates">Dates</th>
+              <th>Status</th>
               <th>Boat</th>
               <th>Itinerary</th>
               <th>Director</th>
@@ -93,11 +110,12 @@ export function Trips() {
             </tr>
           </thead>
           <tbody>
-            {trips.map((t) => (
+            {filterTrips(trips, statusFilter).map((t) => (
               <tr key={t.id}>
                 <td className="col-dates">
                   {t.start_date} → {t.end_date}
                 </td>
+                <td><span className={`chip chip--${t.removed_from_source_at ? "removed" : t.status}`}>{t.removed_from_source_at ? "removed" : t.status}</span></td>
                 <td>
                   <Link to={`/admin/fleet/${t.boat_id}`}>{t.boat_name}</Link>
                 </td>
@@ -137,9 +155,17 @@ export function Trips() {
             ))}
           </tbody>
         </table>
+        </>
       )}
     </>
   );
+}
+
+function filterTrips(trips: Trip[], filter: string): Trip[] {
+  if (filter === "all") return trips;
+  if (filter === "removed") return trips.filter((t) => t.removed_from_source_at);
+  if (filter === "operational") return trips.filter((t) => !t.removed_from_source_at && t.status !== "cancelled");
+  return trips.filter((t) => !t.removed_from_source_at && t.status === filter);
 }
 
 function ManifestSummary({ trip }: { trip: Trip }) {

@@ -32,6 +32,16 @@ type Trip struct {
 	// the liveaboard.com scraper never touches it.
 	NumGuests *int
 
+	Status              string
+	StartedAt           *time.Time
+	StartedByUserID     *uuid.UUID
+	CompletedAt         *time.Time
+	CompletedByUserID   *uuid.UUID
+	CancelledAt         *time.Time
+	CancelledByUserID   *uuid.UUID
+	CancellationReason  *string
+	RemovedFromSourceAt *time.Time
+
 	SourceProvider     string
 	SourceTripKey      string
 	SourceURL          string
@@ -62,9 +72,10 @@ type TripScrape struct {
 // ReplaceFutureScrapedTripsResult reports the outcome of a scrape
 // reconciliation pass.
 type ReplaceFutureScrapedTripsResult struct {
-	Inserts      int
-	Updates      int
-	StaleDeletes int
+	Inserts           int
+	Updates           int
+	StaleDeletes      int
+	RemovedFromSource int
 }
 
 const tripColumns = `id, organization_id, boat_id,
@@ -72,6 +83,8 @@ const tripColumns = `id, organization_id, boat_id,
 	departure_port, return_port,
 	price_text, availability_text,
 	num_guests,
+	status, started_at, started_by_user_id, completed_at, completed_by_user_id,
+	cancelled_at, cancelled_by_user_id, cancellation_reason, removed_from_source_at,
 	source_provider, source_trip_key, source_url, source_last_synced_at,
 	created_at, updated_at`
 
@@ -86,6 +99,8 @@ func prefixedTripColumns(alias string) string {
 		"departure_port", "return_port",
 		"price_text", "availability_text",
 		"num_guests",
+		"status", "started_at", "started_by_user_id", "completed_at", "completed_by_user_id",
+		"cancelled_at", "cancelled_by_user_id", "cancellation_reason", "removed_from_source_at",
 		"source_provider", "source_trip_key", "source_url", "source_last_synced_at",
 		"created_at", "updated_at",
 	}
@@ -108,6 +123,8 @@ func scanTrip(row interface {
 		&t.DeparturePort, &t.ReturnPort,
 		&t.PriceText, &t.AvailabilityText,
 		&t.NumGuests,
+		&t.Status, &t.StartedAt, &t.StartedByUserID, &t.CompletedAt, &t.CompletedByUserID,
+		&t.CancelledAt, &t.CancelledByUserID, &t.CancellationReason, &t.RemovedFromSourceAt,
 		&t.SourceProvider, &t.SourceTripKey, &t.SourceURL, &t.SourceLastSyncedAt,
 		&t.CreatedAt, &t.UpdatedAt,
 	)
@@ -170,6 +187,7 @@ func (p *Pool) ReplaceFutureScrapedTrips(
 				availability_text     = EXCLUDED.availability_text,
 				source_url            = EXCLUDED.source_url,
 				source_last_synced_at = EXCLUDED.source_last_synced_at,
+				removed_from_source_at = NULL,
 				updated_at            = now()
 			RETURNING (xmax = 0) AS inserted
 		`,
@@ -190,21 +208,23 @@ func (p *Pool) ReplaceFutureScrapedTrips(
 		touched = append(touched, s.SourceTripKey)
 	}
 
-	// Stale-trip reconciliation: future trips for this boat from the
-	// same source that we did NOT touch this run are deleted. The empty
-	// touched-list case still works (`<> ALL($3::text[])` against an
-	// empty array is true for every row, so all future rows go).
+	// Stale-trip reconciliation: future source trips that disappeared
+	// from the latest import are retained for history/search but hidden
+	// from default operational lists.
 	tag, err := tx.Exec(ctx, `
-		DELETE FROM trips
+		UPDATE trips
+		SET removed_from_source_at = $5, updated_at = now()
 		WHERE boat_id = $1
 		  AND source_provider = $2
 		  AND start_date >= $3
 		  AND source_trip_key <> ALL($4::text[])
-	`, boatID, sourceProvider, today, touched)
+		  AND removed_from_source_at IS NULL
+	`, boatID, sourceProvider, today, touched, syncedAt)
 	if err != nil {
-		return nil, fmt.Errorf("delete stale trips: %w", err)
+		return nil, fmt.Errorf("soft-remove stale trips: %w", err)
 	}
-	res.StaleDeletes = int(tag.RowsAffected())
+	res.RemovedFromSource = int(tag.RowsAffected())
+	res.StaleDeletes = res.RemovedFromSource
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
@@ -279,6 +299,7 @@ func (p *Pool) ReplaceSpreadsheetTrips(
 					num_guests            = EXCLUDED.num_guests,
 					source_url            = EXCLUDED.source_url,
 					source_last_synced_at = EXCLUDED.source_last_synced_at,
+					removed_from_source_at = NULL,
 					updated_at            = now()
 				RETURNING (xmax = 0) AS inserted
 			`,
@@ -300,19 +321,23 @@ func (p *Pool) ReplaceSpreadsheetTrips(
 			touched = append(touched, s.SourceTripKey)
 		}
 
-		// Per-boat stale-delete: future spreadsheet trips for this
-		// boat that aren't in the upload are removed.
+		// Per-boat stale handling: future spreadsheet trips for this
+		// boat that aren't in the upload are hidden from operational
+		// lists but retained for history/search.
 		tag, err := tx.Exec(ctx, `
-			DELETE FROM trips
+			UPDATE trips
+			SET removed_from_source_at = $5, updated_at = now()
 			WHERE boat_id = $1
 			  AND source_provider = $2
 			  AND start_date >= $3
 			  AND source_trip_key <> ALL($4::text[])
-		`, boatID, sourceProvider, today, touched)
+			  AND removed_from_source_at IS NULL
+		`, boatID, sourceProvider, today, touched, syncedAt)
 		if err != nil {
-			return nil, fmt.Errorf("delete stale trips for boat %s: %w", boatID, err)
+			return nil, fmt.Errorf("soft-remove stale trips for boat %s: %w", boatID, err)
 		}
-		res.StaleDeletes += int(tag.RowsAffected())
+		res.RemovedFromSource += int(tag.RowsAffected())
+		res.StaleDeletes = res.RemovedFromSource
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -327,7 +352,7 @@ func (p *Pool) TripsForBoat(ctx context.Context, boatID uuid.UUID) ([]*Trip, err
 	rows, err := p.Query(ctx, `
 		SELECT `+tripColumns+`
 		FROM trips
-		WHERE boat_id = $1
+		WHERE boat_id = $1 AND removed_from_source_at IS NULL
 		ORDER BY start_date
 	`, boatID)
 	if err != nil {
@@ -385,6 +410,7 @@ func (p *Pool) TripsForUser(ctx context.Context, orgID, userID uuid.UUID) ([]*Tr
 		FROM trips t
 		JOIN trip_cruise_directors tcd ON tcd.trip_id = t.id
 		WHERE t.organization_id = $1 AND tcd.user_id = $2
+		  AND t.removed_from_source_at IS NULL
 		ORDER BY t.start_date
 	`, orgID, userID)
 	if err != nil {
@@ -500,6 +526,8 @@ func (p *Pool) TripsNeedingAttention(ctx context.Context, orgID uuid.UUID, today
 		FROM trips t
 		WHERE t.organization_id = $1
 		  AND t.start_date BETWEEN $2 AND $2 + INTERVAL '90 days'
+		  AND t.status = 'planned'
+		  AND t.removed_from_source_at IS NULL
 		  AND NOT EXISTS (
 		      SELECT 1 FROM trip_cruise_directors tcd
 		      WHERE tcd.trip_id = t.id
@@ -527,7 +555,7 @@ func (p *Pool) TripsNeedingAttention(ctx context.Context, orgID uuid.UUID, today
 // Overview's setup completeness card.
 func (p *Pool) TripCountForOrg(ctx context.Context, orgID uuid.UUID) (int, error) {
 	var n int
-	if err := p.QueryRow(ctx, `SELECT count(*) FROM trips WHERE organization_id = $1`, orgID).Scan(&n); err != nil {
+	if err := p.QueryRow(ctx, `SELECT count(*) FROM trips WHERE organization_id = $1 AND removed_from_source_at IS NULL`, orgID).Scan(&n); err != nil {
 		return 0, err
 	}
 	return n, nil

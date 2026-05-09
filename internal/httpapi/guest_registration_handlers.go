@@ -69,6 +69,13 @@ func (s *Server) handleGetGuestRegistration(w http.ResponseWriter, r *http.Reque
 	if !ok {
 		return
 	}
+	if trip, err := s.Auth.Store.TripByID(r.Context(), tripGuest.OrganizationID, tripGuest.TripID); err == nil && isTripOperationallyClosed(trip) {
+		writeError(w, http.StatusConflict, "trip_closed", "trip is completed or cancelled")
+		return
+	} else if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
 	reg, err := s.Auth.Store.GuestRegistrationByTripGuest(r.Context(), tripGuest.ID)
 	if errors.Is(err, store.ErrNotFound) {
 		writeJSON(w, http.StatusOK, map[string]any{
@@ -89,6 +96,9 @@ func (s *Server) handleGetGuestRegistration(w http.ResponseWriter, r *http.Reque
 func (s *Server) handleSaveGuestRegistration(w http.ResponseWriter, r *http.Request) {
 	guest, tripGuest, ok := s.guestRegistrationAccess(w, r)
 	if !ok {
+		return
+	}
+	if !s.ensureTripMutable(w, r, tripGuest.OrganizationID, tripGuest.TripID) {
 		return
 	}
 	// Once a guest has submitted, drafts are no longer the right gesture:
@@ -119,6 +129,9 @@ func (s *Server) handleSaveGuestRegistration(w http.ResponseWriter, r *http.Requ
 func (s *Server) handleSubmitGuestRegistration(w http.ResponseWriter, r *http.Request) {
 	guest, tripGuest, ok := s.guestRegistrationAccess(w, r)
 	if !ok {
+		return
+	}
+	if !s.ensureTripMutable(w, r, tripGuest.OrganizationID, tripGuest.TripID) {
 		return
 	}
 	payload, ok := readRegistrationPayload(w, r, true)

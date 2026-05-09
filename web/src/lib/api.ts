@@ -75,7 +75,7 @@ export type CruiseDirectorOverview = {
     role: string;
     organization_name: string;
   };
-  stats: { upcoming: number; active: number; past: number };
+  stats: { planned: number; active: number; completed: number };
   trips: Array<{
     id: string;
     boat_id: string;
@@ -83,7 +83,8 @@ export type CruiseDirectorOverview = {
     itinerary: string;
     start_date: string;
     end_date: string;
-    status: "upcoming" | "active" | "past";
+    status: "planned" | "active" | "completed" | "cancelled";
+    date_bucket: "upcoming" | "active" | "past";
   }>;
 };
 

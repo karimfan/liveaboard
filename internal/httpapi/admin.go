@@ -352,6 +352,11 @@ func tripView(t *store.Trip, boatName string, directorIDs []uuid.UUID, directorN
 		"price_text":               t.PriceText,
 		"availability_text":        t.AvailabilityText,
 		"num_guests":               t.NumGuests,
+		"status":                   t.Status,
+		"started_at":               t.StartedAt,
+		"completed_at":             t.CompletedAt,
+		"cancelled_at":             t.CancelledAt,
+		"removed_from_source_at":   t.RemovedFromSourceAt,
 		"cruise_director_user_ids": idStrs,
 		"cruise_director_names":    names,
 	}

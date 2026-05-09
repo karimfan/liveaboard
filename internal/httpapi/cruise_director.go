@@ -12,7 +12,7 @@ import (
 // powers the Cruise Director landing page. It returns:
 //
 //   - the caller's contact card (profile),
-//   - upcoming/active/past trip counts (stats),
+//   - planned/active/completed trip counts (stats),
 //   - the caller's assigned trips (trips), sorted by start_date asc.
 //
 // The endpoint is cruise-director-only. Org Admins receive 403; they
@@ -53,26 +53,27 @@ func (s *Server) handleCruiseDirectorOverview(w http.ResponseWriter, r *http.Req
 	now := time.Now().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
-	upcoming, active, past := 0, 0, 0
+	planned, active, completed := 0, 0, 0
 	tripViews := make([]map[string]any, 0, len(trips))
 	for _, t := range trips {
-		status := classifyTripStatus(t, today)
-		switch status {
-		case "upcoming":
-			upcoming++
+		switch t.Status {
+		case store.TripStatusPlanned:
+			planned++
 		case "active":
 			active++
-		case "past":
-			past++
+		case store.TripStatusCompleted:
+			completed++
 		}
+		dateBucket := classifyTripStatus(t, today)
 		tripViews = append(tripViews, map[string]any{
-			"id":         t.ID,
-			"boat_id":    t.BoatID,
-			"boat_name":  boatNames[t.BoatID.String()],
-			"itinerary":  t.Itinerary,
-			"start_date": t.StartDate.Format("2006-01-02"),
-			"end_date":   t.EndDate.Format("2006-01-02"),
-			"status":     status,
+			"id":          t.ID,
+			"boat_id":     t.BoatID,
+			"boat_name":   boatNames[t.BoatID.String()],
+			"itinerary":   t.Itinerary,
+			"start_date":  t.StartDate.Format("2006-01-02"),
+			"end_date":    t.EndDate.Format("2006-01-02"),
+			"status":      t.Status,
+			"date_bucket": dateBucket,
 		})
 	}
 
@@ -86,9 +87,11 @@ func (s *Server) handleCruiseDirectorOverview(w http.ResponseWriter, r *http.Req
 			"organization_name": org.Name,
 		},
 		"stats": map[string]any{
-			"upcoming": upcoming,
-			"active":   active,
-			"past":     past,
+			"planned":   planned,
+			"active":    active,
+			"completed": completed,
+			"upcoming":  planned,
+			"past":      completed,
 		},
 		"trips": tripViews,
 	})

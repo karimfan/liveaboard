@@ -193,7 +193,7 @@ func (r *Runner) runJob(ctx context.Context, job *store.ImportJob, url string) {
 		BoatsUpdated:  1,
 		TripsInserted: rep.Inserts,
 		TripsUpdated:  rep.Updates,
-		TripsDeleted:  rep.StaleDeletes,
+		TripsDeleted:  rep.RemovedFromSource,
 	}); err != nil {
 		r.Log.Error("mark succeeded", "err", err, "job_id", job.ID)
 	}
