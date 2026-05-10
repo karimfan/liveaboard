@@ -102,7 +102,7 @@ func (p *Pool) TripReadiness(ctx context.Context, orgID, tripID uuid.UUID, now t
 		if g.DocumentCount == 0 {
 			out.Warnings = append(out.Warnings, TripReadinessIssue{Code: "missing_documents", Severity: "warning", Message: "Guest has no uploaded documents.", TripGuestID: g.TripGuestID})
 		}
-		if g.FolioStatus == nil || *g.FolioStatus != FolioStatusClosed {
+		if trip.Status == TripStatusActive && (g.FolioStatus == nil || *g.FolioStatus != FolioStatusClosed) {
 			out.Warnings = append(out.Warnings, TripReadinessIssue{Code: "open_folios", Severity: "warning", Message: "Guest folio is open or missing.", TripGuestID: g.TripGuestID})
 		}
 		out.Guests = append(out.Guests, g)
@@ -155,6 +155,9 @@ func (p *Pool) StartTrip(ctx context.Context, orgID, tripID uuid.UUID, in TripLi
 		RETURNING `+tripColumns,
 		orgID, tripID, in.Now, in.ActorUserID), t)
 	if err != nil {
+		return nil, err
+	}
+	if err := p.OpenGuestFoliosForTripTx(ctx, tx, orgID, tripID, in.ActorUserID); err != nil {
 		return nil, err
 	}
 	_, err = p.RecordAuditEventTx(ctx, tx, AuditEventInput{

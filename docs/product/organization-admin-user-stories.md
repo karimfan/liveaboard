@@ -66,7 +66,6 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 
 The following are explicitly out of scope for the Organization Admin backlog:
 
-- Live ledger entry / mid-trip consumption flows (Cruise Director).
 - Mid-trip manifest operations (Cruise Director).
 - Trip start / complete lifecycle transitions (Cruise Director).
 - Full guest self-service portal beyond trip registration.
@@ -714,6 +713,28 @@ Acceptance Criteria:
 - [ ] Stock-tracked lines decrement boat inventory atomically.
 - [ ] Closing emails the itemized folio to the guest.
 - [ ] No online payment processing or POS confirmation data is stored.
+
+### US-7.6: Record live consumption during active trip
+
+> As a Cruise Director, I want to add a guest's onboard purchases as they
+> happen so that the folio and boat inventory reflect the trip in
+> progress.
+
+Priority: Must
+Area: Oversight
+Depends on: US-7.5, US-5.7
+
+Acceptance Criteria:
+- [ ] Active trip guests have open folios at trip start, with lazy-open
+      on first line-add for late-added guests.
+- [ ] Cruise Director can add one catalog item to one guest from a
+      mobile-friendly trip ledger.
+- [ ] Counted stock is adjusted at line-add time.
+- [ ] Counted stock may go negative and returns a warning rather than
+      blocking the line.
+- [ ] Duplicate mobile submits do not create duplicate lines.
+- [ ] Voided/corrected lines are hidden from the folio view while stock
+      movements and audit retain history.
 
 ### US-7.4: Cross-trip analytics (deferred)
 

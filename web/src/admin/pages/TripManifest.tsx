@@ -125,7 +125,10 @@ export function TripManifest() {
             {data.trip.boat_name} - {data.trip.start_date} to {data.trip.end_date} - {data.trip.itinerary}
           </div>
         </div>
-        <Link className="secondary" to={`/admin/trips/${id}/cabins`}>Cabin board</Link>
+        <div className="header-actions">
+          {lifecycle?.trip.status === "active" && <Link className="primary" to={`/admin/trips/${id}/ledger`}>Ledger</Link>}
+          <Link className="secondary" to={`/admin/trips/${id}/cabins`}>Cabin board</Link>
+        </div>
       </div>
 
       {error && <div className="error">{error}</div>}

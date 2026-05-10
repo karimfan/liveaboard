@@ -62,7 +62,8 @@ When a story or feature could plausibly belong to two personas, the boundary tab
   optional crew-tip line when requested, close the one end-of-trip
   folio as paid, and resend the folio email.
 - Trip lifecycle transitions: start (`planned` → `active`), complete (`active` → `completed`).
-- Guest consumption / ledger entries.
+- Guest consumption / ledger entries: single-guest quick add during
+  active trips, with stock warnings when counted inventory goes negative.
 - Onboard operational coordination for the duration of the trip.
 
 **Does not own:**
@@ -120,7 +121,7 @@ For features that could belong to multiple personas, the table below records the
 | Catalog item add/edit/deactivate | Org Admin | Prices are canonical in USD; checkout may quote another currency. |
 | Per-boat stock setup and adjustment | Org Admin | Cruise Director folio entries can later decrement stock automatically. |
 | Payment settings | Org Admin | Supported currencies, payment methods, card fee, folio email footer. |
-| Record consumption / ledger entries | Cruise Director | |
+| Record consumption / ledger entries | Cruise Director | Active trips only; Org Admin also has oversight access. |
 | Guest checkout / close folio | Cruise Director | Assigned trips only; one end-of-trip folio per guest/trip. |
 | Operational audit log | Org Admin or assigned Cruise Director | Admin sees org-wide events; Cruise Directors see assigned-trip events. |
 | Invite Cruise Director | Org Admin | MVP user-mgmt subset. |

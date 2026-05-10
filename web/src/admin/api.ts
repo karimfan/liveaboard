@@ -401,6 +401,15 @@ export type GuestFolioLine = {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  stock_posted_at?: string | null;
+  client_request_id?: string | null;
+};
+
+export type FolioWarning = {
+  code: string;
+  message: string;
+  catalog_item_id: string | null;
+  quantity_on_hand: number | null;
 };
 
 export type GuestFolio = {
@@ -433,6 +442,43 @@ export type GuestFolio = {
   end_date: string;
   guest_full_name: string;
   guest_email: string;
+  warnings: FolioWarning[];
+};
+
+export type TripLedger = {
+  trip: {
+    id: string;
+    boat_id: string;
+    status: Trip["status"];
+    itinerary: string;
+    start_date: string;
+    end_date: string;
+  };
+  guests: {
+    trip_guest_id: string;
+    full_name: string;
+    email: string;
+    folio_id: string | null;
+    folio_status: string | null;
+    line_count: number;
+    subtotal_usd_cents: number;
+  }[];
+  catalog: CatalogItem[];
+  inventory: {
+    catalog_item_id: string;
+    quantity_on_hand: number;
+    status: "ok" | "low" | "out";
+  }[];
+  recent: {
+    id: string;
+    trip_guest_id: string;
+    guest_full_name: string;
+    item_name: string;
+    quantity: number;
+    line_total_usd_cents: number;
+    stock_mode: "none" | "counted";
+    created_at: string;
+  }[];
 };
 
 export type GuestDocument = {
@@ -649,6 +695,7 @@ export const adminApi = {
     catalog_item_id?: string;
     quantity?: number;
     tip_usd_cents?: number;
+    client_request_id?: string;
   }) => call<GuestFolio>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio/lines`, input),
   updateGuestFolioLine: (tripId: string, guestId: string, lineId: string, input: {
     quantity?: number;
@@ -660,6 +707,14 @@ export const adminApi = {
     call<GuestFolio>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio/close`, input),
   resendGuestFolioEmail: (tripId: string, guestId: string) =>
     call<GuestFolio>("POST", `/admin/trips/${encodeURIComponent(tripId)}/guests/${encodeURIComponent(guestId)}/folio/resend-email`),
+  getTripLedger: (tripId: string) =>
+    call<TripLedger>("GET", `/admin/trips/${encodeURIComponent(tripId)}/ledger`),
+  addTripLedgerLine: (tripId: string, input: {
+    trip_guest_id: string;
+    catalog_item_id: string;
+    quantity: number;
+    client_request_id?: string;
+  }) => call<GuestFolio>("POST", `/admin/trips/${encodeURIComponent(tripId)}/ledger/lines`, input),
 
   // --- Sprint 012 trip imports ---
 

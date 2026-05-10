@@ -16,10 +16,11 @@ import (
 )
 
 type addFolioLineReq struct {
-	LineType      string `json:"line_type"`
-	CatalogItemID string `json:"catalog_item_id,omitempty"`
-	Quantity      int    `json:"quantity,omitempty"`
-	TipUSDCents   int64  `json:"tip_usd_cents,omitempty"`
+	LineType        string `json:"line_type"`
+	CatalogItemID   string `json:"catalog_item_id,omitempty"`
+	Quantity        int    `json:"quantity,omitempty"`
+	TipUSDCents     int64  `json:"tip_usd_cents,omitempty"`
+	ClientRequestID string `json:"client_request_id,omitempty"`
 }
 
 type updateFolioLineReq struct {
@@ -30,6 +31,69 @@ type updateFolioLineReq struct {
 type closeFolioReq struct {
 	PaymentMethod      string `json:"payment_method"`
 	SettlementCurrency string `json:"settlement_currency"`
+}
+
+type addLedgerLineReq struct {
+	TripGuestID     string `json:"trip_guest_id"`
+	CatalogItemID   string `json:"catalog_item_id"`
+	Quantity        int    `json:"quantity"`
+	ClientRequestID string `json:"client_request_id,omitempty"`
+}
+
+func (s *Server) handleTripLedger(w http.ResponseWriter, r *http.Request) {
+	u := auth.UserFromContext(r.Context())
+	tripID, ok := uuidParam(w, r, "id")
+	if !ok {
+		return
+	}
+	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
+		return
+	}
+	ledger, err := s.Auth.Store.TripConsumptionLedger(r.Context(), u.OrganizationID, tripID)
+	if err != nil {
+		writeFolioError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, tripLedgerView(ledger))
+}
+
+func (s *Server) handleAddTripLedgerLine(w http.ResponseWriter, r *http.Request) {
+	u := auth.UserFromContext(r.Context())
+	tripID, ok := uuidParam(w, r, "id")
+	if !ok {
+		return
+	}
+	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
+		return
+	}
+	var req addLedgerLineReq
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		return
+	}
+	guestID, err := uuid.Parse(req.TripGuestID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_input", "trip_guest_id must be a uuid")
+		return
+	}
+	itemID, err := uuid.Parse(req.CatalogItemID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_input", "catalog_item_id must be a uuid")
+		return
+	}
+	view, err := s.Auth.Store.AddGuestFolioLine(r.Context(), u.OrganizationID, tripID, guestID, store.AddFolioLineInput{
+		ActorUserID:     u.ID,
+		LineType:        store.FolioLineCatalogItem,
+		CatalogItemID:   itemID,
+		Quantity:        req.Quantity,
+		ClientRequestID: req.ClientRequestID,
+	})
+	if err != nil {
+		writeFolioError(w, err)
+		return
+	}
+	s.recordStaffAudit(r.Context(), u.OrganizationID, u.ID, "guest.folio_line_added", "guest_folio", &view.Folio.ID, &tripID, &guestID, map[string]any{"line_type": store.FolioLineCatalogItem, "quantity": req.Quantity, "catalog_item_id": itemID})
+	writeJSON(w, http.StatusOK, guestFolioView(view))
 }
 
 func (s *Server) handleGetGuestFolio(w http.ResponseWriter, r *http.Request) {
@@ -101,11 +165,12 @@ func (s *Server) handleAddGuestFolioLine(w http.ResponseWriter, r *http.Request)
 		itemID = id
 	}
 	view, err := s.Auth.Store.AddGuestFolioLine(r.Context(), u.OrganizationID, tripID, guestID, store.AddFolioLineInput{
-		ActorUserID:   u.ID,
-		LineType:      req.LineType,
-		CatalogItemID: itemID,
-		Quantity:      req.Quantity,
-		TipUSDCents:   req.TipUSDCents,
+		ActorUserID:     u.ID,
+		LineType:        req.LineType,
+		CatalogItemID:   itemID,
+		Quantity:        req.Quantity,
+		TipUSDCents:     req.TipUSDCents,
+		ClientRequestID: req.ClientRequestID,
 	})
 	if err != nil {
 		writeFolioError(w, err)
@@ -171,7 +236,7 @@ func (s *Server) handleDeleteGuestFolioLine(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusBadRequest, "invalid_input", "line_id must be a uuid")
 		return
 	}
-	view, err := s.Auth.Store.DeleteGuestFolioLine(r.Context(), u.OrganizationID, tripID, guestID, lineID)
+	view, err := s.Auth.Store.DeleteGuestFolioLine(r.Context(), u.OrganizationID, tripID, guestID, lineID, u.ID)
 	if err != nil {
 		writeFolioError(w, err)
 		return
@@ -328,6 +393,17 @@ func guestFolioView(v *store.GuestFolioView) map[string]any {
 			"sort_order":           line.SortOrder,
 			"created_at":           line.CreatedAt,
 			"updated_at":           line.UpdatedAt,
+			"stock_posted_at":      line.StockPostedAt,
+			"client_request_id":    line.ClientRequestID,
+		})
+	}
+	warnings := make([]map[string]any, 0, len(v.Warnings))
+	for _, warning := range v.Warnings {
+		warnings = append(warnings, map[string]any{
+			"code":             warning.Code,
+			"message":          warning.Message,
+			"catalog_item_id":  warning.CatalogItemID,
+			"quantity_on_hand": warning.QuantityOnHand,
 		})
 	}
 	return map[string]any{
@@ -360,6 +436,64 @@ func guestFolioView(v *store.GuestFolioView) map[string]any {
 		"end_date":               v.TripEndDate,
 		"guest_full_name":        v.GuestFullName,
 		"guest_email":            v.GuestEmail,
+		"warnings":               warnings,
+	}
+}
+
+func tripLedgerView(v *store.TripLedgerView) map[string]any {
+	guests := make([]map[string]any, 0, len(v.Guests))
+	for _, g := range v.Guests {
+		guests = append(guests, map[string]any{
+			"trip_guest_id":      g.TripGuestID,
+			"full_name":          g.FullName,
+			"email":              g.Email,
+			"folio_id":           g.FolioID,
+			"folio_status":       g.FolioStatus,
+			"line_count":         g.LineCount,
+			"subtotal_usd_cents": g.SubtotalUSDCents,
+		})
+	}
+	catalog := make([]map[string]any, 0, len(v.Catalog))
+	for _, item := range v.Catalog {
+		if !item.IsActive || item.ArchivedAt != nil {
+			continue
+		}
+		catalog = append(catalog, catalogItemView(item))
+	}
+	inventory := make([]map[string]any, 0, len(v.Inventory))
+	for _, item := range v.Inventory {
+		inventory = append(inventory, map[string]any{
+			"catalog_item_id":  item.CatalogItemID,
+			"quantity_on_hand": item.QuantityOnHand,
+			"status":           item.Status,
+		})
+	}
+	recent := make([]map[string]any, 0, len(v.Recent))
+	for _, line := range v.Recent {
+		recent = append(recent, map[string]any{
+			"id":                   line.ID,
+			"trip_guest_id":        line.TripGuestID,
+			"guest_full_name":      line.GuestFullName,
+			"item_name":            line.ItemName,
+			"quantity":             line.Quantity,
+			"line_total_usd_cents": line.LineTotalUSDCents,
+			"stock_mode":           line.StockMode,
+			"created_at":           line.CreatedAt,
+		})
+	}
+	return map[string]any{
+		"trip": map[string]any{
+			"id":         v.Trip.ID,
+			"boat_id":    v.Trip.BoatID,
+			"status":     v.Trip.Status,
+			"itinerary":  v.Trip.Itinerary,
+			"start_date": v.Trip.StartDate,
+			"end_date":   v.Trip.EndDate,
+		},
+		"guests":    guests,
+		"catalog":   catalog,
+		"inventory": inventory,
+		"recent":    recent,
 	}
 }
 
@@ -371,6 +505,8 @@ func writeFolioError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "folio_exists", "folio already exists")
 	case errors.Is(err, store.ErrFolioClosed):
 		writeError(w, http.StatusConflict, "folio_closed", "folio is closed")
+	case errors.Is(err, store.ErrTripNotActive):
+		writeError(w, http.StatusConflict, "trip_not_active", "trip is not active")
 	case strings.Contains(err.Error(), "stock adjustment would make quantity negative"):
 		writeError(w, http.StatusConflict, "insufficient_stock", "not enough stock to close this folio")
 	default:

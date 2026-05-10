@@ -98,7 +98,7 @@ func scanStockMovement(row interface{ Scan(dest ...any) error }, m *StockMovemen
 }
 
 func inventoryStatus(onHand int, reorder *int) string {
-	if onHand == 0 {
+	if onHand <= 0 {
 		return "out"
 	}
 	if reorder != nil && onHand <= *reorder {
