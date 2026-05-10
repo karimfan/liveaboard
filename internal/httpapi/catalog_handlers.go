@@ -199,7 +199,7 @@ func catalogCategoryView(c *store.CatalogCategory) map[string]any {
 }
 
 func catalogItemView(i *store.CatalogItem) map[string]any {
-	return map[string]any{
+	out := map[string]any{
 		"id":              i.ID,
 		"category_id":     i.CategoryID,
 		"category_name":   i.CategoryName,
@@ -215,4 +215,10 @@ func catalogItemView(i *store.CatalogItem) map[string]any {
 		"is_active":       i.IsActive,
 		"archived_at":     i.ArchivedAt,
 	}
+	if i.EffectivePriceUSDCents != nil {
+		out["effective_price_usd_cents"] = *i.EffectivePriceUSDCents
+		out["price_source"] = i.PriceSource
+		out["price_override_id"] = i.PriceOverrideID
+	}
+	return out
 }

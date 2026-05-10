@@ -1199,6 +1199,16 @@ select.select-inline:focus {
 .saved-inline {
   margin-left: var(--sp-md);
 }
+.pricing-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: var(--sp-lg);
+  align-items: start;
+}
+.pricing-form {
+  position: sticky;
+  top: var(--sp-lg);
+}
 .folio-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
@@ -1605,6 +1615,12 @@ select.select-inline:focus {
 }
 
 @media (max-width: 880px) {
+  .pricing-layout {
+    grid-template-columns: 1fr;
+  }
+  .pricing-form {
+    position: static;
+  }
   .document-row,
   .activity-row {
     align-items: stretch;

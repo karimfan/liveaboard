@@ -39,23 +39,26 @@ type CatalogCategory struct {
 }
 
 type CatalogItem struct {
-	ID             uuid.UUID
-	OrganizationID uuid.UUID
-	CategoryID     uuid.UUID
-	TemplateKey    *string
-	Name           string
-	Description    *string
-	Unit           string
-	ChargeType     string
-	StockMode      string
-	PriceUSDCents  int64
-	IsTaxable      bool
-	IsRequiredFee  bool
-	IsActive       bool
-	ArchivedAt     *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	CategoryName   string
+	ID                     uuid.UUID
+	OrganizationID         uuid.UUID
+	CategoryID             uuid.UUID
+	TemplateKey            *string
+	Name                   string
+	Description            *string
+	Unit                   string
+	ChargeType             string
+	StockMode              string
+	PriceUSDCents          int64
+	IsTaxable              bool
+	IsRequiredFee          bool
+	IsActive               bool
+	ArchivedAt             *time.Time
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
+	CategoryName           string
+	EffectivePriceUSDCents *int64
+	PriceSource            string
+	PriceOverrideID        *uuid.UUID
 }
 
 type CatalogItemInput struct {

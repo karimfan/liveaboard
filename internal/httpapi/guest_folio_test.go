@@ -228,6 +228,131 @@ func TestTripLedgerLazyOpenIdempotentNegativeStock(t *testing.T) {
 	}
 }
 
+func TestTripLedgerUsesEffectivePriceOverrides(t *testing.T) {
+	h := newHarness(t)
+	c := &http.Client{}
+	adminCookie, org, _ := signInAsAdmin(t, h)
+	tripID := seedManifestTrip(t, h, org.ID, 1)
+	markTripActive(t, h, org.ID, tripID)
+	boatID := boatIDForTrip(t, h, tripID)
+	resp, body := doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests", map[string]any{
+		"full_name": "Override Guest",
+		"email":     "override@example.test",
+		"berth_id":  nextBerthForTrip(t, h, tripID).String(),
+	}, adminCookie)
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("add guest: %d %v", resp.StatusCode, body)
+	}
+	guestID, _ := uuid.Parse(body["id"].(string))
+	item := catalogItemByName(t, h, org.ID, "Beer - Can")
+
+	resp, body = doJSON(t, c, "PUT", h.server.URL+"/api/admin/pricing/boat-overrides", map[string]any{
+		"catalog_item_id": item.ID.String(),
+		"boat_id":         boatID.String(),
+		"price_usd_cents": 900,
+		"notes":           "boat bar price",
+	}, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("boat override: %d %v", resp.StatusCode, body)
+	}
+	resp, body = doJSON(t, c, "PUT", h.server.URL+"/api/admin/pricing/trip-overrides", map[string]any{
+		"catalog_item_id": item.ID.String(),
+		"trip_id":         tripID.String(),
+		"price_usd_cents": 1100,
+		"notes":           "trip special",
+	}, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("trip override: %d %v", resp.StatusCode, body)
+	}
+	resp, body = doJSON(t, c, "GET", h.server.URL+"/api/admin/trips/"+tripID.String()+"/ledger", nil, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("ledger: %d %v", resp.StatusCode, body)
+	}
+	var seen bool
+	for _, raw := range body["catalog"].([]any) {
+		row := raw.(map[string]any)
+		if row["id"] == item.ID.String() {
+			seen = true
+			if row["effective_price_usd_cents"] != float64(1100) || row["price_source"] != "trip_override" {
+				t.Fatalf("effective ledger item: %v", row)
+			}
+		}
+	}
+	if !seen {
+		t.Fatalf("catalog item missing from ledger")
+	}
+
+	resp, body = doJSON(t, c, "POST", h.server.URL+"/api/admin/trips/"+tripID.String()+"/ledger/lines", map[string]any{
+		"trip_guest_id":   guestID.String(),
+		"catalog_item_id": item.ID.String(),
+		"quantity":        2,
+	}, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("add overridden line: %d %v", resp.StatusCode, body)
+	}
+	lines := body["lines"].([]any)
+	if len(lines) != 1 {
+		t.Fatalf("line count = %d want 1", len(lines))
+	}
+	line := lines[0].(map[string]any)
+	if line["unit_price_usd_cents"] != float64(1100) || line["line_total_usd_cents"] != float64(2200) || line["price_source"] != "trip_override" {
+		t.Fatalf("line did not snapshot trip override: %v", line)
+	}
+
+	resp, body = doJSON(t, c, "PUT", h.server.URL+"/api/admin/pricing/trip-overrides", map[string]any{
+		"catalog_item_id": item.ID.String(),
+		"trip_id":         tripID.String(),
+		"price_usd_cents": 1300,
+		"notes":           "changed",
+	}, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("update trip override: %d %v", resp.StatusCode, body)
+	}
+	resp, body = doJSON(t, c, "GET", h.server.URL+"/api/admin/trips/"+tripID.String()+"/guests/"+guestID.String()+"/folio", nil, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("folio after override change: %d %v", resp.StatusCode, body)
+	}
+	line = body["lines"].([]any)[0].(map[string]any)
+	if line["unit_price_usd_cents"] != float64(1100) {
+		t.Fatalf("historical line was repriced: %v", line)
+	}
+}
+
+func TestPaymentSettingsDefaultsEURButAllowsRemoval(t *testing.T) {
+	h := newHarness(t)
+	c := &http.Client{}
+	adminCookie, _, _ := signInAsAdmin(t, h)
+
+	resp, body := doJSON(t, c, "GET", h.server.URL+"/api/admin/organization/payment-settings", nil, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("settings: %d %v", resp.StatusCode, body)
+	}
+	if !containsString(body["supported_currencies"].([]any), "USD") || !containsString(body["supported_currencies"].([]any), "EUR") {
+		t.Fatalf("expected USD and EUR defaults: %v", body["supported_currencies"])
+	}
+
+	resp, body = doJSON(t, c, "PATCH", h.server.URL+"/api/admin/organization/payment-settings", map[string]any{
+		"default_currency":        "USD",
+		"supported_currencies":    []string{"USD"},
+		"enabled_payment_methods": []string{"card", "cash"},
+		"card_fee_basis_points":   0,
+		"folio_email_footer":      nil,
+	}, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("remove EUR: %d %v", resp.StatusCode, body)
+	}
+	if containsString(body["supported_currencies"].([]any), "EUR") {
+		t.Fatalf("EUR should be removable: %v", body["supported_currencies"])
+	}
+	resp, body = doJSON(t, c, "GET", h.server.URL+"/api/admin/organization/payment-settings", nil, adminCookie)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("settings after removal: %d %v", resp.StatusCode, body)
+	}
+	if containsString(body["supported_currencies"].([]any), "EUR") {
+		t.Fatalf("EnsurePaymentSettings re-added EUR: %v", body["supported_currencies"])
+	}
+}
+
 func TestTripLedgerConcurrentLazyOpenSameRequest(t *testing.T) {
 	h := newHarness(t)
 	c := &http.Client{}
@@ -281,6 +406,15 @@ func boatIDForTrip(t *testing.T, h *harness, tripID uuid.UUID) uuid.UUID {
 		t.Fatalf("boatIDForTrip: %v", err)
 	}
 	return boatID
+}
+
+func containsString(items []any, want string) bool {
+	for _, item := range items {
+		if item == want {
+			return true
+		}
+	}
+	return false
 }
 
 func markTripActive(t *testing.T, h *harness, orgID, tripID uuid.UUID) {

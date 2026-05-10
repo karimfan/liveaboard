@@ -48,7 +48,7 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 | Decision | Choice | Rationale |
 |---|---|---|
 | MVP user management | Minimal subset only: invite Cruise Director, deactivate user, assign trip leadership. Advanced role admin deferred. | Cruise Director workflows depend on the ability to invite and assign — full deferral would block the next implementation sprints. |
-| Catalog pricing | Catalog prices are canonical in USD. `organizations.currency` is a display/default checkout preference, and guest checkout quotes convert from USD using stored rate snapshots. Per-boat / per-trip overrides captured as `Could` follow-ups. | Operators compare most onboard extras in USD, while guests may settle in a different currency. |
+| Catalog pricing | Catalog prices are canonical in USD. `organizations.currency` is a display/default checkout preference, and guest checkout quotes convert from USD using stored rate snapshots. Org Admins can configure per-item boat and trip overrides. | Operators compare most onboard extras in USD, while guests may settle in a different currency. |
 | Manifest ownership | Org Admin prepares the initial manifest pre-departure. Mid-trip manifest mutations belong to Cruise Director. | Matches `personas.md` and the README. |
 | Cabin model | Boats have reusable cabin layouts made of cabins and berth slots. Binding a guest to a trip requires selecting a berth; Admins and assigned Cruise Directors can change assignments later. | Liveaboard manifests need spatial rooming control, and alphanumeric berth labels such as `1A`/`1B` are common. |
 | Trip lifecycle | Org Admin creates, configures, cancels (planned only), and monitors trips. Cruise Director performs `planned → active` and `active → completed` transitions. | Reflects who is on the boat at the moment of the transition. |
@@ -73,7 +73,7 @@ The following are explicitly out of scope for the Organization Admin backlog:
 - Deep analytics and reporting beyond setup + operational status + per-trip revenue.
 - Billing and org-deletion controls (post-MVP).
 - Advanced role administration (multi-admin, custom roles, granular permissions).
-- Per-boat/per-trip pricing overrides, trip booking fees.
+- Package pricing, discounts, tax/service-charge rules, and trip booking fees.
 - Offline / sync.
 - Cloud deployment and infrastructure concerns.
 
@@ -562,15 +562,20 @@ Acceptance Criteria:
 - [ ] Categories can be renamed.
 - [ ] Empty categories can be deleted; categories with items cannot.
 
-### US-5.6: Per-boat or per-trip pricing overrides (deferred)
+### US-5.6: Per-boat or per-trip pricing overrides
 
 > As an Organization Admin, I want to override item prices for specific boats or trips so that pricing can vary by route or boat tier.
 
-Priority: Could
+Priority: Should
 Area: Catalog
 Depends on: US-5.3
 
-Acceptance Criteria: Deferred — captured so it is not lost. Will be expanded if/when prioritized.
+Acceptance Criteria:
+- [ ] Admin can set a USD override for one catalog item on one boat.
+- [ ] Admin can set a USD override for one catalog item on one trip.
+- [ ] Trip override wins over boat override; boat override wins over base catalog item price.
+- [ ] Future folio lines snapshot the effective price and source.
+- [ ] Existing folio lines are not repriced when overrides change.
 
 ### US-5.7: Inventory tracking for catalog items
 

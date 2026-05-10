@@ -31,6 +31,7 @@ import { Inventory } from "./admin/pages/Inventory";
 import { Users } from "./admin/pages/Users";
 import { Organization } from "./admin/pages/Organization";
 import { OrganizationPayments } from "./admin/pages/OrganizationPayments";
+import { OrganizationPricing } from "./admin/pages/OrganizationPricing";
 import { AuditEvents } from "./admin/pages/AuditEvents";
 import { GuestFolio } from "./admin/pages/GuestFolio";
 import { Reports } from "./admin/pages/Reports";
@@ -85,6 +86,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route
             path="organization/payments"
             element={<RequireAdmin><OrganizationPayments /></RequireAdmin>}
+          />
+          <Route
+            path="organization/pricing"
+            element={<RequireAdmin><OrganizationPricing /></RequireAdmin>}
           />
           <Route
             path="fleet"

@@ -395,6 +395,8 @@ func guestFolioView(v *store.GuestFolioView) map[string]any {
 			"updated_at":           line.UpdatedAt,
 			"stock_posted_at":      line.StockPostedAt,
 			"client_request_id":    line.ClientRequestID,
+			"price_source":         line.PriceSource,
+			"price_override_id":    line.PriceOverrideID,
 		})
 	}
 	warnings := make([]map[string]any, 0, len(v.Warnings))

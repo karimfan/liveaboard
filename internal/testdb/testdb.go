@@ -124,6 +124,7 @@ func Pool(t *testing.T) *store.Pool {
 			guest_folio_lines,
 			guest_folios,
 			organization_payment_settings,
+			catalog_price_overrides,
 			guest_trip_registrations,
 			guest_trip_invitations,
 			trip_guests,

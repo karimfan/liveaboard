@@ -312,6 +312,25 @@ export type CatalogItem = {
   is_required_fee: boolean;
   is_active: boolean;
   archived_at: string | null;
+  effective_price_usd_cents?: number;
+  price_source?: "base" | "boat_override" | "trip_override" | "tip";
+  price_override_id?: string | null;
+};
+
+export type PriceOverride = {
+  id: string;
+  catalog_item_id: string;
+  item_name: string;
+  scope: "boat" | "trip";
+  boat_id: string | null;
+  boat_name: string | null;
+  trip_id: string | null;
+  trip_label: string | null;
+  price_usd_cents: number;
+  notes: string;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type BoatInventoryItem = {
@@ -403,6 +422,8 @@ export type GuestFolioLine = {
   updated_at: string;
   stock_posted_at?: string | null;
   client_request_id?: string | null;
+  price_source?: "base" | "boat_override" | "trip_override" | "tip";
+  price_override_id?: string | null;
 };
 
 export type FolioWarning = {
@@ -655,6 +676,23 @@ export const adminApi = {
   }) => call<CatalogItem>("PATCH", `/admin/catalog/items/${id}`, input),
   applyCatalogDefaults: () =>
     call<{ status: string }>("POST", "/admin/catalog/defaults/apply"),
+
+  listPriceOverrides: () =>
+    call<{ overrides: PriceOverride[] }>("GET", "/admin/pricing/overrides"),
+  upsertBoatPriceOverride: (input: {
+    catalog_item_id: string;
+    boat_id: string;
+    price_usd_cents: number;
+    notes: string;
+  }) => call<PriceOverride>("PUT", "/admin/pricing/boat-overrides", input),
+  upsertTripPriceOverride: (input: {
+    catalog_item_id: string;
+    trip_id: string;
+    price_usd_cents: number;
+    notes: string;
+  }) => call<PriceOverride>("PUT", "/admin/pricing/trip-overrides", input),
+  archivePriceOverride: (id: string) =>
+    call<PriceOverride>("DELETE", `/admin/pricing/overrides/${encodeURIComponent(id)}`),
 
   inventoryBoatSummary: () =>
     call<{ boats: InventoryBoatSummary[] }>("GET", "/admin/inventory/boats"),

@@ -26,6 +26,7 @@ export function OrganizationPayments() {
     const set = new Set(settings.supported_currencies);
     if (set.has(code)) set.delete(code);
     else set.add(code);
+    set.add("USD");
     const supported = Array.from(set).sort();
     const defaultCurrency = supported.includes(settings.default_currency) ? settings.default_currency : "USD";
     setSettings({ ...settings, supported_currencies: supported, default_currency: defaultCurrency });

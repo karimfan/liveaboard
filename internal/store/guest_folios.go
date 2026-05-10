@@ -74,6 +74,8 @@ type GuestFolioLine struct {
 	VoidedByUserID    *uuid.UUID
 	VoidReason        *string
 	ClientRequestID   *string
+	PriceSource       string
+	PriceOverrideID   *uuid.UUID
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
@@ -158,7 +160,8 @@ const guestFolioColumns = `id, organization_id, trip_id, trip_guest_id, guest_us
 const guestFolioLineColumns = `id, organization_id, folio_id, catalog_item_id, line_type,
 	item_name, quantity, unit_price_usd_cents, line_total_usd_cents, stock_mode,
 	sort_order, created_by_user_id, trip_guest_id, stock_posted_at, voided_at,
-	voided_by_user_id, void_reason, client_request_id, created_at, updated_at`
+	voided_by_user_id, void_reason, client_request_id, price_source, price_override_id,
+	created_at, updated_at`
 
 func scanGuestFolio(row interface{ Scan(dest ...any) error }, f *GuestFolio) error {
 	return row.Scan(&f.ID, &f.OrganizationID, &f.TripID, &f.TripGuestID, &f.GuestUserID, &f.Status,
@@ -173,7 +176,8 @@ func scanGuestFolioLine(row interface{ Scan(dest ...any) error }, l *GuestFolioL
 	return row.Scan(&l.ID, &l.OrganizationID, &l.FolioID, &l.CatalogItemID, &l.LineType,
 		&l.ItemName, &l.Quantity, &l.UnitPriceUSDCents, &l.LineTotalUSDCents, &l.StockMode,
 		&l.SortOrder, &l.CreatedByUserID, &l.TripGuestID, &l.StockPostedAt, &l.VoidedAt,
-		&l.VoidedByUserID, &l.VoidReason, &l.ClientRequestID, &l.CreatedAt, &l.UpdatedAt)
+		&l.VoidedByUserID, &l.VoidReason, &l.ClientRequestID, &l.PriceSource, &l.PriceOverrideID,
+		&l.CreatedAt, &l.UpdatedAt)
 }
 
 func (p *Pool) OpenGuestFolio(ctx context.Context, orgID, tripID, tripGuestID, actorID uuid.UUID) (*GuestFolioView, error) {
@@ -247,7 +251,7 @@ func (p *Pool) TripConsumptionLedger(ctx context.Context, orgID, tripID uuid.UUI
 	if err != nil {
 		return nil, err
 	}
-	catalog, err := p.CatalogItems(ctx, orgID)
+	catalog, err := p.EffectiveCatalogItemsForTrip(ctx, orgID, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +362,11 @@ func (p *Pool) AddGuestFolioLine(ctx context.Context, orgID, tripID, tripGuestID
 		if !item.IsActive || item.ArchivedAt != nil {
 			return nil, ErrNotFound
 		}
-		line, err = insertFolioLineTx(ctx, tx, f, &in.ActorUserID, &in.CatalogItemID, FolioLineCatalogItem, item.Name, in.Quantity, item.PriceUSDCents, item.StockMode, in.ClientRequestID)
+		price, err := effectiveCatalogItemPrice(ctx, tx, orgID, tripID, boatID, item.ID)
+		if err != nil {
+			return nil, err
+		}
+		line, err = insertFolioLineTx(ctx, tx, f, &in.ActorUserID, &in.CatalogItemID, FolioLineCatalogItem, item.Name, in.Quantity, price.PriceUSDCents, item.StockMode, in.ClientRequestID, price.PriceSource, price.OverrideID)
 		if err != nil {
 			if errors.Is(err, errDuplicateFolioLineRequest) {
 				if err := tx.Commit(ctx); err != nil {
@@ -794,23 +802,27 @@ func (p *Pool) insertFolioLine(ctx context.Context, f *GuestFolio, actorID *uuid
 	return l, err
 }
 
-func insertFolioLineTx(ctx context.Context, tx pgx.Tx, f *GuestFolio, actorID *uuid.UUID, itemID *uuid.UUID, lineType, name string, qty int, unitCents int64, stockMode, clientRequestID string) (*GuestFolioLine, error) {
+func insertFolioLineTx(ctx context.Context, tx pgx.Tx, f *GuestFolio, actorID *uuid.UUID, itemID *uuid.UUID, lineType, name string, qty int, unitCents int64, stockMode, clientRequestID, priceSource string, priceOverrideID *uuid.UUID) (*GuestFolioLine, error) {
 	var sortOrder int
 	_ = tx.QueryRow(ctx, `SELECT COALESCE(MAX(sort_order), -1) + 1 FROM guest_folio_lines WHERE folio_id = $1`, f.ID).Scan(&sortOrder)
 	var reqID *string
 	if clientRequestID != "" {
 		reqID = &clientRequestID
 	}
+	if priceSource == "" {
+		priceSource = PriceSourceBase
+	}
 	l := &GuestFolioLine{}
 	err := scanGuestFolioLine(tx.QueryRow(ctx, `
 		INSERT INTO guest_folio_lines (
 			organization_id, folio_id, trip_guest_id, catalog_item_id, line_type, item_name, quantity,
-			unit_price_usd_cents, line_total_usd_cents, stock_mode, sort_order, created_by_user_id, client_request_id
+			unit_price_usd_cents, line_total_usd_cents, stock_mode, sort_order, created_by_user_id,
+			client_request_id, price_source, price_override_id
 		)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 		ON CONFLICT (trip_guest_id, client_request_id) WHERE client_request_id IS NOT NULL DO NOTHING
 		RETURNING `+guestFolioLineColumns,
-		f.OrganizationID, f.ID, f.TripGuestID, itemID, lineType, name, qty, unitCents, unitCents*int64(qty), stockMode, sortOrder, actorID, reqID), l)
+		f.OrganizationID, f.ID, f.TripGuestID, itemID, lineType, name, qty, unitCents, unitCents*int64(qty), stockMode, sortOrder, actorID, reqID, priceSource, priceOverrideID), l)
 	if isNoRows(err) {
 		return nil, errDuplicateFolioLineRequest
 	}
@@ -824,9 +836,9 @@ func (p *Pool) upsertTipLine(ctx context.Context, f *GuestFolio, actorID *uuid.U
 	err := scanGuestFolioLine(p.QueryRow(ctx, `
 		INSERT INTO guest_folio_lines (
 			organization_id, folio_id, trip_guest_id, line_type, item_name, quantity,
-			unit_price_usd_cents, line_total_usd_cents, stock_mode, sort_order, created_by_user_id
+			unit_price_usd_cents, line_total_usd_cents, stock_mode, sort_order, created_by_user_id, price_source
 		)
-		VALUES ($1,$2,$3,'crew_tip','Crew tip',1,$4,$4,'none',$5,$6)
+		VALUES ($1,$2,$3,'crew_tip','Crew tip',1,$4,$4,'none',$5,$6,'tip')
 		ON CONFLICT (folio_id) WHERE line_type = 'crew_tip' AND voided_at IS NULL DO UPDATE SET
 			unit_price_usd_cents = EXCLUDED.unit_price_usd_cents,
 			line_total_usd_cents = EXCLUDED.line_total_usd_cents,
@@ -844,9 +856,9 @@ func upsertTipLineTx(ctx context.Context, tx pgx.Tx, f *GuestFolio, actorID *uui
 	err := scanGuestFolioLine(tx.QueryRow(ctx, `
 		INSERT INTO guest_folio_lines (
 			organization_id, folio_id, trip_guest_id, line_type, item_name, quantity,
-			unit_price_usd_cents, line_total_usd_cents, stock_mode, sort_order, created_by_user_id
+			unit_price_usd_cents, line_total_usd_cents, stock_mode, sort_order, created_by_user_id, price_source
 		)
-		VALUES ($1,$2,$3,'crew_tip','Crew tip',1,$4,$4,'none',$5,$6)
+		VALUES ($1,$2,$3,'crew_tip','Crew tip',1,$4,$4,'none',$5,$6,'tip')
 		ON CONFLICT (folio_id) WHERE line_type = 'crew_tip' AND voided_at IS NULL DO UPDATE SET
 			unit_price_usd_cents = EXCLUDED.unit_price_usd_cents,
 			line_total_usd_cents = EXCLUDED.line_total_usd_cents,

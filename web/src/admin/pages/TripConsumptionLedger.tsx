@@ -126,6 +126,8 @@ export function TripConsumptionLedger() {
               const stock = inventoryByItem.get(item.id);
               const stockText = item.stock_mode === "counted" ? `${stock?.quantity_on_hand ?? 0} on hand` : "not counted";
               const low = item.stock_mode === "counted" && (stock?.quantity_on_hand ?? 0) <= 0;
+              const price = item.effective_price_usd_cents ?? item.price_usd_cents;
+              const source = item.price_source && item.price_source !== "base" ? ` - ${item.price_source.replace("_", " ")}` : "";
               return (
                 <button
                   key={item.id}
@@ -134,7 +136,7 @@ export function TripConsumptionLedger() {
                   onClick={() => setItemId(item.id)}
                 >
                   <strong>{item.name}</strong>
-                  <span>{money(item.price_usd_cents)} - {stockText}</span>
+                  <span>{money(price)}{source} - {stockText}</span>
                 </button>
               );
             })}
@@ -158,7 +160,7 @@ export function TripConsumptionLedger() {
       <div className="ledger-submit">
         <div>
           <strong>{selectedGuest?.full_name ?? "Select guest"}</strong>
-          <span>{selectedItem ? `${selectedItem.name} - ${money(selectedItem.price_usd_cents)}` : "Select item"}</span>
+          <span>{selectedItem ? `${selectedItem.name} - ${money(selectedItem.effective_price_usd_cents ?? selectedItem.price_usd_cents)}` : "Select item"}</span>
         </div>
         <div className="ledger-stepper">
           <button type="button" onClick={() => setQty((n) => Math.max(1, n - 1))} disabled={busy}>-</button>

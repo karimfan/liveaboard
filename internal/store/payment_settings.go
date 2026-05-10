@@ -83,9 +83,9 @@ func (p *Pool) EnsurePaymentSettings(ctx context.Context, orgID uuid.UUID) error
 	}
 	_, err = p.Exec(ctx, `
 		INSERT INTO organization_payment_settings (organization_id, default_currency, supported_currencies)
-		VALUES ($1, $2, ARRAY[$3]::text[])
+		VALUES ($1, $2, ARRAY['USD','EUR']::text[])
 		ON CONFLICT (organization_id) DO NOTHING
-	`, orgID, defaultCurrency, defaultCurrency)
+	`, orgID, defaultCurrency)
 	return err
 }
 

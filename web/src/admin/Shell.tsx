@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
     adminOnly: true,
     children: [
       { to: "/admin/organization/payments", label: "Payments", adminOnly: true },
+      { to: "/admin/organization/pricing", label: "Pricing", adminOnly: true },
     ],
   },
   { to: "/admin/audit", label: "Audit" },
