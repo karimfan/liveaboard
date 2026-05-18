@@ -22,8 +22,8 @@ fi
 # keep the names short and predictable. Override via gcp.env if needed.
 VM_NAME="${VM_NAME:-liveaboard}"
 VM_MACHINE_TYPE="${VM_MACHINE_TYPE:-e2-micro}"
-VM_IMAGE_FAMILY="${VM_IMAGE_FAMILY:-debian-12}"
-VM_IMAGE_PROJECT="${VM_IMAGE_PROJECT:-debian-cloud}"
+VM_IMAGE_FAMILY="${VM_IMAGE_FAMILY:-ubuntu-2404-lts-amd64}"
+VM_IMAGE_PROJECT="${VM_IMAGE_PROJECT:-ubuntu-os-cloud}"
 VM_DISK_SIZE_GB="${VM_DISK_SIZE_GB:-20}"
 VM_DISK_TYPE="${VM_DISK_TYPE:-pd-standard}"
 

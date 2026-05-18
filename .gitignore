@@ -29,3 +29,4 @@ web/tsconfig.tsbuildinfo
 # Tooling
 .gstack/
 .claude/
+deploy/.cache/

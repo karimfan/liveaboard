@@ -22,7 +22,8 @@ Browser ──► https://<ip-with-dashes>.nip.io
             └──────────────────────────────────────┘
 ```
 
-- **VM**: `e2-micro` in `us-central1-a` (free-tier eligible).
+- **VM**: `e2-micro` in `us-central1-a`, Ubuntu 24.04 LTS (free-tier
+  eligible).
 - **Postgres**: installed via apt; data lives on the VM's boot disk.
 - **TLS**: nginx serves a self-signed cert generated on first bootstrap.
 - **Secrets**: `/etc/liveaboard/env` (mode `0640`, owned by `root:liveaboard`),
@@ -72,9 +73,17 @@ VM removes the Cloud SQL line item.
    ```
 
 5. **Visit** `https://<ip-with-dashes>.nip.io`. Your browser will warn
-   about the self-signed cert — click through. To make it stick, export
-   `/etc/liveaboard/tls.crt` from the VM and import it into your
-   browser's trust store.
+   about the self-signed cert. To make it trusted on macOS/Linux:
+
+   ```bash
+   ./deploy/trust-cert.sh
+   ```
+
+   This pulls the cert from the VM, prints its details, and installs it
+   into the right system trust store (macOS System keychain on Darwin,
+   `/usr/local/share/ca-certificates` on Linux). Firefox uses its own
+   NSS store — import the cached file at `deploy/.cache/liveaboard-tls.crt`
+   manually if you use Firefox. Restart any open browser tabs after.
 
 ## Incremental deploys
 
@@ -140,6 +149,7 @@ Confirms once, then deletes the VM, firewall rule, and static IP.
 | `deploy/bootstrap.sh`                 | Fresh deploy (idempotent).             |
 | `deploy/deploy.sh`                    | Incremental: build → scp → restart.    |
 | `deploy/destroy.sh`                   | Tear down all GCP resources.           |
+| `deploy/trust-cert.sh`                | Install the VM's self-signed cert into the local trust store. |
 | `deploy/lib/common.sh`                | Shared helpers; reads `gcp.env`.       |
 | `deploy/remote/setup.sh`              | VM-side installer (Postgres, nginx).   |
 | `deploy/remote/liveaboard.service`    | systemd unit for the Go binary.        |
