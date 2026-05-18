@@ -73,17 +73,9 @@ VM removes the Cloud SQL line item.
    ```
 
 5. **Visit** `https://<ip-with-dashes>.nip.io`. Your browser will warn
-   about the self-signed cert. To make it trusted on macOS/Linux:
-
-   ```bash
-   ./deploy/trust-cert.sh
-   ```
-
-   This pulls the cert from the VM, prints its details, and installs it
-   into the right system trust store (macOS System keychain on Darwin,
-   `/usr/local/share/ca-certificates` on Linux). Firefox uses its own
-   NSS store — import the cached file at `deploy/.cache/liveaboard-tls.crt`
-   manually if you use Firefox. Restart any open browser tabs after.
+   about the self-signed cert — click through. This is expected for a
+   pre-launch deployment; real customers will get a real cert once
+   the app has a public domain (see *Future: production TLS* below).
 
 ## Incremental deploys
 
@@ -149,11 +141,28 @@ Confirms once, then deletes the VM, firewall rule, and static IP.
 | `deploy/bootstrap.sh`                 | Fresh deploy (idempotent).             |
 | `deploy/deploy.sh`                    | Incremental: build → scp → restart.    |
 | `deploy/destroy.sh`                   | Tear down all GCP resources.           |
-| `deploy/trust-cert.sh`                | Install the VM's self-signed cert into the local trust store. |
 | `deploy/lib/common.sh`                | Shared helpers; reads `gcp.env`.       |
 | `deploy/remote/setup.sh`              | VM-side installer (Postgres, nginx).   |
 | `deploy/remote/liveaboard.service`    | systemd unit for the Go binary.        |
 | `deploy/remote/nginx-liveaboard.conf` | nginx TLS reverse proxy site.          |
+
+## Future: production TLS
+
+The self-signed cert + `nip.io` URL is fine for pre-launch internal
+testing — operators on the team click through the browser warning once
+and move on. It is **not** a customer-facing setup; a real customer's
+browser hits the same warning and has no good reason to trust it.
+
+Two paths when the product is ready for real users:
+
+1. **Caddy instead of nginx.** Replace nginx on the VM with Caddy and
+   point a real domain (e.g. `app.example.com`) at the static IP. Caddy
+   handles Let's Encrypt automatically — no cron, no renewal scripts.
+2. **certbot + nginx.** Keep nginx; add `certbot --nginx` and a renewal
+   timer (the certbot package ships one). Slightly more moving pieces.
+
+Either path needs a real domain you control; `nip.io` cannot be issued
+ACME certificates because nobody can prove ownership of its wildcard.
 
 ## Notes
 
