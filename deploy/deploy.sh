@@ -21,6 +21,19 @@ if ! resource_exists compute instances describe "${VM_NAME}" --zone="${GCP_ZONE}
 fi
 
 # -- 1. Frontend build (writes web/dist) -------------------------------
+# Resolve VITE_* + LIVEABOARD_* from config/production.env via the same
+# wiring `make build` uses. Without this, web/src/lib/config.ts throws
+# at module load because VITE_API_BASE is undefined and the page is
+# blank.
+log "loading production env for build"
+LIVEABOARD_MODE=production
+export LIVEABOARD_MODE
+# shellcheck source=../scripts/lib/load-env.sh
+. "${REPO_ROOT}/scripts/lib/load-env.sh"
+# Write web/.env.local from the resolved VITE_* values so Vite picks
+# them up. Same script `make dev` and `make build` use.
+"${REPO_ROOT}/scripts/lib/sync-web-env.sh"
+
 log "building frontend"
 (cd web && npm ci --silent && npm run build)
 
