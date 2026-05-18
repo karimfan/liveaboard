@@ -52,12 +52,24 @@ openssl x509 -in "${LOCAL_CERT}" -noout -subject -issuer -enddate -ext subjectAl
 
 case "$(uname -s)" in
   Darwin)
-    log "installing into macOS System keychain (sudo required)"
-    # -d: add to admin trust settings  -r trustRoot: trust as root for SSL
-    sudo security add-trusted-cert -d -r trustRoot \
-      -k /Library/Keychains/System.keychain \
-      "${LOCAL_CERT}"
-    log "done. Restart your browser if a tab was already open on the URL."
+    log "installing into macOS System keychain (admin password required)"
+    # -d: admin trust settings  -r trustRoot: trust as a root CA for SSL.
+    # Use osascript's "with administrator privileges" so the password
+    # prompt is a GUI dialog — works whether or not this script runs in
+    # an interactive terminal.
+    cmd="security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain '${LOCAL_CERT}'"
+    if osascript -e "do shell script \"${cmd}\" with administrator privileges" 2>/tmp/trust-cert-err; then
+      log "done. Restart your browser if a tab was already open on the URL."
+    else
+      err="$(cat /tmp/trust-cert-err 2>/dev/null || true)"
+      if [[ "${err}" == *"User canceled"* || "${err}" == *"-128"* ]]; then
+        warn "admin prompt was canceled. Run this when ready:"
+      else
+        warn "GUI prompt failed (${err}). Run this manually:"
+      fi
+      printf "  sudo security add-trusted-cert -d -r trustRoot \\\\\n    -k /Library/Keychains/System.keychain \\\\\n    %s\n" "${LOCAL_CERT}"
+    fi
+    rm -f /tmp/trust-cert-err
     ;;
   Linux)
     log "installing into system CA bundle (sudo required)"
