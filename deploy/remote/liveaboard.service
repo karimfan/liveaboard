@@ -1,0 +1,28 @@
+[Unit]
+Description=Liveaboard backend (Go server)
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=liveaboard
+Group=liveaboard
+WorkingDirectory=/opt/liveaboard
+EnvironmentFile=/etc/liveaboard/env
+ExecStart=/opt/liveaboard/bin/liveaboard
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Hardening. Cheap wins for an app that only needs to read its own dir
+# and talk to localhost Postgres + outbound SMTP.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/liveaboard
+
+[Install]
+WantedBy=multi-user.target

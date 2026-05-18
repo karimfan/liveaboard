@@ -12,6 +12,9 @@ coverage.txt
 .env.local
 web/.env.local
 
+# Per-developer GCP deploy config (see gcp.env.example).
+gcp.env
+
 # Frontend
 web/node_modules/
 web/dist/
