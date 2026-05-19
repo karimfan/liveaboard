@@ -12,8 +12,9 @@ coverage.txt
 .env.local
 web/.env.local
 
-# Per-developer GCP deploy config (see gcp.env.example).
-gcp.env
+# Per-developer deploy config (see env.sh.example). Contains GCP project
+# info AND SMTP credentials — never commit.
+env.sh
 
 # Frontend
 web/node_modules/

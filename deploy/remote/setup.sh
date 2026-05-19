@@ -16,8 +16,21 @@ APP_USER="liveaboard"
 APP_ROOT="/opt/liveaboard"
 ENV_FILE="/etc/liveaboard/env"
 TLS_DIR="/etc/liveaboard"
+SECRETS_FILE="/tmp/liveaboard-deploy-secrets.env"
 
 log() { printf "[setup] %s\n" "$*"; }
+
+# Source deploy-time secrets (LIVEABOARD_SMTP_*) if the deploy script
+# uploaded them. The file is shredded after use so it does not sit on
+# disk longer than necessary.
+if [[ -f "${SECRETS_FILE}" ]]; then
+  log "loading deploy secrets"
+  set -a
+  # shellcheck disable=SC1090
+  . "${SECRETS_FILE}"
+  set +a
+  shred -u "${SECRETS_FILE}" 2>/dev/null || rm -f "${SECRETS_FILE}"
+fi
 
 # -- 1. Packages ---------------------------------------------------------
 log "installing packages"
@@ -84,13 +97,19 @@ else
   log "TLS cert already present at ${TLS_DIR}/tls.crt"
 fi
 
-# -- 5. App environment file (secrets + config overrides) --------------
-# Only write the env file if it does not already exist; preserves SMTP
-# credentials the operator may have edited in by hand. Re-write the
-# APP_BASE_URL line so an IP change is picked up.
-if [[ ! -f "${ENV_FILE}" ]]; then
-  log "writing initial ${ENV_FILE}"
-  sudo tee "${ENV_FILE}" >/dev/null <<EOF
+# -- 5. App environment file -------------------------------------------
+# Always rewrite from the current deploy values. The DB password is
+# preserved in /root/.liveaboard-db-password (read into DB_PASSWORD
+# above); SMTP_* come from /tmp/liveaboard-deploy-secrets.env (loaded
+# at the top of this script) or fall through to placeholders.
+log "writing ${ENV_FILE}"
+SMTP_HOST="${LIVEABOARD_SMTP_HOST:-smtp-relay.brevo.com}"
+SMTP_PORT="${LIVEABOARD_SMTP_PORT:-587}"
+SMTP_USERNAME="${LIVEABOARD_SMTP_USERNAME:-PLACEHOLDER_EDIT_ME}"
+SMTP_PASSWORD="${LIVEABOARD_SMTP_PASSWORD:-PLACEHOLDER_EDIT_ME}"
+SMTP_FROM="${LIVEABOARD_SMTP_FROM:-Liveaboard <noreply@example.com>}"
+
+sudo tee "${ENV_FILE}" >/dev/null <<EOF
 # Liveaboard server environment. Loaded by systemd as the process env.
 # Production mode requires every secret to come from process env (not a
 # file the binary reads itself), so systemd's EnvironmentFile is exactly
@@ -102,19 +121,14 @@ LIVEABOARD_COOKIE_SECURE=true
 LIVEABOARD_APP_BASE_URL=https://${VANITY_HOST}
 LIVEABOARD_DATABASE_URL=postgres://liveaboard:${DB_PASSWORD}@127.0.0.1:5432/liveaboard?sslmode=disable
 
-# --- SMTP (edit these before the service can start) ---
-LIVEABOARD_SMTP_HOST=smtp-relay.brevo.com
-LIVEABOARD_SMTP_PORT=587
-LIVEABOARD_SMTP_USERNAME=PLACEHOLDER_EDIT_ME
-LIVEABOARD_SMTP_PASSWORD=PLACEHOLDER_EDIT_ME
-LIVEABOARD_SMTP_FROM=Liveaboard <noreply@example.com>
+LIVEABOARD_SMTP_HOST=${SMTP_HOST}
+LIVEABOARD_SMTP_PORT=${SMTP_PORT}
+LIVEABOARD_SMTP_USERNAME=${SMTP_USERNAME}
+LIVEABOARD_SMTP_PASSWORD=${SMTP_PASSWORD}
+LIVEABOARD_SMTP_FROM=${SMTP_FROM}
 EOF
-  sudo chown root:"${APP_USER}" "${ENV_FILE}"
-  sudo chmod 640 "${ENV_FILE}"
-else
-  log "${ENV_FILE} already exists; updating APP_BASE_URL only"
-  sudo sed -i -E "s|^LIVEABOARD_APP_BASE_URL=.*|LIVEABOARD_APP_BASE_URL=https://${VANITY_HOST}|" "${ENV_FILE}"
-fi
+sudo chown root:"${APP_USER}" "${ENV_FILE}"
+sudo chmod 640 "${ENV_FILE}"
 
 # -- 6. nginx site -----------------------------------------------------
 if [[ -f /tmp/nginx-liveaboard.conf ]]; then
@@ -143,4 +157,8 @@ fi
 
 log "VM setup complete."
 log "  vanity URL : https://${VANITY_HOST}"
-log "  env file   : ${ENV_FILE} (edit SMTP_* placeholders, then restart liveaboard.service)"
+if [[ "${SMTP_USERNAME}" == "PLACEHOLDER_EDIT_ME" ]]; then
+  log "  env file   : ${ENV_FILE} (SMTP_* still placeholder; set env.sh and re-bootstrap)"
+else
+  log "  env file   : ${ENV_FILE} (SMTP wired to ${SMTP_HOST})"
+fi

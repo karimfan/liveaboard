@@ -97,6 +97,28 @@ vm_scp "${SCRIPT_DIR}/remote/liveaboard.service"    "/tmp/liveaboard.service"
 vm_scp "${SCRIPT_DIR}/remote/nginx-liveaboard.conf" "/tmp/nginx-liveaboard.conf"
 vm_scp "${REPO_ROOT}/config/production.env"         "/tmp/production.env"
 
+# Ship the SMTP credentials in a temp file instead of as command-line
+# args (which would leak briefly into the VM's process table). setup.sh
+# sources this file and then shreds it.
+SECRETS_TMP="$(mktemp)"
+trap 'rm -f "${SECRETS_TMP}"' EXIT
+chmod 600 "${SECRETS_TMP}"
+{
+  for k in LIVEABOARD_SMTP_HOST LIVEABOARD_SMTP_PORT \
+           LIVEABOARD_SMTP_USERNAME LIVEABOARD_SMTP_PASSWORD \
+           LIVEABOARD_SMTP_FROM; do
+    if [[ -n "${!k:-}" ]]; then
+      printf '%s=%s\n' "${k}" "${!k}"
+    fi
+  done
+} > "${SECRETS_TMP}"
+if [[ -s "${SECRETS_TMP}" ]]; then
+  log "shipping SMTP credentials"
+  vm_scp "${SECRETS_TMP}" "/tmp/liveaboard-deploy-secrets.env"
+else
+  warn "no LIVEABOARD_SMTP_* found in env.sh — service will run but email sends will fail"
+fi
+
 # -- 7. Run setup on VM ------------------------------------------------
 log "running setup.sh on VM"
 vm_ssh "STATIC_IP='${STATIC_IP}' VANITY_HOST='${VANITY_HOST}' bash /tmp/setup.sh"
@@ -114,18 +136,15 @@ cat <<EOF
   Static IP  : ${STATIC_IP}
   VM         : ${VM_NAME} (${VM_MACHINE_TYPE}) in ${GCP_ZONE}
 
-  The SMTP_* placeholders in ${ENV_FILE_REMOTE} must be edited
-  before the backend can finish starting. To do that:
-
-    gcloud compute ssh ${REMOTE_USER}@${VM_NAME} --zone=${GCP_ZONE} --tunnel-through-iap
-    sudo \$EDITOR ${ENV_FILE_REMOTE}
-    sudo systemctl restart liveaboard
+  SMTP credentials from env.sh have been written to
+  ${ENV_FILE_REMOTE}. To rotate, edit env.sh and re-run
+  ./deploy/bootstrap.sh — setup.sh is idempotent.
 
   Tail logs:
     gcloud compute ssh ${REMOTE_USER}@${VM_NAME} --zone=${GCP_ZONE} --tunnel-through-iap \\
       --command='sudo journalctl -u liveaboard -f'
 
-  Browsers will warn about the self-signed cert — that's expected.
-  Click through (or import /etc/liveaboard/tls.crt from the VM).
+  Browsers will warn about the self-signed cert — click through;
+  see deploy/README.md "Future: production TLS" for the launch plan.
 ============================================================
 EOF

@@ -6,17 +6,19 @@ set -euo pipefail
 DEPLOY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "${DEPLOY_DIR}/.." && pwd)"
 
-GCP_ENV_FILE="${REPO_ROOT}/gcp.env"
-if [[ ! -f "${GCP_ENV_FILE}" ]]; then
-  echo "ERROR: ${GCP_ENV_FILE} not found." >&2
+ENV_FILE="${REPO_ROOT}/env.sh"
+if [[ ! -f "${ENV_FILE}" ]]; then
+  echo "ERROR: ${ENV_FILE} not found. Copy env.sh.example to env.sh." >&2
   exit 1
 fi
 # shellcheck disable=SC1090
-. "${GCP_ENV_FILE}"
+. "${ENV_FILE}"
 
-: "${GCP_PROJECT:?GCP_PROJECT must be set in gcp.env}"
-: "${GCP_REGION:?GCP_REGION must be set in gcp.env}"
-: "${GCP_ZONE:?GCP_ZONE must be set in gcp.env}"
+: "${GCP_PROJECT:?GCP_PROJECT must be set in env.sh}"
+: "${GCP_REGION:?GCP_REGION must be set in env.sh}"
+: "${GCP_ZONE:?GCP_ZONE must be set in env.sh}"
+# SMTP keys are optional at common.sh load (some scripts don't need them);
+# bootstrap.sh re-validates and warns if any are missing before deploying.
 
 # Resource names. All cluster around a single VM-based deployment, so we
 # keep the names short and predictable. Override via gcp.env if needed.

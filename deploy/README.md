@@ -38,44 +38,41 @@ VM removes the Cloud SQL line item.
 
 ## One-time setup
 
-1. **Confirm `gcp.env`** at the repo root has your project, region, zone:
+1. **Create `env.sh`** at the repo root from the template, fill in your
+   GCP project + SMTP relay creds:
 
    ```bash
-   cat gcp.env
+   cp env.sh.example env.sh
+   $EDITOR env.sh
    ```
+
+   `env.sh` is gitignored. The keys (`GCP_*`, `LIVEABOARD_SMTP_*`)
+   match what `gcloud` and the application read directly.
 
 2. **Authenticate**:
 
    ```bash
    gcloud auth login
-   gcloud config set project "$GCP_PROJECT"   # optional; scripts pass --project
    ```
 
-3. **Bootstrap** (provisions IP, VM, installs Postgres+nginx, deploys binary):
+3. **Bootstrap** (provisions IP, VM, installs Postgres+nginx, ships
+   SMTP creds, deploys the binary):
 
    ```bash
    ./deploy/bootstrap.sh
    ```
 
    On success it prints the vanity URL (e.g.
-   `https://35-255-150-205.nip.io`). The service will not be reachable
-   yet — see the next step.
+   `https://35-255-150-205.nip.io`).
 
-4. **Set SMTP credentials**. The Go binary refuses to start without
-   valid SMTP_* values. The bootstrap left placeholders in the env file:
-
-   ```bash
-   gcloud compute ssh liveaboard-deploy@liveaboard \
-     --zone="$GCP_ZONE" --tunnel-through-iap
-   sudo $EDITOR /etc/liveaboard/env       # replace PLACEHOLDER_EDIT_ME lines
-   sudo systemctl restart liveaboard
-   sudo journalctl -u liveaboard -f
-   ```
-
-5. **Visit** `https://<ip-with-dashes>.nip.io`. Your browser will warn
+4. **Visit** `https://<ip-with-dashes>.nip.io`. Your browser will warn
    about the self-signed cert — click through. This is expected for a
    pre-launch deployment; real customers will get a real cert once
    the app has a public domain (see *Future: production TLS* below).
+
+To rotate SMTP credentials later, edit `env.sh` and re-run
+`./deploy/bootstrap.sh` — `setup.sh` is idempotent and reuses the
+existing VM, IP, firewall, and Postgres role/password.
 
 ## Incremental deploys
 
@@ -141,7 +138,7 @@ Confirms once, then deletes the VM, firewall rule, and static IP.
 | `deploy/bootstrap.sh`                 | Fresh deploy (idempotent).             |
 | `deploy/deploy.sh`                    | Incremental: build → scp → restart.    |
 | `deploy/destroy.sh`                   | Tear down all GCP resources.           |
-| `deploy/lib/common.sh`                | Shared helpers; reads `gcp.env`.       |
+| `deploy/lib/common.sh`                | Shared helpers; reads `env.sh`.        |
 | `deploy/remote/setup.sh`              | VM-side installer (Postgres, nginx).   |
 | `deploy/remote/liveaboard.service`    | systemd unit for the Go binary.        |
 | `deploy/remote/nginx-liveaboard.conf` | nginx TLS reverse proxy site.          |
@@ -172,5 +169,5 @@ ACME certificates because nobody can prove ownership of its wildcard.
   and SCP so you don't need to open `tcp:22` to the world.
 - Cross-compiling on macOS works because the binary is pure Go
   (`CGO_ENABLED=0`); the `pgx` Postgres driver does not require cgo.
-- If you change `gcp.env`'s region/zone after bootstrap, the existing
+- If you change `env.sh`'s region/zone after bootstrap, the existing
   VM/IP keep their original location — destroy and re-bootstrap to move.
