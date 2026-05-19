@@ -1,9 +1,9 @@
 # GCP deployment
 
 A minimal-cost deployment of Liveaboard onto a single GCP Compute Engine
-VM, with Postgres running on the same box and TLS terminated by nginx
-using a self-signed certificate. The public URL uses `nip.io` so no DNS
-setup is required.
+VM, with Postgres running on the same box and TLS terminated by Caddy
+using an automatically-issued Let's Encrypt certificate. The public URL
+uses `nip.io` so no DNS setup is required.
 
 ## Architecture
 
@@ -11,21 +11,24 @@ setup is required.
 Browser ──► https://<ip-with-dashes>.nip.io
                 │   (nip.io resolves to the static external IP)
                 ▼
-            ┌──────────────────────────────────────┐
-            │ Compute Engine VM (e2-micro, Debian) │
-            │                                       │
-            │  nginx  :443 (self-signed cert) ─┐    │
-            │                                  ▼    │
-            │  liveaboard (Go binary) :8080  ──┐    │
-            │                                  ▼    │
-            │  PostgreSQL 16 (localhost:5432)       │
-            └──────────────────────────────────────┘
+            ┌──────────────────────────────────────────┐
+            │ Compute Engine VM (e2-micro, Ubuntu 24)  │
+            │                                           │
+            │  Caddy :80,:443 ── Let's Encrypt ──┐      │
+            │   (ACME HTTP-01 + auto-renew)       │      │
+            │                                     ▼      │
+            │  liveaboard (Go binary) :8080  ──┐         │
+            │                                  ▼         │
+            │  PostgreSQL 16 (localhost:5432)            │
+            └──────────────────────────────────────────┘
 ```
 
 - **VM**: `e2-micro` in `us-central1-a`, Ubuntu 24.04 LTS (free-tier
   eligible).
 - **Postgres**: installed via apt; data lives on the VM's boot disk.
-- **TLS**: nginx serves a self-signed cert generated on first bootstrap.
+- **TLS**: Caddy auto-acquires + auto-renews a Let's Encrypt cert
+  against `<ip>.nip.io`. No manual cert rotation; browsers trust it
+  out of the box.
 - **Secrets**: `/etc/liveaboard/env` (mode `0640`, owned by `root:liveaboard`),
   loaded by `systemd` as the process environment.
 
@@ -65,14 +68,15 @@ VM removes the Cloud SQL line item.
    On success it prints the vanity URL (e.g.
    `https://35-255-150-205.nip.io`).
 
-4. **Visit** `https://<ip-with-dashes>.nip.io`. Your browser will warn
-   about the self-signed cert — click through. This is expected for a
-   pre-launch deployment; real customers will get a real cert once
-   the app has a public domain (see *Future: production TLS* below).
+4. **Visit** `https://<ip-with-dashes>.nip.io`. The first HTTPS request
+   takes 20-40 seconds while Caddy negotiates the cert with Let's
+   Encrypt; subsequent requests are instant. No browser warning —
+   it's a real, trusted cert.
 
 To rotate SMTP credentials later, edit `env.sh` and re-run
 `./deploy/bootstrap.sh` — `setup.sh` is idempotent and reuses the
-existing VM, IP, firewall, and Postgres role/password.
+existing VM, IP, firewall, Postgres role/password, and Caddy cert
+cache.
 
 ## Incremental deploys
 
@@ -112,14 +116,14 @@ gcloud compute ssh liveaboard-deploy@liveaboard \
   --command='sudo -u postgres psql liveaboard'
 ```
 
-### Rotate the self-signed cert
+### Force a cert renewal
+
+Caddy renews automatically ~30 days before expiry. To force one early:
 
 ```bash
 gcloud compute ssh liveaboard-deploy@liveaboard \
-  --zone="$GCP_ZONE" --tunnel-through-iap
-sudo rm /etc/liveaboard/tls.crt /etc/liveaboard/tls.key
-sudo VANITY_HOST=<host>.nip.io STATIC_IP=<ip> bash /tmp/setup.sh
-sudo systemctl reload nginx
+  --zone="$GCP_ZONE" --tunnel-through-iap \
+  --command='sudo caddy reload --config /etc/caddy/Caddyfile'
 ```
 
 ## Tear down
@@ -139,27 +143,31 @@ Confirms once, then deletes the VM, firewall rule, and static IP.
 | `deploy/deploy.sh`                    | Incremental: build → scp → restart.    |
 | `deploy/destroy.sh`                   | Tear down all GCP resources.           |
 | `deploy/lib/common.sh`                | Shared helpers; reads `env.sh`.        |
-| `deploy/remote/setup.sh`              | VM-side installer (Postgres, nginx).   |
+| `deploy/remote/setup.sh`              | VM-side installer (Postgres, Caddy).   |
 | `deploy/remote/liveaboard.service`    | systemd unit for the Go binary.        |
-| `deploy/remote/nginx-liveaboard.conf` | nginx TLS reverse proxy site.          |
+| `deploy/remote/Caddyfile.tmpl`        | Caddy TLS reverse proxy template.      |
 
-## Future: production TLS
+## When you launch with a real domain
 
-The self-signed cert + `nip.io` URL is fine for pre-launch internal
-testing — operators on the team click through the browser warning once
-and move on. It is **not** a customer-facing setup; a real customer's
-browser hits the same warning and has no good reason to trust it.
+The nip.io URL is fine indefinitely — the cert is real and browsers
+trust it. When you're ready for a branded public URL:
 
-Two paths when the product is ready for real users:
+1. Point an `A` record (e.g. `app.your-domain.example`) at the static
+   IP printed by bootstrap.
+2. Edit `deploy/remote/Caddyfile.tmpl` to use the real hostname (or
+   add a second site block); re-run `./deploy/bootstrap.sh`.
+3. Update `LIVEABOARD_APP_BASE_URL` similarly (it's currently set in
+   `setup.sh` to `https://${VANITY_HOST}`).
 
-1. **Caddy instead of nginx.** Replace nginx on the VM with Caddy and
-   point a real domain (e.g. `app.example.com`) at the static IP. Caddy
-   handles Let's Encrypt automatically — no cron, no renewal scripts.
-2. **certbot + nginx.** Keep nginx; add `certbot --nginx` and a renewal
-   timer (the certbot package ships one). Slightly more moving pieces.
+Caddy will issue a fresh cert for the real hostname automatically.
 
-Either path needs a real domain you control; `nip.io` cannot be issued
-ACME certificates because nobody can prove ownership of its wildcard.
+### Let's Encrypt rate limits
+
+nip.io is a single registered domain shared by everyone using the
+service. Let's Encrypt's per-registered-domain limit is 50 certs/week,
+so on a bad day the limit can be exhausted. If `caddy` logs show
+`rate-limited`, set `DNS_SUFFIX=sslip.io` in `env.sh` and re-bootstrap
+— same IP-to-DNS trick on a different domain.
 
 ## Notes
 

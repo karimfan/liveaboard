@@ -44,15 +44,22 @@ VANITY_HOST="$(vanity_hostname "${STATIC_IP}")"
 log "static IP : ${STATIC_IP}"
 log "vanity URL: https://${VANITY_HOST}"
 
-# -- 3. Firewall rule for tcp:443 --------------------------------------
+# -- 3. Firewall rule for tcp:80,443 -----------------------------------
+# Both ports are needed: :80 for Caddy to solve Let's Encrypt's HTTP-01
+# challenge (at first issue and on every ~60-day renewal), :443 for the
+# actual application traffic.
+FW_RULES="tcp:80,tcp:443"
 if resource_exists compute firewall-rules describe "${FIREWALL_HTTPS}"; then
-  log "firewall rule ${FIREWALL_HTTPS} already exists"
+  log "firewall rule ${FIREWALL_HTTPS} already exists; ensuring ${FW_RULES}"
+  gcloud "${gcloud_args[@]}" compute firewall-rules update "${FIREWALL_HTTPS}" \
+    --rules="${FW_RULES}" \
+    --quiet
 else
-  log "creating firewall rule ${FIREWALL_HTTPS} (allow tcp:443 to ${NETWORK_TAG})"
+  log "creating firewall rule ${FIREWALL_HTTPS} (allow ${FW_RULES} to ${NETWORK_TAG})"
   gcloud "${gcloud_args[@]}" compute firewall-rules create "${FIREWALL_HTTPS}" \
     --direction=INGRESS \
     --action=ALLOW \
-    --rules=tcp:443 \
+    --rules="${FW_RULES}" \
     --source-ranges=0.0.0.0/0 \
     --target-tags="${NETWORK_TAG}" \
     --quiet
@@ -92,10 +99,10 @@ log "SSH is up"
 
 # -- 6. Push setup artifacts to VM -------------------------------------
 log "uploading setup artifacts"
-vm_scp "${SCRIPT_DIR}/remote/setup.sh"              "/tmp/setup.sh"
-vm_scp "${SCRIPT_DIR}/remote/liveaboard.service"    "/tmp/liveaboard.service"
-vm_scp "${SCRIPT_DIR}/remote/nginx-liveaboard.conf" "/tmp/nginx-liveaboard.conf"
-vm_scp "${REPO_ROOT}/config/production.env"         "/tmp/production.env"
+vm_scp "${SCRIPT_DIR}/remote/setup.sh"           "/tmp/setup.sh"
+vm_scp "${SCRIPT_DIR}/remote/liveaboard.service" "/tmp/liveaboard.service"
+vm_scp "${SCRIPT_DIR}/remote/Caddyfile.tmpl"     "/tmp/Caddyfile.tmpl"
+vm_scp "${REPO_ROOT}/config/production.env"      "/tmp/production.env"
 
 # Ship the SMTP credentials in a temp file instead of as command-line
 # args (which would leak briefly into the VM's process table). setup.sh
@@ -140,11 +147,12 @@ cat <<EOF
   ${ENV_FILE_REMOTE}. To rotate, edit env.sh and re-run
   ./deploy/bootstrap.sh — setup.sh is idempotent.
 
-  Tail logs:
-    gcloud compute ssh ${REMOTE_USER}@${VM_NAME} --zone=${GCP_ZONE} --tunnel-through-iap \\
-      --command='sudo journalctl -u liveaboard -f'
+  TLS is served by Caddy with a Let's Encrypt certificate. The
+  first HTTPS request after bootstrap may take 20-40 seconds while
+  Caddy negotiates the cert; subsequent requests are instant.
 
-  Browsers will warn about the self-signed cert — click through;
-  see deploy/README.md "Future: production TLS" for the launch plan.
+  Tail logs (app + caddy):
+    gcloud compute ssh ${REMOTE_USER}@${VM_NAME} --zone=${GCP_ZONE} --tunnel-through-iap \\
+      --command='sudo journalctl -u liveaboard -u caddy -f'
 ============================================================
 EOF

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Runs on the VM as the SSH user via `sudo`. Idempotent: re-running it
-# upgrades packages, but does not destroy data (DB rows, secrets, certs
-# already on disk are preserved).
+# upgrades packages and replays the same config, but does not destroy
+# data (Postgres rows, the DB password, and Caddy's cert cache are
+# preserved across runs).
 #
 # Required environment variables (passed by deploy/bootstrap.sh):
-#   STATIC_IP        — the external IP of the VM (used in the cert SAN)
+#   STATIC_IP        — the external IP of the VM
 #   VANITY_HOST      — e.g. 35-255-150-205.nip.io
 
 set -euo pipefail
@@ -15,7 +16,7 @@ set -euo pipefail
 APP_USER="liveaboard"
 APP_ROOT="/opt/liveaboard"
 ENV_FILE="/etc/liveaboard/env"
-TLS_DIR="/etc/liveaboard"
+ETC_DIR="/etc/liveaboard"
 SECRETS_FILE="/tmp/liveaboard-deploy-secrets.env"
 
 log() { printf "[setup] %s\n" "$*"; }
@@ -32,27 +33,55 @@ if [[ -f "${SECRETS_FILE}" ]]; then
   shred -u "${SECRETS_FILE}" 2>/dev/null || rm -f "${SECRETS_FILE}"
 fi
 
-# -- 1. Packages ---------------------------------------------------------
-log "installing packages"
+# -- 1. Packages -------------------------------------------------------
+log "installing system packages"
 export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update -qq
 sudo apt-get install -y -qq \
   postgresql \
   postgresql-contrib \
-  nginx \
-  openssl \
-  ca-certificates >/dev/null
+  curl \
+  gnupg \
+  ca-certificates \
+  apt-transport-https \
+  debian-keyring \
+  debian-archive-keyring >/dev/null
 
-# -- 2. App user + directories ------------------------------------------
+# Caddy from its official Cloudsmith APT repo. Same recipe Caddy's
+# install docs use; the keyring lives under /usr/share/keyrings so the
+# repo file can pin it explicitly.
+if ! command -v caddy >/dev/null; then
+  log "installing caddy"
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+    | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
+    | sudo tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null
+  sudo apt-get update -qq
+  sudo apt-get install -y -qq caddy >/dev/null
+fi
+
+# Stop anything else that would steal :80 or :443. Earlier bootstraps
+# ran nginx; clear it out cleanly so Caddy can bind.
+if systemctl is-enabled nginx >/dev/null 2>&1; then
+  log "disabling pre-existing nginx (Caddy now terminates TLS)"
+  sudo systemctl disable --now nginx || true
+  sudo apt-get purge -y -qq nginx nginx-common >/dev/null || true
+fi
+
+# -- 2. App user + directories ----------------------------------------
 if ! id -u "${APP_USER}" >/dev/null 2>&1; then
   log "creating system user ${APP_USER}"
   sudo useradd --system --home-dir "${APP_ROOT}" --shell /usr/sbin/nologin "${APP_USER}"
 fi
 
 sudo install -d -m 0755 -o "${APP_USER}" -g "${APP_USER}" "${APP_ROOT}" "${APP_ROOT}/bin" "${APP_ROOT}/config"
-sudo install -d -m 0750 -o root         -g "${APP_USER}" "${TLS_DIR}"
+sudo install -d -m 0750 -o root         -g "${APP_USER}" "${ETC_DIR}"
 
-# -- 3. Postgres: DB + user --------------------------------------------
+# Carry-over from the nginx era — these are no longer used by Caddy
+# (it manages its own certs under /var/lib/caddy). Remove if present.
+sudo rm -f "${ETC_DIR}/tls.crt" "${ETC_DIR}/tls.key"
+
+# -- 3. Postgres: DB + user -------------------------------------------
 sudo systemctl enable --now postgresql >/dev/null
 
 if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='liveaboard'" | grep -q 1; then
@@ -61,7 +90,6 @@ if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='liveaboar
   sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
 CREATE USER liveaboard WITH PASSWORD '${DB_PASSWORD}';
 SQL
-  # Persist the password into the env file below (first-time write).
   echo "${DB_PASSWORD}" | sudo tee /root/.liveaboard-db-password >/dev/null
   sudo chmod 600 /root/.liveaboard-db-password
 else
@@ -82,22 +110,7 @@ CREATE DATABASE liveaboard OWNER liveaboard;
 SQL
 fi
 
-# -- 4. Self-signed TLS cert -------------------------------------------
-if [[ ! -s "${TLS_DIR}/tls.crt" || ! -s "${TLS_DIR}/tls.key" ]]; then
-  log "generating self-signed cert for ${VANITY_HOST}"
-  sudo openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
-    -keyout "${TLS_DIR}/tls.key" \
-    -out    "${TLS_DIR}/tls.crt" \
-    -subj   "/CN=${VANITY_HOST}" \
-    -addext "subjectAltName=DNS:${VANITY_HOST},IP:${STATIC_IP}" \
-    >/dev/null 2>&1
-  sudo chown root:"${APP_USER}" "${TLS_DIR}/tls.crt" "${TLS_DIR}/tls.key"
-  sudo chmod 640 "${TLS_DIR}/tls.crt" "${TLS_DIR}/tls.key"
-else
-  log "TLS cert already present at ${TLS_DIR}/tls.crt"
-fi
-
-# -- 5. App environment file -------------------------------------------
+# -- 4. App environment file ------------------------------------------
 # Always rewrite from the current deploy values. The DB password is
 # preserved in /root/.liveaboard-db-password (read into DB_PASSWORD
 # above); SMTP_* come from /tmp/liveaboard-deploy-secrets.env (loaded
@@ -130,18 +143,21 @@ EOF
 sudo chown root:"${APP_USER}" "${ENV_FILE}"
 sudo chmod 640 "${ENV_FILE}"
 
-# -- 6. nginx site -----------------------------------------------------
-if [[ -f /tmp/nginx-liveaboard.conf ]]; then
-  log "installing nginx site"
-  sudo install -m 0644 -o root -g root /tmp/nginx-liveaboard.conf /etc/nginx/sites-available/liveaboard
-  sudo ln -sf /etc/nginx/sites-available/liveaboard /etc/nginx/sites-enabled/liveaboard
-  sudo rm -f /etc/nginx/sites-enabled/default
-  sudo nginx -t
-  sudo systemctl enable --now nginx >/dev/null
-  sudo systemctl reload nginx
+# -- 5. Caddyfile -----------------------------------------------------
+# Caddy's own apt package ships a default Caddyfile that serves a
+# placeholder page on :80 — replace it. Hostname interpolation is a
+# plain sed since the template only has one substitution.
+if [[ -f /tmp/Caddyfile.tmpl ]]; then
+  log "rendering /etc/caddy/Caddyfile (host=${VANITY_HOST})"
+  sudo bash -c "sed 's|{{VANITY_HOST}}|${VANITY_HOST}|g' /tmp/Caddyfile.tmpl > /etc/caddy/Caddyfile"
+  sudo chmod 0644 /etc/caddy/Caddyfile
+  # Validate before reload so a broken template doesn't take Caddy out.
+  sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+  sudo systemctl enable --now caddy >/dev/null
+  sudo systemctl reload caddy 2>/dev/null || sudo systemctl restart caddy
 fi
 
-# -- 7. systemd unit ---------------------------------------------------
+# -- 6. systemd unit for the Go binary --------------------------------
 if [[ -f /tmp/liveaboard.service ]]; then
   log "installing systemd unit"
   sudo install -m 0644 -o root -g root /tmp/liveaboard.service /etc/systemd/system/liveaboard.service
@@ -149,7 +165,7 @@ if [[ -f /tmp/liveaboard.service ]]; then
   sudo systemctl enable liveaboard >/dev/null
 fi
 
-# -- 8. production.env (committed defaults) ----------------------------
+# -- 7. production.env (committed defaults) ---------------------------
 if [[ -f /tmp/production.env ]]; then
   log "installing production.env"
   sudo install -m 0644 -o "${APP_USER}" -g "${APP_USER}" /tmp/production.env "${APP_ROOT}/config/production.env"
@@ -157,6 +173,7 @@ fi
 
 log "VM setup complete."
 log "  vanity URL : https://${VANITY_HOST}"
+log "  TLS        : Caddy + Let's Encrypt (auto-renewed)"
 if [[ "${SMTP_USERNAME}" == "PLACEHOLDER_EDIT_ME" ]]; then
   log "  env file   : ${ENV_FILE} (SMTP_* still placeholder; set env.sh and re-bootstrap)"
 else

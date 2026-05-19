@@ -33,6 +33,11 @@ STATIC_IP_NAME="${STATIC_IP_NAME:-liveaboard-ip}"
 FIREWALL_HTTPS="${FIREWALL_HTTPS:-liveaboard-allow-https}"
 NETWORK_TAG="${NETWORK_TAG:-liveaboard-https}"
 
+# IP → DNS magic-suffix service. Defaults to nip.io. Switch to sslip.io
+# (or another wildcard-DNS service) by setting DNS_SUFFIX in env.sh if
+# you hit Let's Encrypt's per-registered-domain rate limit on nip.io.
+DNS_SUFFIX="${DNS_SUFFIX:-nip.io}"
+
 REMOTE_USER="${REMOTE_USER:-liveaboard-deploy}"
 APP_USER="liveaboard"
 APP_ROOT="/opt/liveaboard"
@@ -54,10 +59,10 @@ resource_exists() {
   gcloud "${gcloud_args[@]}" "$@" >/dev/null 2>&1
 }
 
-# vanity_hostname <ip> — converts 1.2.3.4 to 1-2-3-4.nip.io.
+# vanity_hostname <ip> — converts 1.2.3.4 to 1-2-3-4.<DNS_SUFFIX>.
 vanity_hostname() {
   local ip="$1"
-  echo "${ip//./-}.nip.io"
+  echo "${ip//./-}.${DNS_SUFFIX}"
 }
 
 # vm_ssh <cmd...> — run a command on the VM via gcloud compute ssh.

@@ -1,0 +1,22 @@
+# Caddy site config for liveaboard. Rendered by setup.sh —
+# {{VANITY_HOST}} is the operator's IP-shaped nip.io hostname
+# (e.g. 35-253-223-175.nip.io).
+#
+# Caddy auto-acquires + auto-renews a Let's Encrypt certificate for
+# this host using the HTTP-01 challenge on port 80. The firewall must
+# allow tcp:80 AND tcp:443 (bootstrap.sh handles that).
+
+{{VANITY_HOST}} {
+    encode gzip
+    header -Server
+
+    request_body {
+        max_size 25MB
+    }
+
+    reverse_proxy 127.0.0.1:8080 {
+        header_up X-Forwarded-For   {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP         {remote_host}
+    }
+}
