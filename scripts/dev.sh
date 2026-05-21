@@ -32,7 +32,18 @@ WEB_PID=$!
 # we want to fail loudly here instead of leaving Vite running and
 # silently serving ECONNREFUSED proxy errors until the operator
 # notices something's wrong.
-wait -n
+#
+# `wait -n` arrived in bash 4.3. macOS still ships bash 3.2 by default
+# (Apple's GPL3 stance), so poll instead. Same observable behavior,
+# slightly less precise (1s wakeup vs immediate).
+while kill -0 "${BACKEND_PID}" 2>/dev/null && kill -0 "${WEB_PID}" 2>/dev/null; do
+  sleep 1
+done
+if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
+  wait "${BACKEND_PID}" 2>/dev/null
+else
+  wait "${WEB_PID}" 2>/dev/null
+fi
 EXITED_PID=$?
 
 if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
