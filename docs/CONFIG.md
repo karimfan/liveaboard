@@ -32,6 +32,8 @@ The loader is `internal/config`. It is the only package allowed to call `os.Gete
 | `LIVEABOARD_BCRYPT_COST` | no | no | int [4,31] | `12` | `12` | `4` | `12` | Password hashing cost. |
 | `LIVEABOARD_SESSION_DURATION` | no | no | duration | `336h` | `336h` | `336h` | `336h` | Session lifetime. |
 | `LIVEABOARD_VERIFICATION_DURATION` | no | no | duration | `24h` | `24h` | `24h` | `24h` | Email verification token lifetime. |
+| `LIVEABOARD_EMAIL_TRANSPORT` | no | no | enum | `smtp` | `smtp` | `smtp` | `smtp` (filesystem rejected) | Outbound mail transport. `smtp` ships via Brevo; `filesystem` writes each rendered message under `LIVEABOARD_EMAIL_FILESYSTEM_DIR/<recipient>/` for local end-to-end testing. The production loader hard-rejects `filesystem`. |
+| `LIVEABOARD_EMAIL_FILESYSTEM_DIR` | no | no | path | `/tmp/inbox` | `/tmp/inbox` | `/tmp/inbox` | n/a | Inbox root when `LIVEABOARD_EMAIL_TRANSPORT=filesystem`. See `docs/dev/email-inbox.md`. |
 | `VITE_API_BASE` | no | no | URL or path | `/api` | `/api` | `/api` | `/api` | Frontend → backend base URL. Same-origin `/api` works for both `make dev` (Vite proxy) and `make build` (binary serves SPA + /api). |
 
 The `VITE_*` keys are part of the schema only so the loader catches typos. The Go runtime never reads them; the Makefile / `scripts/lib/sync-web-env.sh` writes them into `web/.env.local` before `npm run dev` / `npm run build` so Vite can consume them.

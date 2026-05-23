@@ -301,15 +301,15 @@ Behavior:
   extractor (or a new test file).
 
 **Tasks:**
-- [ ] Implement `ExtractLinks` scanning both text and HTML bodies,
+- [x] Implement `ExtractLinks` scanning both text and HTML bodies,
       preserving first-occurrence order, deduping case-sensitively.
-- [ ] Refactor `MockSender.LinkFor` to call `ExtractLinks` internally
+- [x] Refactor `MockSender.LinkFor` to call `ExtractLinks` internally
       while preserving its existing signature.
-- [ ] Implement `FilesystemSender.Send` writing `.eml` + `.json`
+- [x] Implement `FilesystemSender.Send` writing `.eml` + `.json`
       atomically and rewriting `latest.*` files atomically.
-- [ ] Recipient-slug helper that preserves `@.+_-`, replaces anything
+- [x] Recipient-slug helper that preserves `@.+_-`, replaces anything
       else with `_`, lowercases.
-- [ ] Tests asserting: `.eml` reproduces SMTP MIME byte-for-byte;
+- [x] Tests asserting: `.eml` reproduces SMTP MIME byte-for-byte;
       sidecar JSON schema; slug normalization including hostile
       characters; deterministic timestamp ordering; concurrent
       writes from multiple goroutines all land without collision;
@@ -330,16 +330,16 @@ Behavior:
   rejected.
 
 **Tasks:**
-- [ ] Add the two new fields with `env`/`default` tags.
-- [ ] Validate `EmailTransport ∈ {smtp, filesystem}`.
-- [ ] Hard-reject `EmailTransport=filesystem` in `ModeProduction`.
-- [ ] Validate `EmailFilesystemDir` non-empty when transport is
+- [x] Add the two new fields with `env`/`default` tags.
+- [x] Validate `EmailTransport ∈ {smtp, filesystem}`.
+- [x] Hard-reject `EmailTransport=filesystem` in `ModeProduction`.
+- [x] Validate `EmailFilesystemDir` non-empty when transport is
       filesystem.
-- [ ] Update `cmd/server/main.go` to switch on transport, build
+- [x] Update `cmd/server/main.go` to switch on transport, build
       `FilesystemSender` when selected, gate the SMTP-presence check
       to `smtp` only, log `slog.Warn("email transport: filesystem",
       "inbox_dir", …)` once on the filesystem path.
-- [ ] Config tests: default loads SMTP; `filesystem` loads without
+- [x] Config tests: default loads SMTP; `filesystem` loads without
       SMTP creds; `production+filesystem` is rejected at load time
       with a clear error message; bogus transport string rejected.
 
@@ -353,18 +353,18 @@ Behavior:
 - `Makefile` — `make inbox` and `make inbox-clear` targets.
 
 **Tasks:**
-- [ ] Implement three GET-only handlers for `/dev/inbox`,
+- [x] Implement three GET-only handlers for `/dev/inbox`,
       `/dev/inbox/{recipient}`, `/dev/inbox/{recipient}/{id}`.
-- [ ] Wire route mount conditional on `Mode=dev` and
+- [x] Wire route mount conditional on `Mode=dev` and
       `EmailTransport=filesystem`.
-- [ ] Slug-validate path parameters; reject anything else with `400`.
-- [ ] Refuse reads outside `EmailFilesystemDir`.
-- [ ] `scripts/inbox.sh <recipient>` reads
+- [x] Slug-validate path parameters; reject anything else with `400`.
+- [x] Refuse reads outside `EmailFilesystemDir`.
+- [x] `scripts/inbox.sh <recipient>` reads
       `${LIVEABOARD_EMAIL_FILESYSTEM_DIR:-/tmp/inbox}/<recipient>/latest.json`
       and `jq .` it.
-- [ ] `make inbox` and `make inbox-clear` targets. `make inbox-clear`
+- [x] `make inbox` and `make inbox-clear` targets. `make inbox-clear`
       prompts for confirmation unless `FORCE=1`.
-- [ ] Handler tests: route NOT mounted in `Mode=test` even with
+- [x] Handler tests: route NOT mounted in `Mode=test` even with
       filesystem transport; route NOT mounted in `Mode=dev` with
       `smtp` transport; route returns `400` for slug-violating
       paths; handler refuses to traverse outside the inbox dir.
@@ -377,18 +377,18 @@ Behavior:
   end-to-end test.
 
 **Tasks:**
-- [ ] Per-kind matrix test: for each of the eight `email.Kind`
+- [x] Per-kind matrix test: for each of the eight `email.Kind`
       values, render with representative `Vars`, send through
       `FilesystemSender` into `t.TempDir()`, assert the `.eml`
       exists, the `.json` parses, the `links` slice matches what
       `ExtractLinks` produces on the rendered `Message`.
-- [ ] One HTTP-level e2e: boot the test HTTP server with
+- [x] One HTTP-level e2e: boot the test HTTP server with
       `FilesystemSender` into `t.TempDir()`, POST
       `/api/auth/signup` with a synthetic recipient, read
       `latest.json` for that recipient, follow the verification
       URL through `/api/auth/verify-email`, confirm the user is now
       verified.
-- [ ] Existing unit tests using `MockSender` continue to pass with
+- [x] Existing unit tests using `MockSender` continue to pass with
       no code changes (verify the refactored `LinkFor` is
       behavior-compatible).
 
@@ -399,14 +399,14 @@ Behavior:
 - `docs/dev/email-inbox.md` — new doc.
 
 **Tasks:**
-- [ ] Add the two keys to the `docs/CONFIG.md` keys table.
-- [ ] Write `docs/dev/email-inbox.md` covering: enabling filesystem
+- [x] Add the two keys to the `docs/CONFIG.md` keys table.
+- [x] Write `docs/dev/email-inbox.md` covering: enabling filesystem
       mode, layout, the `latest.json` contract, the `/dev/inbox`
       viewer, the `scripts/inbox.sh` and `make` targets, and the
       hard production rejection.
-- [ ] Run `go test ./...`.
-- [ ] Run `go vet ./...`.
-- [ ] Run `npm run build`.
+- [x] Run `go test ./...`.
+- [x] Run `go vet ./...`.
+- [x] Run `npm run build`.
 
 ## API Endpoints
 
@@ -446,44 +446,44 @@ configuration; the production binary never exposes them.
 
 ## Definition of Done
 
-- [ ] `LIVEABOARD_EMAIL_TRANSPORT=filesystem` runs the server with no
+- [x] `LIVEABOARD_EMAIL_TRANSPORT=filesystem` runs the server with no
       SMTP credentials and no external network calls for email.
-- [ ] Default behavior (no env override) is unchanged in every mode;
+- [x] Default behavior (no env override) is unchanged in every mode;
       production still requires the four SMTP env vars.
-- [ ] All eight email kinds (`verification`, `invitation`,
+- [x] All eight email kinds (`verification`, `invitation`,
       `password_reset`, `change_email`, `trip_assigned`,
       `trip_unassigned`, `guest_registration_invite`,
       `guest_folio_closed`) land on disk under the configured inbox
       dir when filesystem transport is selected, proven by the
       per-kind matrix test.
-- [ ] `<recipient>/latest.eml` and `<recipient>/latest.json` are
+- [x] `<recipient>/latest.eml` and `<recipient>/latest.json` are
       regular files (not symlinks) that always reflect the most
       recent message for that recipient, even under concurrent
       writers.
-- [ ] `.eml` artifacts are byte-identical to what `SMTPSender` would
+- [x] `.eml` artifacts are byte-identical to what `SMTPSender` would
       have transmitted for the same `Message`.
-- [ ] `.json` sidecar matches the schema (`id`, `from`, `to`,
+- [x] `.json` sidecar matches the schema (`id`, `from`, `to`,
       `subject`, `sent_at`, `eml_path`, `links`) and `links` is
       produced by the shared `ExtractLinks` helper.
-- [ ] `MockSender.LinkFor` is refactored to use `ExtractLinks`
+- [x] `MockSender.LinkFor` is refactored to use `ExtractLinks`
       internally and existing unit tests pass unchanged.
-- [ ] Production mode hard-rejects `EmailTransport=filesystem` at
+- [x] Production mode hard-rejects `EmailTransport=filesystem` at
       config-load time with a clear error message.
-- [ ] `/dev/inbox` viewer is mounted only when `Mode=dev` AND
+- [x] `/dev/inbox` viewer is mounted only when `Mode=dev` AND
       `EmailTransport=filesystem`; it is never mounted in other
       configurations and is never available in production.
-- [ ] `/dev/inbox` viewer rejects path-traversal attempts and
+- [x] `/dev/inbox` viewer rejects path-traversal attempts and
       slug-violating recipient names with `400`.
-- [ ] `make inbox`, `make inbox-clear`, and `scripts/inbox.sh` are
+- [x] `make inbox`, `make inbox-clear`, and `scripts/inbox.sh` are
       documented and work against the default inbox dir.
-- [ ] One HTTP-level e2e test boots the server with filesystem
+- [x] One HTTP-level e2e test boots the server with filesystem
       transport, completes a signup → verification flow by reading
       the inbox, and asserts the user is now verified.
-- [ ] `docs/CONFIG.md` and `docs/dev/email-inbox.md` reflect the
+- [x] `docs/CONFIG.md` and `docs/dev/email-inbox.md` reflect the
       new surface.
-- [ ] `go test ./...` passes.
-- [ ] `go vet ./...` passes.
-- [ ] `npm run build` (frontend) passes.
+- [x] `go test ./...` passes.
+- [x] `go vet ./...` passes.
+- [x] `npm run build` (frontend) passes.
 
 ## Risks & Mitigations
 
