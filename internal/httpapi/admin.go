@@ -405,4 +405,3 @@ func tripScopeFor(role string) string {
 	}
 	return "all"
 }
-

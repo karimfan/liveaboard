@@ -79,6 +79,8 @@ func (s *Server) Router() http.Handler {
 			r.Get("/guest/trip-registrations/{trip_guest_id}/documents", s.handleListGuestDocuments)
 			r.Post("/guest/trip-registrations/{trip_guest_id}/documents", s.handleUploadGuestDocument)
 			r.Get("/guest/trip-registrations/{trip_guest_id}/documents/{document_id}", s.handleOpenGuestDocument)
+			// Sprint 022 — guest's own itemized tab for one trip.
+			r.Get("/guest/trip-registrations/{trip_guest_id}/tab", s.handleGuestTab)
 		})
 
 		// Authenticated routes.
@@ -156,9 +158,16 @@ func (s *Server) Router() http.Handler {
 				r.Get("/cruise-director-overview", s.handleCruiseDirectorOverview)
 				r.Get("/audit-events", s.handleAuditEvents)
 
+				// Sprint 022 — per-trip dashboard. Admin sees any org
+				// trip; Cruise Director sees assigned trips only.
+				// Handler enforces the role/assignment check.
+				r.Get("/trips/{id}/dashboard", s.handleTripDashboard)
+
 				r.Group(func(r chi.Router) {
 					r.Use(auth.RequireOrgAdmin)
 					r.Get("/overview", s.AdminAPI.HandleOverview)
+					// Sprint 022 — Admin reports.
+					r.Get("/reports", s.handleAdminReports)
 					r.Get("/organization/payment-settings", s.handleGetPaymentSettings)
 					r.Patch("/organization/payment-settings", s.handleUpdatePaymentSettings)
 					r.Get("/boats", s.AdminAPI.HandleListBoats)

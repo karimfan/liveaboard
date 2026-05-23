@@ -116,21 +116,21 @@ type TripOperationalRow struct {
 
 // TripRevenueRow is one trip's revenue rollup.
 type TripRevenueRow struct {
-	TripID                  uuid.UUID
-	BoatName                string
-	StartDate               time.Time
-	EndDate                 time.Time
-	Status                  string
-	OpenFolioCount          int
-	ClosedFolioCount        int
-	ChargesUSDCents         int64
-	CrewTipUSDCents         int64
-	CardFeeUSDCents         int64
-	SettledUSDCents         int64
-	OutstandingUSDCents     int64
-	VoidedLineCount         int
-	VoidedUSDCents          int64
-	SettlementByCurrency    []SettlementCurrencyRow
+	TripID               uuid.UUID
+	BoatName             string
+	StartDate            time.Time
+	EndDate              time.Time
+	Status               string
+	OpenFolioCount       int
+	ClosedFolioCount     int
+	ChargesUSDCents      int64
+	CrewTipUSDCents      int64
+	CardFeeUSDCents      int64
+	SettledUSDCents      int64
+	OutstandingUSDCents  int64
+	VoidedLineCount      int
+	VoidedUSDCents       int64
+	SettlementByCurrency []SettlementCurrencyRow
 }
 
 // SettlementCurrencyRow groups closed-folio settlement totals by
@@ -138,9 +138,9 @@ type TripRevenueRow struct {
 // currencies — they are returned as separate rows so the UI can
 // render them per currency.
 type SettlementCurrencyRow struct {
-	Currency    string
-	TotalMinor  int64
-	FolioCount  int
+	Currency   string
+	TotalMinor int64
+	FolioCount int
 }
 
 // --- Trip dashboard ---
@@ -246,11 +246,11 @@ type GuestTabLine struct {
 }
 
 type GuestTabSettlement struct {
-	Currency        string
-	TotalMinor      int64
-	CurrencyExp     int
-	PaymentMethod   *string
-	ClosedAt        time.Time
+	Currency      string
+	TotalMinor    int64
+	CurrencyExp   int
+	PaymentMethod *string
+	ClosedAt      time.Time
 }
 
 // --- Methods on *Pool ---
@@ -786,14 +786,14 @@ func (p *Pool) GuestTab(ctx context.Context, guestUserID, tripGuestID uuid.UUID)
 	// Folio lookup (one per trip_guest by unique index). May not exist
 	// yet — that's the empty-state path.
 	var (
-		folioID                                   uuid.UUID
-		folioStatus                               string
-		subtotal, cardFee, total                  int64
-		settlementCurrency                        *string
-		settlementTotalMinor                      *int64
-		currencyExp                               *int
-		paymentMethod                             *string
-		closedAt                                  *time.Time
+		folioID                  uuid.UUID
+		folioStatus              string
+		subtotal, cardFee, total int64
+		settlementCurrency       *string
+		settlementTotalMinor     *int64
+		currencyExp              *int
+		paymentMethod            *string
+		closedAt                 *time.Time
 	)
 	err := p.QueryRow(ctx, `
 		SELECT id, status, subtotal_usd_cents, card_fee_usd_cents, total_usd_cents,

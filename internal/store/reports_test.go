@@ -18,21 +18,21 @@ import (
 // crew tip) so the reports surface can be exercised across the full
 // matrix in one place.
 type reportFixture struct {
-	OrgA, OrgB                       *store.Organization
-	BoatA                            *store.Boat
-	BoatB                            *store.Boat
+	OrgA, OrgB                        *store.Organization
+	BoatA                             *store.Boat
+	BoatB                             *store.Boat
 	TripPlanned, TripActive, TripDone *store.Trip
-	TripB                            *store.Trip
-	GuestUserA                       uuid.UUID // guest_users.id
-	GuestUserA2                      uuid.UUID
-	GuestUserB                       uuid.UUID
-	TripGuestA1                      uuid.UUID // owned by GuestUserA on TripActive
-	TripGuestA2                      uuid.UUID // owned by GuestUserA2 on TripActive
-	TripGuestB                       uuid.UUID // owned by GuestUserB on TripB
-	FolioA1Closed                    uuid.UUID
-	FolioA2Open                      uuid.UUID
-	FolioB                           uuid.UUID
-	AdminA                           *store.User
+	TripB                             *store.Trip
+	GuestUserA                        uuid.UUID // guest_users.id
+	GuestUserA2                       uuid.UUID
+	GuestUserB                        uuid.UUID
+	TripGuestA1                       uuid.UUID // owned by GuestUserA on TripActive
+	TripGuestA2                       uuid.UUID // owned by GuestUserA2 on TripActive
+	TripGuestB                        uuid.UUID // owned by GuestUserB on TripB
+	FolioA1Closed                     uuid.UUID
+	FolioA2Open                       uuid.UUID
+	FolioB                            uuid.UUID
+	AdminA                            *store.User
 }
 
 func seedReportFixture(t *testing.T, p *store.Pool) *reportFixture {
@@ -96,8 +96,8 @@ func seedReportFixture(t *testing.T, p *store.Pool) *reportFixture {
 		OrgA: orgA, OrgB: orgB,
 		BoatA: boatA, BoatB: boatB,
 		TripPlanned: tripPlanned, TripActive: tripActive, TripDone: tripDone,
-		TripB:        tripB,
-		GuestUserA:   guestUserA, GuestUserA2: guestUserA2, GuestUserB: guestUserB,
+		TripB:      tripB,
+		GuestUserA: guestUserA, GuestUserA2: guestUserA2, GuestUserB: guestUserB,
 		TripGuestA1: tripGuestA1, TripGuestA2: tripGuestA2, TripGuestB: tripGuestB,
 		FolioA1Closed: folioA1, FolioA2Open: folioA2, FolioB: folioB,
 		AdminA: adminA,
@@ -253,9 +253,9 @@ func ensureCatalogItem(t *testing.T, p *store.Pool, orgID uuid.UUID, name string
 	return id
 }
 
-func ptrStr(s string) *string  { return &s }
-func ptr64(n int64) *int64     { return &n }
-func ptrInt(n int) *int        { return &n }
+func ptrStr(s string) *string { return &s }
+func ptr64(n int64) *int64    { return &n }
+func ptrInt(n int) *int       { return &n }
 func ptrTime(t time.Time) *time.Time {
 	return &t
 }
