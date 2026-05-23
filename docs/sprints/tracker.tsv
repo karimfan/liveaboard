@@ -20,3 +20,4 @@ sprint_id	title	status	created_at	updated_at
 019	Real-Time Consumption Ledger	completed	2026-05-09T17:53:36Z	2026-05-09T20:32:53Z
 020	Pricing Overrides and Currency Defaults	completed	2026-05-10T20:19:46Z	2026-05-10T20:19:47Z
 021	Filesystem Email Transport for End-to-End Testing	completed	2026-05-23T18:27:32Z	2026-05-23T18:51:27Z
+022	Analytical Reports Across Personas + Postgres-Only Storage	planned	2026-05-23T20:38:09Z	2026-05-23T20:38:09Z
