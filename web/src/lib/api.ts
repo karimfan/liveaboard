@@ -263,4 +263,55 @@ export const api = {
     if (!resp.ok) throw parsed as ApiError;
     return parsed as GuestDocument;
   },
+
+  guestTab: (tripGuestId: string) =>
+    call<GuestTabResponse>(
+      "GET",
+      `/guest/trip-registrations/${encodeURIComponent(tripGuestId)}/tab`,
+    ),
+};
+
+// --- Sprint 022 guest tab ---
+
+export type GuestTabLine = {
+  id: string;
+  line_type: "catalog_item" | "crew_tip";
+  item_name: string;
+  quantity: number;
+  unit_price_usd_cents: number;
+  line_total_usd_cents: number;
+  created_at: string;
+};
+
+export type GuestTabSettlement = {
+  currency: string;
+  total_minor: number;
+  currency_exp: number;
+  payment_method: string | null;
+  closed_at: string;
+};
+
+export type GuestTabResponse = {
+  trip: {
+    trip_id: string;
+    boat_id: string;
+    boat_name: string;
+    start_date: string;
+    end_date: string;
+    itinerary: string;
+    departure_port: string | null;
+    return_port: string | null;
+    status: string;
+    started_at: string | null;
+    completed_at: string | null;
+    cancelled_at: string | null;
+    director_count: number;
+  };
+  has_folio: boolean;
+  status: "open" | "closed" | "";
+  lines: GuestTabLine[];
+  subtotal_usd_cents: number;
+  card_fee_usd_cents: number;
+  total_usd_cents: number;
+  settlement?: GuestTabSettlement;
 };

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { api, type GuestDocument } from "../lib/api";
 import { appConfig } from "../lib/config";
@@ -124,6 +124,9 @@ export function GuestRegistration() {
             </p>
           </div>
           <span className="chip chip--active">{status}</span>
+        </div>
+        <div className="muted" style={{ marginBottom: "var(--sp-md)" }}>
+          <Link to={`/guest/trips/${tripGuestId}/tab`}>View my tab →</Link>
         </div>
         {error && <div className="error">{error}</div>}
         {message && <div className="callout">{message}</div>}

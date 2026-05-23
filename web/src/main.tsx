@@ -13,6 +13,7 @@ import { ResetPassword } from "./pages/ResetPassword";
 import { AcceptInvitation } from "./pages/AcceptInvitation";
 import { GuestInvitation } from "./pages/GuestInvitation";
 import { GuestRegistration } from "./pages/GuestRegistration";
+import { GuestTab } from "./pages/GuestTab";
 import { RequireSession } from "./lib/RequireSession";
 
 import { AdminShell, RequireAdmin } from "./admin/Shell";
@@ -54,6 +55,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/invitations/:token/accept" element={<AcceptInvitation />} />
         <Route path="/guest/invitations/:token" element={<GuestInvitation />} />
         <Route path="/guest/trips/:tripGuestId/register" element={<GuestRegistration />} />
+        <Route path="/guest/trips/:tripGuestId/tab" element={<GuestTab />} />
 
         {/* Root redirects to the admin chrome — that's the only authenticated
             surface. RequireSession on /admin handles the unauthenticated case. */}
