@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -25,11 +24,19 @@ type AdminHandlers struct {
 
 // HandleOverview returns the aggregate counts the Overview screen
 // needs for setup-completeness + a list of trips needing attention.
+// The setup-completeness calculation is delegated to
+// store.SetupCompleteness (Sprint 022) so the Overview screen and
+// the Reports page agree on what counts as "set up".
 func (a *AdminHandlers) HandleOverview(w http.ResponseWriter, r *http.Request) {
 	u := auth.UserFromContext(r.Context())
 	ctx := r.Context()
 	now := time.Now().UTC()
 
+	setup, err := a.Store.SetupCompleteness(ctx, u.OrganizationID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
 	boatCount, err := a.Store.BoatCountForOrg(ctx, u.OrganizationID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
@@ -45,11 +52,6 @@ func (a *AdminHandlers) HandleOverview(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
-	org, err := a.Store.OrganizationByID(ctx, u.OrganizationID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal", "internal error")
-		return
-	}
 	attention, err := a.Store.TripsNeedingAttention(ctx, u.OrganizationID, now)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
@@ -61,28 +63,10 @@ func (a *AdminHandlers) HandleOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currencySet := org.Currency != nil && *org.Currency != ""
-	steps := []map[string]any{
-		{"key": "currency", "label": "Set organization currency", "done": currencySet, "hint": derefOrEmpty(org.Currency), "href": "/admin/organization"},
-		{"key": "boats", "label": "Add or import a boat", "done": boatCount > 0, "hint": pluralize(boatCount, "boat", "boats"), "href": "/admin/fleet"},
-		{"key": "directors", "label": "Invite a Cruise Director", "done": directorCount > 0, "hint": pluralize(directorCount, "active", "active"), "href": "/admin/users"},
-		{"key": "trips", "label": "Create your first trip", "done": tripCount > 0, "hint": pluralize(tripCount, "trip", "trips"), "href": "/admin/trips"},
-	}
-	doneCount := 0
-	for _, s := range steps {
-		if s["done"].(bool) {
-			doneCount++
-		}
-	}
-	pct := 0
-	if len(steps) > 0 {
-		pct = int(float64(doneCount) / float64(len(steps)) * 100)
-	}
-
 	writeJSON(w, http.StatusOK, map[string]any{
 		"setup": map[string]any{
-			"pct":   pct,
-			"steps": steps,
+			"pct":   setup.Percent,
+			"steps": setupStepsView(setup.Steps),
 		},
 		"counts": map[string]any{
 			"boats":            boatCount,
@@ -91,6 +75,23 @@ func (a *AdminHandlers) HandleOverview(w http.ResponseWriter, r *http.Request) {
 		},
 		"trips_needing_attention": tripsToView(attention, boatNames),
 	})
+}
+
+// setupStepsView serializes SetupStep entries into the same JSON
+// shape HandleOverview emitted before Sprint 022 — kept so the
+// existing Overview screen renders without changes.
+func setupStepsView(steps []store.SetupStep) []map[string]any {
+	out := make([]map[string]any, 0, len(steps))
+	for _, s := range steps {
+		out = append(out, map[string]any{
+			"key":   s.Key,
+			"label": s.Label,
+			"done":  s.Done,
+			"hint":  s.Hint,
+			"href":  s.Href,
+		})
+	}
+	return out
 }
 
 // HandleListBoats returns every boat in the org.
@@ -405,16 +406,3 @@ func tripScopeFor(role string) string {
 	return "all"
 }
 
-func derefOrEmpty(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func pluralize(n int, sing, plur string) string {
-	if n == 1 {
-		return fmt.Sprintf("%d %s", n, sing)
-	}
-	return fmt.Sprintf("%d %s", n, plur)
-}
