@@ -45,13 +45,24 @@ type Config struct {
 	DocumentsDir string `env:"LIVEABOARD_DOCUMENTS_DIR" default:"var/uploads/guest-documents"`
 
 	// Brevo / SMTP relay settings. Empty in test mode (handlers use a
-	// MockSender). Required at server startup in dev/prod (validated by
-	// cmd/server/main).
+	// MockSender). Required at server startup in dev/prod when
+	// EmailTransport=smtp (validated by cmd/server/main).
 	SMTPHost     string `env:"LIVEABOARD_SMTP_HOST"`
 	SMTPPort     int    `env:"LIVEABOARD_SMTP_PORT" default:"587"`
 	SMTPUsername string `env:"LIVEABOARD_SMTP_USERNAME" secret:"true"`
 	SMTPPassword string `env:"LIVEABOARD_SMTP_PASSWORD" secret:"true"`
 	SMTPFrom     string `env:"LIVEABOARD_SMTP_FROM"`
+
+	// EmailTransport selects how outgoing mail is delivered. `smtp` is the
+	// default and the only transport allowed in production. `filesystem`
+	// writes each rendered message under EmailFilesystemDir/<recipient>/
+	// for local end-to-end testing and demos; the production loader
+	// hard-rejects it.
+	EmailTransport string `env:"LIVEABOARD_EMAIL_TRANSPORT" default:"smtp"`
+
+	// EmailFilesystemDir is the inbox root used when EmailTransport is
+	// `filesystem`. Each Send creates <dir>/<recipient>/ on demand.
+	EmailFilesystemDir string `env:"LIVEABOARD_EMAIL_FILESYSTEM_DIR" default:"/tmp/inbox"`
 
 	// Scraper knobs. The liveaboard import runner reads these to politely
 	// fetch liveaboard.com boat detail pages. None are secrets; all have
@@ -212,6 +223,19 @@ func (c *Config) validate() error {
 			if m.source != srcProcess {
 				return fmt.Errorf("config: production mode: secret %s must come from the process environment, not %s", m.envKey, m.source)
 			}
+		}
+	}
+	switch c.EmailTransport {
+	case "smtp", "filesystem":
+	default:
+		return fmt.Errorf("config: LIVEABOARD_EMAIL_TRANSPORT=%q must be one of: smtp, filesystem", c.EmailTransport)
+	}
+	if c.EmailTransport == "filesystem" {
+		if c.Mode == ModeProduction {
+			return fmt.Errorf("config: production mode does not permit LIVEABOARD_EMAIL_TRANSPORT=filesystem (it writes token-bearing links to disk)")
+		}
+		if c.EmailFilesystemDir == "" {
+			return fmt.Errorf("config: LIVEABOARD_EMAIL_FILESYSTEM_DIR is required when LIVEABOARD_EMAIL_TRANSPORT=filesystem")
 		}
 	}
 	if c.BcryptCost < 4 || c.BcryptCost > 31 {

@@ -40,7 +40,7 @@ func main() {
 	}
 	log.Info("config loaded", "mode", cfg.Mode, "addr", cfg.Addr, "cookie_secure", cfg.CookieSecure)
 
-	if cfg.SMTPHost == "" || cfg.SMTPUsername == "" || cfg.SMTPPassword == "" || cfg.SMTPFrom == "" {
+	if cfg.EmailTransport == "smtp" && (cfg.SMTPHost == "" || cfg.SMTPUsername == "" || cfg.SMTPPassword == "" || cfg.SMTPFrom == "") {
 		log.Error("SMTP not configured", "host_set", cfg.SMTPHost != "", "user_set", cfg.SMTPUsername != "", "from_set", cfg.SMTPFrom != "")
 		os.Exit(1)
 	}
@@ -59,14 +59,25 @@ func main() {
 	}
 	defer pool.Close()
 
-	sender := &email.SMTPSender{
-		Host:     cfg.SMTPHost,
-		Port:     cfg.SMTPPort,
-		Username: cfg.SMTPUsername,
-		Password: cfg.SMTPPassword,
+	var sender email.Sender
+	senderFrom := cfg.SMTPFrom
+	switch cfg.EmailTransport {
+	case "filesystem":
+		log.Warn("email transport: filesystem (no SMTP delivery)", "inbox_dir", cfg.EmailFilesystemDir)
+		if senderFrom == "" {
+			senderFrom = "Liveaboard <noreply@filesystem.local>"
+		}
+		sender = email.NewFilesystemSender(cfg.EmailFilesystemDir, log)
+	default:
+		sender = &email.SMTPSender{
+			Host:     cfg.SMTPHost,
+			Port:     cfg.SMTPPort,
+			Username: cfg.SMTPUsername,
+			Password: cfg.SMTPPassword,
+		}
 	}
 
-	authSvc := auth.New(pool, sender, log, cfg.AppBaseURL, cfg.SMTPFrom)
+	authSvc := auth.New(pool, sender, log, cfg.AppBaseURL, senderFrom)
 	authSvc.BcryptCost = cfg.BcryptCost
 	authSvc.SessionDuration = cfg.SessionDuration
 	authSvc.VerificationDuration = cfg.VerificationDuration

@@ -335,3 +335,88 @@ func TestErrModeRequiredIsExported(t *testing.T) {
 		t.Fatal("nil should not match")
 	}
 }
+
+// --- Email transport ---
+
+func TestEmailTransportDefaultsToSMTP(t *testing.T) {
+	clearProcessEnv(t)
+	root := writeRepo(t, map[string]string{
+		"config/dev.env": "LIVEABOARD_DATABASE_URL=postgres://x\n",
+	})
+	cfg, err := config.Load(config.ModeDev, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.EmailTransport != "smtp" {
+		t.Errorf("default EmailTransport=%q want smtp", cfg.EmailTransport)
+	}
+	if cfg.EmailFilesystemDir != "/tmp/inbox" {
+		t.Errorf("default EmailFilesystemDir=%q", cfg.EmailFilesystemDir)
+	}
+}
+
+func TestEmailTransportFilesystemLoadsWithoutSMTP(t *testing.T) {
+	clearProcessEnv(t)
+	root := writeRepo(t, map[string]string{
+		"config/dev.env": "LIVEABOARD_DATABASE_URL=postgres://x\nLIVEABOARD_EMAIL_TRANSPORT=filesystem\nLIVEABOARD_EMAIL_FILESYSTEM_DIR=/tmp/test-inbox\n",
+	})
+	cfg, err := config.Load(config.ModeDev, root)
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if cfg.EmailTransport != "filesystem" {
+		t.Errorf("EmailTransport=%q", cfg.EmailTransport)
+	}
+	if cfg.EmailFilesystemDir != "/tmp/test-inbox" {
+		t.Errorf("EmailFilesystemDir=%q", cfg.EmailFilesystemDir)
+	}
+}
+
+func TestEmailTransportRejectsUnknown(t *testing.T) {
+	clearProcessEnv(t)
+	root := writeRepo(t, map[string]string{
+		"config/dev.env": "LIVEABOARD_DATABASE_URL=postgres://x\nLIVEABOARD_EMAIL_TRANSPORT=carrier-pigeon\n",
+	})
+	_, err := config.Load(config.ModeDev, root)
+	if err == nil || !strings.Contains(err.Error(), "EMAIL_TRANSPORT") {
+		t.Fatalf("want transport error, got %v", err)
+	}
+}
+
+func TestEmailTransportFilesystemRejectsEmptyDir(t *testing.T) {
+	clearProcessEnv(t)
+	root := writeRepo(t, map[string]string{
+		"config/dev.env": "LIVEABOARD_DATABASE_URL=postgres://x\nLIVEABOARD_EMAIL_TRANSPORT=filesystem\nLIVEABOARD_EMAIL_FILESYSTEM_DIR=\n",
+	})
+	_, err := config.Load(config.ModeDev, root)
+	if err == nil || !strings.Contains(err.Error(), "EMAIL_FILESYSTEM_DIR") {
+		t.Fatalf("want dir error, got %v", err)
+	}
+}
+
+func TestProductionRejectsFilesystemTransport(t *testing.T) {
+	clearProcessEnv(t)
+	root := writeRepo(t, map[string]string{
+		"config/production.env": "LIVEABOARD_COOKIE_SECURE=true\nLIVEABOARD_EMAIL_TRANSPORT=filesystem\n",
+	})
+	t.Setenv("LIVEABOARD_DATABASE_URL", "postgres://prod")
+	_, err := config.Load(config.ModeProduction, root)
+	if err == nil || !strings.Contains(err.Error(), "filesystem") {
+		t.Fatalf("want production filesystem rejection, got %v", err)
+	}
+}
+
+func TestProductionAcceptsSMTPTransport(t *testing.T) {
+	clearProcessEnv(t)
+	root := writeRepo(t, map[string]string{
+		"config/production.env": "LIVEABOARD_COOKIE_SECURE=true\nLIVEABOARD_EMAIL_TRANSPORT=smtp\n",
+	})
+	t.Setenv("LIVEABOARD_DATABASE_URL", "postgres://prod")
+	cfg, err := config.Load(config.ModeProduction, root)
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if cfg.EmailTransport != "smtp" {
+		t.Errorf("EmailTransport=%q", cfg.EmailTransport)
+	}
+}
