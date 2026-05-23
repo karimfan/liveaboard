@@ -127,6 +127,7 @@ export function TripManifest() {
         </div>
         <div className="header-actions">
           {lifecycle?.trip.status === "active" && <Link className="primary" to={`/admin/trips/${id}/ledger`}>Ledger</Link>}
+          <Link className="secondary" to={`/admin/trips/${id}/dashboard`}>Dashboard</Link>
           <Link className="secondary" to={`/admin/trips/${id}/cabins`}>Cabin board</Link>
         </div>
       </div>

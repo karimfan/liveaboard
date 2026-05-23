@@ -24,6 +24,7 @@ import { BoatTrips, BoatInventory, BoatNotes } from "./admin/pages/BoatTabs";
 import { BoatCabins } from "./admin/pages/BoatCabins";
 import { Trips } from "./admin/pages/Trips";
 import { TripManifest } from "./admin/pages/TripManifest";
+import { TripDashboard } from "./admin/pages/TripDashboard";
 import { TripConsumptionLedger } from "./admin/pages/TripConsumptionLedger";
 import { TripGuestDetail } from "./admin/pages/TripGuestDetail";
 import { TripCabins } from "./admin/pages/TripCabins";
@@ -71,6 +72,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route index element={<Overview />} />
           <Route path="trips" element={<Trips />} />
           <Route path="trips/:id/manifest" element={<TripManifest />} />
+          <Route path="trips/:id/dashboard" element={<TripDashboard />} />
           <Route path="trips/:id/ledger" element={<TripConsumptionLedger />} />
           <Route path="trips/:id/cabins" element={<TripCabins />} />
           <Route path="trips/:id/guests/:guestId" element={<TripGuestDetail />} />
