@@ -260,27 +260,27 @@ Admin reports accept optional `from` and `to` query params:
   cross-tenant isolation
 
 **Tasks:**
-- [ ] Write the ADR covering the Postgres-only decision, the
+- [x] Write the ADR covering the Postgres-only decision, the
       escalation path, and the revisit triggers.
-- [ ] Audit existing migration indexes before adding new ones. Add
+- [x] Audit existing migration indexes before adding new ones. Add
       only non-duplicate, query-justified indexes (candidate set
       from Codex draft, validated against current schema):
       `guest_folio_lines (organization_id, trip_guest_id, created_at) WHERE voided_at IS NULL`,
       `guest_folios (organization_id, trip_id, status)` if absent,
       `trips (organization_id, status, start_date, end_date)` if
       absent.
-- [ ] Implement `AdminReports`: setup blockers (moved from
+- [x] Implement `AdminReports`: setup blockers (moved from
       `HandleOverview`), trip status counts, trip operational
       rows, trip revenue rows.
-- [ ] Implement `TripDashboard`: header, occupancy, readiness,
+- [x] Implement `TripDashboard`: header, occupancy, readiness,
       folio totals, top-10 items, low stock.
-- [ ] Implement `GuestTab` with the guest-user ownership join.
-- [ ] Tests: revenue excludes voided, separates crew tips,
+- [x] Implement `GuestTab` with the guest-user ownership join.
+- [x] Tests: revenue excludes voided, separates crew tips,
       reports voided counts as correction metadata, settlement
       totals grouped per currency, low-stock floor, two-org
       isolation, director-not-assigned returns no data, guest
       cannot read another guest's `trip_guest_id`.
-- [ ] Update `HandleOverview` to call into the unified setup
+- [x] Update `HandleOverview` to call into the unified setup
       logic.
 
 ### Phase 2: HTTP Handlers + Authz Tests (~20%)
@@ -291,13 +291,13 @@ Admin reports accept optional `from` and `to` query params:
 - `internal/httpapi/httpapi.go` — route mounts
 
 **Tasks:**
-- [ ] Mount `GET /api/admin/reports` (RequireOrgAdmin); parse and
+- [x] Mount `GET /api/admin/reports` (RequireOrgAdmin); parse and
       bound the `from`/`to` window, reject > 1 year with 400.
-- [ ] Mount `GET /api/admin/trips/{id}/dashboard` (Admin or
+- [x] Mount `GET /api/admin/trips/{id}/dashboard` (Admin or
       assigned CD).
-- [ ] Mount `GET /api/guest/trip-registrations/{trip_guest_id}/tab`
+- [x] Mount `GET /api/guest/trip-registrations/{trip_guest_id}/tab`
       (guest session middleware).
-- [ ] Tests: every endpoint refuses cross-org callers; Director
+- [x] Tests: every endpoint refuses cross-org callers; Director
       cannot call org-wide endpoints; Director cannot access
       unassigned trips; Guest cannot read another guest's
       `trip_guest_id`; window > 1 year returns 400.
@@ -313,14 +313,14 @@ Admin reports accept optional `from` and `to` query params:
 - `web/src/styles/app.css` — modify (report table styles)
 
 **Tasks:**
-- [ ] Render setup completeness rows with deep links to fix
+- [x] Render setup completeness rows with deep links to fix
       screens.
-- [ ] Render trip status counts and operational table for the
+- [x] Render trip status counts and operational table for the
       selected window.
-- [ ] Render per-trip revenue table with USD canonical headlines
+- [x] Render per-trip revenue table with USD canonical headlines
       and per-currency settlement footnotes when present.
-- [ ] Date-window controls with conservative defaults.
-- [ ] DESIGN.md compliance: dense tables, muted surfaces, no
+- [x] Date-window controls with conservative defaults.
+- [x] DESIGN.md compliance: dense tables, muted surfaces, no
       decorative charts or hero analytics.
 
 ### Phase 4: Cruise Director Trip Dashboard UI (~15%)
@@ -335,12 +335,12 @@ Admin reports accept optional `from` and `to` query params:
 - `web/src/styles/app.css` — modify
 
 **Tasks:**
-- [ ] Read-only dashboard route for a single trip.
-- [ ] Cards/tables for occupancy, readiness, folio totals,
+- [x] Read-only dashboard route for a single trip.
+- [x] Cards/tables for occupancy, readiness, folio totals,
       top-10 items, low stock.
-- [ ] Deep links into existing operational screens for any
+- [x] Deep links into existing operational screens for any
       mutation; no write affordances on the dashboard itself.
-- [ ] Visible to Org Admin for any org trip; visible to a Cruise
+- [x] Visible to Org Admin for any org trip; visible to a Cruise
       Director only for assigned trips (relies on handler
       authz; UI hides the link for unassigned directors).
 
@@ -356,14 +356,14 @@ Admin reports accept optional `from` and `to` query params:
 - `web/src/styles/app.css` — modify
 
 **Tasks:**
-- [ ] Tab page in the existing guest surface (`web/src/pages/`,
+- [x] Tab page in the existing guest surface (`web/src/pages/`,
       no new shell).
-- [ ] Show trip header, itemized non-voided lines, subtotal, card
+- [x] Show trip header, itemized non-voided lines, subtotal, card
       fee + total if closed, settlement currency total if closed.
-- [ ] Empty state when no folio yet.
-- [ ] Link in from the existing guest registration page after
+- [x] Empty state when no folio yet.
+- [x] Link in from the existing guest registration page after
       the guest authenticates.
-- [ ] Never expose admin chrome or other guests/trips.
+- [x] Never expose admin chrome or other guests/trips.
 
 ### Phase 6: Docs and Verification (~5%)
 
@@ -374,8 +374,8 @@ Admin reports accept optional `from` and `to` query params:
   "Future" into current scope)
 
 **Tasks:**
-- [ ] Update product docs.
-- [ ] Run `go test ./...`, `go vet ./...`, `npm run build`.
+- [x] Update product docs.
+- [x] Run `go test ./...`, `go vet ./...`, `npm run build`.
 
 ## API Endpoints
 
@@ -413,42 +413,42 @@ Admin reports accept optional `from` and `to` query params:
 
 ## Definition of Done
 
-- [ ] ADR 0003 records the Postgres-only decision, escalation
+- [x] ADR 0003 records the Postgres-only decision, escalation
       path, and revisit triggers.
-- [ ] One migration adds only targeted, non-duplicate indexes.
+- [x] One migration adds only targeted, non-duplicate indexes.
       No views, no materialized views, no new tables.
-- [ ] `internal/store/reports.go` exposes `AdminReports`,
+- [x] `internal/store/reports.go` exposes `AdminReports`,
       `TripDashboard`, `GuestTab`. Every query scopes by
       `organization_id` (or `guest_user_id`) in SQL.
-- [ ] `HandleOverview`'s setup-completeness logic is sourced from
+- [x] `HandleOverview`'s setup-completeness logic is sourced from
       `reports.go`; no duplicated calculation.
-- [ ] Admin Reports page renders setup completeness, trip status,
+- [x] Admin Reports page renders setup completeness, trip status,
       and per-trip revenue from live data.
-- [ ] Cruise Director can open a read-only dashboard for an
+- [x] Cruise Director can open a read-only dashboard for an
       assigned trip and sees occupancy, readiness, folio totals,
       top items, and low stock.
-- [ ] Guest can open `/guest/trips/:tripGuestId/tab` for a
+- [x] Guest can open `/guest/trips/:tripGuestId/tab` for a
       `trip_guest_id` bound to their session, and only that one.
-- [ ] Revenue numbers are reproducible from
+- [x] Revenue numbers are reproducible from
       `SUM(line_total_usd_cents) WHERE voided_at IS NULL` on
       `guest_folio_lines`.
-- [ ] Voided lines are excluded from revenue and exposed only as
+- [x] Voided lines are excluded from revenue and exposed only as
       correction metadata (count + USD).
-- [ ] Settlement totals are grouped by currency and shown only
+- [x] Settlement totals are grouped by currency and shown only
       for closed folios. They are never summed across mixed
       currencies.
-- [ ] Crew tips are reported separately from item revenue.
-- [ ] Low-stock surfaces items at or below `reorder_level`, plus
+- [x] Crew tips are reported separately from item revenue.
+- [x] Low-stock surfaces items at or below `reorder_level`, plus
       always surfaces zero/negative stock.
-- [ ] Window > 1 year returns 400.
-- [ ] Cross-tenant tests prove org A cannot see org B's data via
+- [x] Window > 1 year returns 400.
+- [x] Cross-tenant tests prove org A cannot see org B's data via
       any report path.
-- [ ] Director-not-assigned and guest-not-owner authz tests pass.
-- [ ] Cross-trip analytics (US-7.4) remains deferred and is
+- [x] Director-not-assigned and guest-not-owner authz tests pass.
+- [x] Cross-trip analytics (US-7.4) remains deferred and is
       called out as such in the product docs.
-- [ ] `go test ./...` passes.
-- [ ] `go vet ./...` passes.
-- [ ] `npm run build` passes.
+- [x] `go test ./...` passes.
+- [x] `go vet ./...` passes.
+- [x] `npm run build` passes.
 
 ## Risks & Mitigations
 

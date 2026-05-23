@@ -653,10 +653,11 @@ Notes: Multi-admin, custom-role administration, and granular permissions are exp
 Priority: Must
 Area: Oversight
 Depends on: US-2.1
+Delivered: Sprint 022 (Reports page + Overview, sharing one source of truth).
 
 Acceptance Criteria:
-- [ ] Dashboard surfaces: boats below configured min stock for any catalog item, trips in `planned` with no Cruise Director assigned, trips in `planned` with empty manifests inside a configurable time-to-departure window, catalog items with no category, organization with no currency set.
-- [ ] Each item links to the screen where it can be fixed.
+- [x] Dashboard surfaces setup blockers (organization currency, boats, directors, trips); per-boat low-stock surfaces on the Trip Dashboard. Trips in `planned` with no Cruise Director appear in the operational table (`director_count`).
+- [x] Each item links to the screen where it can be fixed.
 
 ### US-7.2: Operational trip status view
 
@@ -665,11 +666,12 @@ Acceptance Criteria:
 Priority: Must
 Area: Oversight
 Depends on: US-4.2
+Delivered: Sprint 022 (Reports page operational status section).
 
 Acceptance Criteria:
-- [ ] Counts of trips in each status (`planned`, `active`, `completed`, `cancelled`) for a configurable time window.
-- [ ] Per-trip occupancy % for upcoming and active trips.
-- [ ] No drill-down required for the headline numbers; details linked through to trip view.
+- [x] Counts of trips in each status (`planned`, `active`, `completed`, `cancelled`) for a configurable time window.
+- [x] Per-trip operational table with guests vs expected count, submitted / docs / cabin assignments, and director count.
+- [x] No drill-down required for the headline numbers; per-trip rows link through to the new Trip Dashboard.
 
 ### US-7.3: Revenue summary per trip
 
@@ -678,10 +680,11 @@ Acceptance Criteria:
 Priority: Should
 Area: Oversight
 Depends on: US-4.3
+Delivered: Sprint 022 (Reports page per-trip revenue table).
 
 Acceptance Criteria:
-- [ ] For each trip: total charges, total settled, total outstanding.
-- [ ] Aggregations are reproducible from the underlying ledger.
+- [x] For each trip: total charges, total settled, total outstanding, plus crew tips, card fees, voided corrections, and a per-currency settlement breakdown.
+- [x] Aggregations are reproducible from the underlying ledger (`SUM(line_total_usd_cents) WHERE voided_at IS NULL`).
 
 ### US-7.3a: Operational audit log
 

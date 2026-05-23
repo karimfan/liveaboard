@@ -89,7 +89,9 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 - Saving draft trip registration and returning later to complete it.
 - Submitting their own identity, travel, emergency contact, diving, dietary/allergy, rental gear, and notes information.
 - Uploading their own trip registration documents before the trip starts.
-- Future: read access to their own tab, dive schedule, and trip details.
+- Read-only "My tab" view of their own folio (itemized lines, totals,
+  and settlement currency when closed) — Sprint 022.
+- Future: dive schedule and richer trip details.
 
 **Does not own:**
 - Anything else. No org, trip, or other-guest visibility.
