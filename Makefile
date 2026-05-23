@@ -50,3 +50,35 @@ clean:
 .PHONY: dev-reset
 dev-reset:
 	./scripts/dev-reset.sh
+
+INBOX_DIR ?= $(if $(LIVEABOARD_EMAIL_FILESYSTEM_DIR),$(LIVEABOARD_EMAIL_FILESYSTEM_DIR),/tmp/inbox)
+
+## inbox: List email recipients and latest subjects from the filesystem inbox.
+.PHONY: inbox
+inbox:
+	@if [[ ! -d "$(INBOX_DIR)" ]]; then \
+	  echo "no inbox at $(INBOX_DIR) (set LIVEABOARD_EMAIL_TRANSPORT=filesystem and run the server)"; \
+	  exit 0; \
+	fi
+	@for rcp in $$(ls -1 "$(INBOX_DIR)" 2>/dev/null); do \
+	  latest="$(INBOX_DIR)/$$rcp/latest.json"; \
+	  if [[ -f "$$latest" ]]; then \
+	    subj="$$(grep -m1 '"subject"' "$$latest" | sed 's/.*"subject":[[:space:]]*"\([^"]*\)".*/\1/')"; \
+	    printf "  %-40s %s\n" "$$rcp" "$$subj"; \
+	  fi; \
+	done
+
+## inbox-clear: Remove all messages from the filesystem inbox (FORCE=1 to skip prompt).
+.PHONY: inbox-clear
+inbox-clear:
+	@if [[ ! -d "$(INBOX_DIR)" ]]; then \
+	  echo "no inbox at $(INBOX_DIR), nothing to clear"; \
+	  exit 0; \
+	fi; \
+	if [[ "$(FORCE)" != "1" ]]; then \
+	  read -r -p "Remove all messages in $(INBOX_DIR)? [y/N] " ans; \
+	  if [[ "$$ans" != "y" && "$$ans" != "Y" ]]; then echo "aborted"; exit 0; fi; \
+	fi; \
+	rm -rf "$(INBOX_DIR)"; \
+	mkdir -p "$(INBOX_DIR)"; \
+	echo "cleared $(INBOX_DIR)"

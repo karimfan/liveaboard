@@ -35,6 +35,12 @@ type Server struct {
 	ImportRunner *imports.Runner
 	DocumentsDir string
 	CookieSecure bool
+
+	// DevInboxDir, when non-empty, mounts the read-only /dev/inbox viewer
+	// for browsing emails written by the filesystem transport. Wired only
+	// in dev mode + filesystem transport from cmd/server/main.go; empty in
+	// every other configuration.
+	DevInboxDir string
 }
 
 func (s *Server) Router() http.Handler {
@@ -200,6 +206,16 @@ func (s *Server) Router() http.Handler {
 			})
 		})
 	})
+
+	// Dev-mode inbox viewer. Mounted only when the server was constructed
+	// with a non-empty DevInboxDir (cmd/server/main.go wires this in dev
+	// mode with filesystem transport). Production never mounts it because
+	// the loader hard-rejects filesystem transport in production.
+	if s.DevInboxDir != "" {
+		r.Get("/dev/inbox", s.handleDevInboxIndex)
+		r.Get("/dev/inbox/{recipient}", s.handleDevInboxRecipient)
+		r.Get("/dev/inbox/{recipient}/{file}", s.handleDevInboxMessage)
+	}
 
 	// Static SPA + fallback. Anything not under /api falls through here.
 	r.Handle("/*", SPAHandler())

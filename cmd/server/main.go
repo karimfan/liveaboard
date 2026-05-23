@@ -130,6 +130,10 @@ func main() {
 		DocumentsDir: cfg.DocumentsDir,
 		CookieSecure: cfg.CookieSecure,
 	}
+	if cfg.Mode == config.ModeDev && cfg.EmailTransport == "filesystem" {
+		srv.DevInboxDir = cfg.EmailFilesystemDir
+		log.Info("dev inbox viewer mounted", "path", "/dev/inbox", "inbox_dir", cfg.EmailFilesystemDir)
+	}
 
 	httpServer := &http.Server{
 		Addr:              cfg.Addr,
