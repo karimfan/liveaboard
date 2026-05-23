@@ -501,6 +501,16 @@ h3 { font-size: var(--fs-xl); }
   text-align: right;
 }
 
+.settlement-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+.settlement-list li {
+  margin-bottom: 2px;
+}
+
 .chip {
   display: inline-block;
   font-size: var(--fs-xs);

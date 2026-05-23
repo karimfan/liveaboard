@@ -787,6 +787,128 @@ export const adminApi = {
       trips_updated: number;
       trips_deleted: number;
     }>("POST", "/admin/import/spreadsheet/commit", input),
+
+  // --- Sprint 022 reports ---
+
+  adminReports: (params?: { from?: string; to?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.from) qs.set("from", params.from);
+    if (params?.to) qs.set("to", params.to);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return call<AdminReportsResponse>("GET", `/admin/reports${suffix}`);
+  },
+
+  tripDashboard: (tripId: string) =>
+    call<TripDashboardResponse>("GET", `/admin/trips/${encodeURIComponent(tripId)}/dashboard`),
+};
+
+// --- Sprint 022 report types ---
+
+export type SettlementCurrencyRow = {
+  currency: string;
+  total_minor: number;
+  folio_count: number;
+};
+
+export type AdminReportsResponse = {
+  window: { from: string; to: string };
+  setup: { pct: number; steps: SetupStep[] };
+  trip_status_counts: {
+    planned: number;
+    active: number;
+    completed: number;
+    cancelled: number;
+  };
+  trip_operational: {
+    trip_id: string;
+    boat_id: string;
+    boat_name: string;
+    start_date: string;
+    end_date: string;
+    status: string;
+    num_guests: number | null;
+    guest_count: number;
+    submitted_count: number;
+    document_count: number;
+    cabin_assignments: number;
+    director_count: number;
+  }[];
+  trip_revenue: {
+    trip_id: string;
+    boat_name: string;
+    start_date: string;
+    end_date: string;
+    status: string;
+    open_folio_count: number;
+    closed_folio_count: number;
+    charges_usd_cents: number;
+    crew_tip_usd_cents: number;
+    card_fee_usd_cents: number;
+    settled_usd_cents: number;
+    outstanding_usd_cents: number;
+    voided_line_count: number;
+    voided_usd_cents: number;
+    settlement_by_currency: SettlementCurrencyRow[];
+  }[];
+};
+
+export type TripDashboardResponse = {
+  trip: {
+    trip_id: string;
+    boat_id: string;
+    boat_name: string;
+    start_date: string;
+    end_date: string;
+    itinerary: string;
+    departure_port: string | null;
+    return_port: string | null;
+    status: string;
+    started_at: string | null;
+    completed_at: string | null;
+    cancelled_at: string | null;
+    director_count: number;
+  };
+  occupancy: {
+    num_guests: number | null;
+    guest_count: number;
+    cabin_assignments: number;
+    berths_total: number;
+  };
+  registration_ready: {
+    submitted_count: number;
+    pending_count: number;
+    guest_count: number;
+  };
+  document_ready: {
+    uploaded_count: number;
+    guests_with_docs_count: number;
+    guest_count: number;
+  };
+  folio_totals: {
+    open_count: number;
+    closed_count: number;
+    charges_usd_cents: number;
+    crew_tip_usd_cents: number;
+    card_fee_usd_cents: number;
+    settled_usd_cents: number;
+    outstanding_usd_cents: number;
+    voided_line_count: number;
+    voided_usd_cents: number;
+  };
+  top_items: {
+    catalog_item_id: string;
+    item_name: string;
+    quantity: number;
+    usd_cents: number;
+  }[];
+  low_stock: {
+    catalog_item_id: string;
+    item_name: string;
+    category_name: string;
+    quantity_on_hand: number;
+    reorder_level: number | null;
+    par_level: number | null;
+  }[];
 };
 
 // --- import types ---
