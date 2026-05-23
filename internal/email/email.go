@@ -63,42 +63,24 @@ func (m *MockSender) Last() Message {
 	return m.Messages[len(m.Messages)-1]
 }
 
-// LinkFor scans the most-recent message addressed to `to` whose body
-// contains needle, and returns the first http(s) URL on the line that
-// contains needle. Tests use it to recover token-bearing URLs without
-// re-implementing template parsing. Returns "" if no match.
+// LinkFor scans recorded messages from newest to oldest and returns the
+// first http(s) URL from a message addressed to `to` whose URL contains
+// needle. Routes URL discovery through ExtractLinks so the mock and the
+// filesystem transport agree on what counts as a link. Returns "" if no
+// match.
 func (m *MockSender) LinkFor(to, needle string) string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	toLower := strings.ToLower(to)
 	for i := len(m.Messages) - 1; i >= 0; i-- {
 		msg := m.Messages[i]
-		if !strings.Contains(strings.ToLower(msg.To), strings.ToLower(to)) {
+		if !strings.Contains(strings.ToLower(msg.To), toLower) {
 			continue
 		}
-		for _, line := range strings.Split(msg.TextBody, "\n") {
-			if !strings.Contains(line, needle) {
-				continue
-			}
-			if u := firstURL(line); u != "" {
+		for _, u := range ExtractLinks(msg) {
+			if strings.Contains(u, needle) {
 				return u
 			}
-		}
-	}
-	return ""
-}
-
-func firstURL(line string) string {
-	for _, prefix := range []string{"https://", "http://"} {
-		if i := strings.Index(line, prefix); i >= 0 {
-			rest := line[i:]
-			end := len(rest)
-			for j, ch := range rest {
-				if ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n' || ch == ')' || ch == '>' {
-					end = j
-					break
-				}
-			}
-			return rest[:end]
 		}
 	}
 	return ""
