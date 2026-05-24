@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { api } from "../../lib/api";
 import { adminApi } from "../api";
+import { CurrencyPicker } from "../CurrencyPicker";
 
 type OrgView = {
   id: string;
@@ -89,20 +90,18 @@ export function Organization() {
             />
           </div>
           <div className="field">
-            <label htmlFor="org-currency">Default currency</label>
-            <select
+            <label htmlFor="org-currency">Country currency</label>
+            <CurrencyPicker
               id="org-currency"
               value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-            >
-              <option value="">— not set —</option>
-              <option value="USD">USD — US dollar</option>
-              <option value="EUR">EUR — Euro</option>
-              <option value="AUD">AUD — Australian dollar</option>
-              <option value="GBP">GBP — British pound</option>
-            </select>
+              onChange={setCurrency}
+              allowClear
+              placeholder="Search currency…"
+            />
             <div className="muted" style={{ marginTop: "var(--sp-xs)" }}>
-              Multi-currency support is on the roadmap; today an org has one default.
+              The organization's local currency. Reports headline in
+              USD; this currency is automatically added to your accepted
+              checkout currencies on Payments.
             </div>
           </div>
           <div className="field">

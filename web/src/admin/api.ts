@@ -800,6 +800,13 @@ export const adminApi = {
 
   tripDashboard: (tripId: string) =>
     call<TripDashboardResponse>("GET", `/admin/trips/${encodeURIComponent(tripId)}/dashboard`),
+
+  // --- Sprint 023 currency catalog ---
+  listCurrencies: () =>
+    call<{ currencies: { code: string; name: string; exponent: number }[] }>(
+      "GET",
+      "/currencies",
+    ),
 };
 
 // --- Sprint 022 report types ---

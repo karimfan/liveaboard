@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 
+import { api } from "../../lib/api";
 import { adminApi, type PaymentSettings } from "../api";
+import { CurrencyMultiPicker } from "../CurrencyPicker";
 
-const currencies = ["USD", "EUR", "GBP", "AUD", "IDR", "THB", "SGD", "PHP", "JPY"];
 const methods = [
   { value: "card", label: "Card" },
   { value: "cash", label: "Cash" },
@@ -11,6 +12,7 @@ const methods = [
 
 export function OrganizationPayments() {
   const [settings, setSettings] = useState<PaymentSettings | null>(null);
+  const [orgCurrency, setOrgCurrency] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -19,15 +21,15 @@ export function OrganizationPayments() {
     adminApi.paymentSettings()
       .then(setSettings)
       .catch((err) => setError((err as { message?: string })?.message ?? "Failed to load payment settings."));
+    api.organization()
+      .then((o) => setOrgCurrency(o.currency))
+      .catch(() => { /* non-fatal: picker just won't lock the country currency */ });
   }, []);
 
-  function toggleCurrency(code: string) {
-    if (!settings || code === "USD") return;
-    const set = new Set(settings.supported_currencies);
-    if (set.has(code)) set.delete(code);
-    else set.add(code);
-    set.add("USD");
-    const supported = Array.from(set).sort();
+  function setSupported(supported: string[]) {
+    if (!settings) return;
+    // USD is always supported.
+    if (!supported.includes("USD")) supported = ["USD", ...supported].sort();
     const defaultCurrency = supported.includes(settings.default_currency) ? settings.default_currency : "USD";
     setSettings({ ...settings, supported_currencies: supported, default_currency: defaultCurrency });
   }
@@ -78,28 +80,29 @@ export function OrganizationPayments() {
         <form className="admin-card settings-card" onSubmit={save}>
           <h2 className="admin-card__title">Checkout settings</h2>
           <div className="field">
-            <label>Supported currencies</label>
-            <div className="toggle-grid">
-              {currencies.map((code) => {
-                const readiness = settings.rate_readiness.find((r) => r.currency === code);
-                const enabled = settings.supported_currencies.includes(code);
-                return (
-                  <label key={code} className="check-row">
-                    <input
-                      type="checkbox"
-                      checked={enabled}
-                      disabled={code === "USD"}
-                      onChange={() => toggleCurrency(code)}
-                    />
-                    {code}
-                    {enabled && code !== "USD" && (
-                      <span className={readiness?.ready ? "muted" : "error-inline"}>
-                        {readiness?.ready ? "rate ready" : "rate needed"}
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
+            <label>Accepted currencies</label>
+            <CurrencyMultiPicker
+              value={settings.supported_currencies}
+              onChange={setSupported}
+              locked={orgCurrency ? ["USD", orgCurrency] : ["USD"]}
+              placeholder="Add a currency…"
+            />
+            <div className="rate-readiness">
+              {settings.supported_currencies
+                .filter((c) => c !== "USD")
+                .map((c) => {
+                  const r = settings.rate_readiness.find((x) => x.currency === c);
+                  return (
+                    <span key={c} className={r?.ready ? "muted" : "error-inline"}>
+                      {c}: {r?.ready ? "rate ready" : "rate needed"}
+                    </span>
+                  );
+                })}
+            </div>
+            <div className="muted" style={{ marginTop: "var(--sp-xs)" }}>
+              USD is always supported. The country currency (set on
+              Organization) is also locked here so a conversion target
+              is always available.
             </div>
           </div>
           <div className="form-grid">
