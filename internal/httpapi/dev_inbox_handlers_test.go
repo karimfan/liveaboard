@@ -138,11 +138,15 @@ func TestDevInboxRejectsBadSlug(t *testing.T) {
 	}
 }
 
-func TestDevInboxServesEMLAsPlainText(t *testing.T) {
+func TestDevInboxRendersEMLAsHTML(t *testing.T) {
 	dir := t.TempDir()
 	s := email.NewFilesystemSender(dir, nil)
 	if err := s.Send(context.Background(), email.Message{
-		From: "n@x.test", To: "owner@x.test", Subject: "S", TextBody: "http://x.test/t",
+		From:     "n@x.test",
+		To:       "owner@x.test",
+		Subject:  "Confirm",
+		TextBody: "Visit http://x.test/verify?token=K to confirm.",
+		HTMLBody: `<p>Hello <strong>world</strong></p>`,
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -158,6 +162,9 @@ func TestDevInboxServesEMLAsPlainText(t *testing.T) {
 	}
 
 	ts := devInboxHarness(t, dir)
+
+	// Default view: HTML page with subject as <h1>, clickable link,
+	// and the HTML body embedded in a sandboxed iframe.
 	resp, err := http.Get(ts.URL + "/dev/inbox/owner@x.test/" + emlName)
 	if err != nil {
 		t.Fatal(err)
@@ -167,11 +174,33 @@ func TestDevInboxServesEMLAsPlainText(t *testing.T) {
 		t.Fatalf("status %d", resp.StatusCode)
 	}
 	ct := resp.Header.Get("Content-Type")
-	if !strings.HasPrefix(ct, "text/plain") {
-		t.Errorf("Content-Type=%q want text/plain", ct)
+	if !strings.HasPrefix(ct, "text/html") {
+		t.Errorf("Content-Type=%q want text/html", ct)
 	}
 	body, _ := io.ReadAll(resp.Body)
-	if !strings.Contains(string(body), "Subject: S") {
-		t.Errorf(".eml body missing subject: %s", body)
+	bodyStr := string(body)
+	for _, want := range []string{
+		`<h1>Confirm</h1>`,
+		`http://x.test/verify?token=K`,
+		`<iframe sandbox=""`,
+		`Hello`, // from the HTML body, srcdoc-escaped
+	} {
+		if !strings.Contains(bodyStr, want) {
+			t.Errorf("default view missing %q in:\n%s", want, bodyStr)
+		}
+	}
+
+	// ?raw=1 escape hatch: serves raw MIME as text/plain.
+	resp, err = http.Get(ts.URL + "/dev/inbox/owner@x.test/" + emlName + "?raw=1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/plain") {
+		t.Errorf("raw view Content-Type=%q want text/plain", resp.Header.Get("Content-Type"))
+	}
+	rawBody, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(rawBody), "Subject: Confirm") {
+		t.Errorf("raw .eml missing subject: %s", rawBody)
 	}
 }
