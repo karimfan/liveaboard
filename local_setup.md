@@ -32,7 +32,6 @@ Create `.env.local` at the repo root (gitignored, dev/test only):
 
 ```bash
 cat > .env.local <<'EOF'
-LIVEABOARD_DATABASE_URL=postgres://localhost:5432/liveaboard?sslmode=disable
 LIVEABOARD_EMAIL_TRANSPORT=filesystem
 LIVEABOARD_EMAIL_FILESYSTEM_DIR=/tmp/inbox
 EOF
@@ -40,6 +39,13 @@ EOF
 
 That's it. No SMTP credentials needed — the filesystem transport
 doesn't talk to Brevo at all.
+
+> **Do not put `LIVEABOARD_DATABASE_URL` in `.env.local`** unless it
+> already points at a `*_test` DB. `scripts/lib/load-env.sh` is shared
+> by `make dev` and `make test`, and any value in `.env.local`
+> overrides the mode file in both directions — a dev DSN here will
+> cause `make test` to `TRUNCATE` your dev database. The default DSN
+> in `config/dev.env` already targets the local `liveaboard` DB.
 
 ## 3. Run the app
 

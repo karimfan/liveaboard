@@ -7,6 +7,8 @@ package testdb
 
 import (
 	"context"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,6 +19,17 @@ import (
 	"github.com/karimfan/liveaboard/internal/config"
 	"github.com/karimfan/liveaboard/internal/store"
 )
+
+// dsnDatabaseName extracts the database name from a postgres:// DSN.
+// Returns "" if the DSN cannot be parsed. Used by Pool() to refuse to
+// TRUNCATE non-_test databases.
+func dsnDatabaseName(dsn string) string {
+	u, err := url.Parse(dsn)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimPrefix(u.Path, "/")
+}
 
 // TestPassword is the canonical password used in tests. Hashed at bcrypt
 // cost 4 so the suite stays fast.
@@ -88,6 +101,16 @@ func Pool(t *testing.T) *store.Pool {
 	dsn := cfg.DatabaseURL
 	if dsn == "" {
 		t.Skip("test database URL is empty")
+	}
+
+	// Safety net: the test harness TRUNCATEs the database below. Make
+	// absolutely sure the DSN points at a `*_test` database. This catches
+	// the scenario where a .env.local has overridden the test mode's
+	// LIVEABOARD_DATABASE_URL with the operator's dev DSN.
+	if name := dsnDatabaseName(dsn); !strings.HasSuffix(name, "_test") {
+		t.Fatalf("refusing to run tests against database %q (must end in _test). "+
+			"This usually means .env.local overrode config/test.env's LIVEABOARD_DATABASE_URL. "+
+			"Move dev-only overrides out of .env.local or use a separate _test database.", name)
 	}
 
 	ctx := context.Background()
