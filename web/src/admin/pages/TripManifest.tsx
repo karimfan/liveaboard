@@ -20,18 +20,19 @@ export function TripManifest() {
   async function load() {
     if (!id) return;
     setError(null);
+    // Manifest is essential; the page can't render without it. Cabin
+    // board and lifecycle are best-effort — a failure on either leaves
+    // the manifest visible with a callout instead of blanking the
+    // whole page.
     try {
-      const [manifest, cabins, life] = await Promise.all([
-        adminApi.tripManifest(id),
-        adminApi.tripCabinBoard(id),
-        adminApi.tripLifecycle(id),
-      ]);
+      const manifest = await adminApi.tripManifest(id);
       setData(manifest);
-      setBoard(cabins);
-      setLifecycle(life);
     } catch (err) {
       setError((err as { message?: string })?.message ?? "Failed to load manifest.");
+      return;
     }
+    adminApi.tripCabinBoard(id).then(setBoard).catch(() => setBoard(null));
+    adminApi.tripLifecycle(id).then(setLifecycle).catch(() => setLifecycle(null));
   }
 
   useEffect(() => {
@@ -180,26 +181,37 @@ export function TripManifest() {
 
       <form className="admin-card manifest-add" onSubmit={addGuest}>
         <h2 className="admin-card__title">Add guest</h2>
-        <div className="form-grid">
-          <div className="field">
-            <label htmlFor="guest-name">Full name</label>
-            <input id="guest-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+        {board !== null && availableBerths(board).length === 0 ? (
+          <div className="callout">
+            No cabin berths available yet. Set up the boat's cabin
+            layout first:{" "}
+            <Link to={`/admin/fleet/${data.trip.boat_id}/cabins`}>
+              Cabin layout for {data.trip.boat_name}
+            </Link>
+            .
           </div>
-          <div className="field">
-            <label htmlFor="guest-email">Email</label>
-            <input id="guest-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        ) : (
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="guest-name">Full name</label>
+              <input id="guest-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+            </div>
+            <div className="field">
+              <label htmlFor="guest-email">Email</label>
+              <input id="guest-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="field">
+              <label htmlFor="guest-berth">Cabin berth</label>
+              <select id="guest-berth" value={berthId} onChange={(e) => setBerthId(e.target.value)} required>
+                <option value="">Select berth...</option>
+                {availableBerths(board).map((b) => (
+                  <option key={b.id} value={b.id}>{b.label}</option>
+                ))}
+              </select>
+            </div>
+            <button className="primary" type="submit" disabled={submitting || lifecycle?.trip.status === "completed" || lifecycle?.trip.status === "cancelled"}>{submitting ? "Sending..." : "Send invite"}</button>
           </div>
-          <div className="field">
-            <label htmlFor="guest-berth">Cabin berth</label>
-            <select id="guest-berth" value={berthId} onChange={(e) => setBerthId(e.target.value)} required>
-              <option value="">Select berth...</option>
-              {availableBerths(board).map((b) => (
-                <option key={b.id} value={b.id}>{b.label}</option>
-              ))}
-            </select>
-          </div>
-          <button className="primary" type="submit" disabled={submitting || lifecycle?.trip.status === "completed" || lifecycle?.trip.status === "cancelled"}>{submitting ? "Sending..." : "Send invite"}</button>
-        </div>
+        )}
       </form>
 
       <table className="admin-table">

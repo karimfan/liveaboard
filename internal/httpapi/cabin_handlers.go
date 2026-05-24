@@ -163,9 +163,9 @@ func (s *Server) handleTripCabinBoard(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.authorizeManifestAccess(w, r, u, tripID); !ok {
 		return
 	}
-	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
-		return
-	}
+	// Cabin board is a read endpoint. Completed/cancelled trips can
+	// still be inspected (e.g. for historical context on the manifest
+	// page); only mutating handlers gate on ensureTripMutable.
 	board, err := s.Auth.Store.TripCabinBoard(r.Context(), u.OrganizationID, tripID, time.Now().UTC())
 	if err != nil {
 		writeCabinError(w, err)
