@@ -15,16 +15,18 @@ body {
 }
 
 /*
- * Sprint 011 — sea gradient on the SPA. The gradient is fixed to
- * the viewport so scrolling long admin pages doesn't repeat or
- * stretch it. Slate scale stays the working-surface palette;
- * sidebar, cards, and tables are still opaque white over this
- * background.
+ * App background. A center/cover photo behind a subtle white wash
+ * keeps cards and tables legible without losing the image. The
+ * background is fixed to the viewport so scrolling long admin
+ * pages doesn't repeat or stretch it.
  */
 html,
 body {
-  background: var(--gradient-sea);
-  background-attachment: fixed;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.55)),
+    url("/background.jpg") center / cover no-repeat,
+    var(--gradient-sea);
+  background-attachment: fixed, fixed, fixed;
 }
 body {
   min-height: 100vh;
