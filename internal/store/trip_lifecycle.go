@@ -60,7 +60,16 @@ func (p *Pool) TripReadiness(ctx context.Context, orgID, tripID uuid.UUID, now t
 	if err != nil {
 		return nil, err
 	}
-	out := &TripLifecycleReadiness{TripID: tripID, Status: trip.Status}
+	// Initialize slice fields so JSON marshals as [] instead of null
+	// when the trip has no blockers/warnings/guests — the frontend
+	// .map() over these arrays would otherwise crash the page.
+	out := &TripLifecycleReadiness{
+		TripID:   tripID,
+		Status:   trip.Status,
+		Blockers: []TripReadinessIssue{},
+		Warnings: []TripReadinessIssue{},
+		Guests:   []TripReadinessGuest{},
+	}
 	rows, err := p.Query(ctx, `
 		SELECT
 			g.id, g.full_name, g.email,

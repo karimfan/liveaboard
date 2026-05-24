@@ -87,7 +87,7 @@ export function TripManifest() {
     setError(null);
     setMessage(null);
     try {
-      const acknowledged = [...new Set(lifecycle?.readiness.warnings.map((w) => w.code) ?? [])];
+      const acknowledged = [...new Set((lifecycle?.readiness.warnings ?? []).map((w) => w.code))];
       if (action === "start") {
         await adminApi.startTrip(id, { acknowledged_warnings: acknowledged, reason: transitionReason });
         setMessage("Trip started.");
@@ -143,13 +143,13 @@ export function TripManifest() {
             <span className={`chip chip--${lifecycle.trip.status}`}>{lifecycle.trip.status}</span>
           </div>
           <div className="lifecycle-issues">
-            {lifecycle.readiness.blockers.map((issue, i) => (
+            {(lifecycle.readiness.blockers ?? []).map((issue, i) => (
               <div key={`b-${i}`} className="error-inline">{issue.message}</div>
             ))}
-            {lifecycle.readiness.warnings.map((issue, i) => (
+            {(lifecycle.readiness.warnings ?? []).map((issue, i) => (
               <div key={`w-${i}`} className="muted">Warning: {issue.message}</div>
             ))}
-            {lifecycle.readiness.blockers.length === 0 && lifecycle.readiness.warnings.length === 0 && (
+            {(lifecycle.readiness.blockers ?? []).length === 0 && (lifecycle.readiness.warnings ?? []).length === 0 && (
               <div className="muted">No lifecycle blockers or warnings.</div>
             )}
           </div>
@@ -161,7 +161,7 @@ export function TripManifest() {
             />
             {lifecycle.trip.status === "planned" && (
               <>
-                <button type="button" className="secondary" disabled={transitioning || lifecycle.readiness.blockers.length > 0} onClick={() => transition("start")}>Start trip</button>
+                <button type="button" className="secondary" disabled={transitioning || (lifecycle.readiness.blockers ?? []).length > 0} onClick={() => transition("start")}>Start trip</button>
                 <button type="button" className="ghost" disabled={transitioning} onClick={() => transition("cancel")}>Cancel</button>
               </>
             )}
@@ -226,7 +226,7 @@ export function TripManifest() {
           </tr>
         </thead>
         <tbody>
-          {data.guests.map((g) => (
+          {(data.guests ?? []).map((g) => (
             <tr key={g.id}>
               <td>
                 <Link to={`/admin/trips/${id}/guests/${g.id}`}>{g.full_name}</Link>
