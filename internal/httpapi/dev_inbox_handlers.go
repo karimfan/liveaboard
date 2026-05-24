@@ -59,7 +59,7 @@ type inboxRecipient struct {
 
 func (s *Server) handleDevInboxIndex(w http.ResponseWriter, r *http.Request) {
 	entries, err := os.ReadDir(s.DevInboxDir)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		writeError(w, http.StatusInternalServerError, "inbox_read", "could not read inbox directory")
 		return
 	}
