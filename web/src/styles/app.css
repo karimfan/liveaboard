@@ -193,8 +193,11 @@ h3 { font-size: var(--fs-xl); }
   border-radius: var(--r-md);
   font-size: var(--fs-sm);
   margin-bottom: var(--sp-md);
-  font-family: var(--font-mono);
-  word-break: break-all;
+  /* Body font + standard wrapping so prose breaks at word boundaries.
+     overflow-wrap keeps very long unbreakable strings (URLs/tokens)
+     contained without breaking normal words mid-letter. */
+  font-family: var(--font-body);
+  overflow-wrap: break-word;
 }
 
 .dashboard {
