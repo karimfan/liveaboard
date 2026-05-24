@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/karimfan/liveaboard/internal/auth"
 	"github.com/karimfan/liveaboard/internal/store"
 )
@@ -19,10 +21,37 @@ func (s *Server) handleInventoryBoatSummary(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, http.StatusOK, map[string]any{"boats": rows})
 }
 
+// requireBoatAccess returns the authenticated user if they are an Org
+// Admin OR a Cruise Director assigned to the given boat. Anything else
+// writes the appropriate 4xx and returns nil.
+func (s *Server) requireBoatAccess(w http.ResponseWriter, r *http.Request, boatID uuid.UUID) *store.User {
+	u := requireStaff(w, r)
+	if u == nil {
+		return nil
+	}
+	if u.Role == store.RoleOrgAdmin {
+		return u
+	}
+	assigned, err := s.Auth.Store.UserAssignedToBoat(r.Context(), u.OrganizationID, boatID, u.ID)
+	if err != nil {
+		s.Log.Error("boat access check", "err", err)
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return nil
+	}
+	if !assigned {
+		writeError(w, http.StatusForbidden, "forbidden", "not assigned to this boat")
+		return nil
+	}
+	return u
+}
+
 func (s *Server) handleListBoatInventory(w http.ResponseWriter, r *http.Request) {
-	u := auth.UserFromContext(r.Context())
 	boatID, ok := uuidParam(w, r, "id")
 	if !ok {
+		return
+	}
+	u := s.requireBoatAccess(w, r, boatID)
+	if u == nil {
 		return
 	}
 	rows, err := s.Auth.Store.BoatInventory(r.Context(), u.OrganizationID, boatID)
@@ -45,9 +74,12 @@ type setInventoryReq struct {
 }
 
 func (s *Server) handleSetBoatInventory(w http.ResponseWriter, r *http.Request) {
-	u := auth.UserFromContext(r.Context())
 	boatID, ok := uuidParam(w, r, "id")
 	if !ok {
+		return
+	}
+	u := s.requireBoatAccess(w, r, boatID)
+	if u == nil {
 		return
 	}
 	itemID, err := parseUUIDParam(r, "item_id")
@@ -80,9 +112,12 @@ type adjustStockReq struct {
 }
 
 func (s *Server) handleAdjustBoatInventory(w http.ResponseWriter, r *http.Request) {
-	u := auth.UserFromContext(r.Context())
 	boatID, ok := uuidParam(w, r, "id")
 	if !ok {
+		return
+	}
+	u := s.requireBoatAccess(w, r, boatID)
+	if u == nil {
 		return
 	}
 	itemID, err := parseUUIDParam(r, "item_id")

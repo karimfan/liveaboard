@@ -164,6 +164,20 @@ func (s *Server) Router() http.Handler {
 				// Handler enforces the role/assignment check.
 				r.Get("/trips/{id}/dashboard", s.handleTripDashboard)
 
+				// Sprint 024 — catalog editing (price, description, etc.)
+				// and per-boat inventory editing are open to both Org
+				// Admin and Cruise Director. The handlers enforce the
+				// role check (and assignment for per-boat inventory).
+				r.Get("/catalog/categories", s.handleListCatalogCategories)
+				r.Post("/catalog/categories", s.handleCreateCatalogCategory)
+				r.Patch("/catalog/categories/{id}", s.handleUpdateCatalogCategory)
+				r.Get("/catalog/items", s.handleListCatalogItems)
+				r.Post("/catalog/items", s.handleCreateCatalogItem)
+				r.Patch("/catalog/items/{id}", s.handleUpdateCatalogItem)
+				r.Get("/boats/{id}/inventory", s.handleListBoatInventory)
+				r.Put("/boats/{id}/inventory/{item_id}", s.handleSetBoatInventory)
+				r.Post("/boats/{id}/inventory/{item_id}/adjustments", s.handleAdjustBoatInventory)
+
 				r.Group(func(r chi.Router) {
 					r.Use(auth.RequireOrgAdmin)
 					r.Get("/overview", s.AdminAPI.HandleOverview)
@@ -174,22 +188,13 @@ func (s *Server) Router() http.Handler {
 					r.Get("/boats", s.AdminAPI.HandleListBoats)
 					r.Get("/boats/{id}", s.AdminAPI.HandleGetBoat)
 					r.Get("/boats/{id}/trips", s.AdminAPI.HandleListBoatTrips)
-					r.Get("/boats/{id}/inventory", s.handleListBoatInventory)
 					r.Get("/users", s.AdminAPI.HandleListUsers)
-					r.Get("/catalog/categories", s.handleListCatalogCategories)
-					r.Post("/catalog/categories", s.handleCreateCatalogCategory)
-					r.Patch("/catalog/categories/{id}", s.handleUpdateCatalogCategory)
-					r.Get("/catalog/items", s.handleListCatalogItems)
-					r.Post("/catalog/items", s.handleCreateCatalogItem)
-					r.Patch("/catalog/items/{id}", s.handleUpdateCatalogItem)
 					r.Post("/catalog/defaults/apply", s.handleApplyCatalogDefaults)
 					r.Get("/pricing/overrides", s.handleListPriceOverrides)
 					r.Put("/pricing/boat-overrides", s.handleUpsertBoatPriceOverride)
 					r.Put("/pricing/trip-overrides", s.handleUpsertTripPriceOverride)
 					r.Delete("/pricing/overrides/{id}", s.handleArchivePriceOverride)
 					r.Get("/inventory/boats", s.handleInventoryBoatSummary)
-					r.Put("/boats/{id}/inventory/{item_id}", s.handleSetBoatInventory)
-					r.Post("/boats/{id}/inventory/{item_id}/adjustments", s.handleAdjustBoatInventory)
 					r.Get("/fx/rates", s.handleListFXRates)
 					r.Post("/fx/rates", s.handleCreateFXRate)
 

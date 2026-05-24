@@ -16,8 +16,27 @@ type categoryReq struct {
 	Archived  *bool  `json:"archived,omitempty"`
 }
 
-func (s *Server) handleListCatalogCategories(w http.ResponseWriter, r *http.Request) {
+// requireStaff returns the authenticated user if they are an Org Admin
+// or Cruise Director. Anything else (or no session) writes the
+// appropriate 4xx and returns nil — the caller should return.
+func requireStaff(w http.ResponseWriter, r *http.Request) *store.User {
 	u := auth.UserFromContext(r.Context())
+	if u == nil {
+		writeError(w, http.StatusUnauthorized, "unauthenticated", "session required")
+		return nil
+	}
+	if u.Role != store.RoleOrgAdmin && u.Role != store.RoleCruiseDirector {
+		writeError(w, http.StatusForbidden, "forbidden", "staff role required")
+		return nil
+	}
+	return u
+}
+
+func (s *Server) handleListCatalogCategories(w http.ResponseWriter, r *http.Request) {
+	u := requireStaff(w, r)
+	if u == nil {
+		return
+	}
 	cats, err := s.Auth.Store.CatalogCategories(r.Context(), u.OrganizationID)
 	if err != nil {
 		s.Log.Error("catalog categories", "err", err)
@@ -32,7 +51,10 @@ func (s *Server) handleListCatalogCategories(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *Server) handleCreateCatalogCategory(w http.ResponseWriter, r *http.Request) {
-	u := auth.UserFromContext(r.Context())
+	u := requireStaff(w, r)
+	if u == nil {
+		return
+	}
 	var req categoryReq
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
@@ -47,7 +69,10 @@ func (s *Server) handleCreateCatalogCategory(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *Server) handleUpdateCatalogCategory(w http.ResponseWriter, r *http.Request) {
-	u := auth.UserFromContext(r.Context())
+	u := requireStaff(w, r)
+	if u == nil {
+		return
+	}
 	id, ok := uuidParam(w, r, "id")
 	if !ok {
 		return
@@ -80,7 +105,10 @@ type itemReq struct {
 }
 
 func (s *Server) handleListCatalogItems(w http.ResponseWriter, r *http.Request) {
-	u := auth.UserFromContext(r.Context())
+	u := requireStaff(w, r)
+	if u == nil {
+		return
+	}
 	items, err := s.Auth.Store.CatalogItems(r.Context(), u.OrganizationID)
 	if err != nil {
 		s.Log.Error("catalog items", "err", err)
@@ -95,7 +123,10 @@ func (s *Server) handleListCatalogItems(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleCreateCatalogItem(w http.ResponseWriter, r *http.Request) {
-	u := auth.UserFromContext(r.Context())
+	u := requireStaff(w, r)
+	if u == nil {
+		return
+	}
 	var req itemReq
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
@@ -114,7 +145,10 @@ func (s *Server) handleCreateCatalogItem(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleUpdateCatalogItem(w http.ResponseWriter, r *http.Request) {
-	u := auth.UserFromContext(r.Context())
+	u := requireStaff(w, r)
+	if u == nil {
+		return
+	}
 	id, ok := uuidParam(w, r, "id")
 	if !ok {
 		return
