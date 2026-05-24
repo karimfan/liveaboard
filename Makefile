@@ -82,3 +82,18 @@ inbox-clear:
 	rm -rf "$(INBOX_DIR)"; \
 	mkdir -p "$(INBOX_DIR)"; \
 	echo "cleared $(INBOX_DIR)"
+
+DEV_DB ?= liveaboard
+
+## dev-clean: Drop+recreate the dev DB and wipe the filesystem inbox (FORCE=1 to skip prompt).
+.PHONY: dev-clean
+dev-clean:
+	@if [[ "$(FORCE)" != "1" ]]; then \
+	  read -r -p "Drop $(DEV_DB) and wipe $(INBOX_DIR)? [y/N] " ans; \
+	  if [[ "$$ans" != "y" && "$$ans" != "Y" ]]; then echo "aborted"; exit 0; fi; \
+	fi; \
+	dropdb --if-exists "$(DEV_DB)" && \
+	createdb "$(DEV_DB)" && \
+	rm -rf "$(INBOX_DIR)" && \
+	mkdir -p "$(INBOX_DIR)" && \
+	echo "nuked $(DEV_DB) and $(INBOX_DIR); migrations will re-run on next make dev"
