@@ -22,11 +22,9 @@ type ExchangeRate struct {
 	ExpiresAt       time.Time
 }
 
-var currencyExponents = map[string]int{
-	"USD": 2, "EUR": 2, "GBP": 2, "AUD": 2, "CAD": 2, "NZD": 2,
-	"IDR": 0, "JPY": 0, "KRW": 0, "THB": 2, "PHP": 2, "SGD": 2,
-	"MYR": 2, "MVR": 2, "BHD": 3, "KWD": 3, "OMR": 3,
-}
+// currencyExponents and the catalog it derives from live in currencies.go
+// so the HTTP currency endpoint and the pickers stay in sync with the
+// validator used here.
 
 func CurrencyExponent(code string) (int, bool) {
 	exp, ok := currencyExponents[strings.ToUpper(strings.TrimSpace(code))]

@@ -64,7 +64,21 @@ func (p *Pool) OrganizationByName(ctx context.Context, name string) (*Organizati
 }
 
 // UpdateOrganizationProfile updates the org's name and currency.
+//
+// When a non-nil currency is set, it is normalized via NormalizeCurrency
+// and auto-added to organization_payment_settings.supported_currencies
+// (idempotent). This preserves the cross-table invariant that the
+// country currency is always one of the accepted checkout currencies.
+// Clearing the currency (currency == nil) does not touch payment
+// settings.
 func (p *Pool) UpdateOrganizationProfile(ctx context.Context, orgID uuid.UUID, name string, currency *string) (*Organization, error) {
+	if currency != nil {
+		norm, err := NormalizeCurrency(*currency)
+		if err != nil {
+			return nil, err
+		}
+		currency = &norm
+	}
 	org := &Organization{}
 	err := p.QueryRow(ctx, `
 		UPDATE organizations
@@ -77,6 +91,11 @@ func (p *Pool) UpdateOrganizationProfile(ctx context.Context, orgID uuid.UUID, n
 	}
 	if err != nil {
 		return nil, err
+	}
+	if currency != nil {
+		if err := p.EnsureCurrencyInSupported(ctx, orgID, *currency); err != nil {
+			return nil, err
+		}
 	}
 	return org, nil
 }

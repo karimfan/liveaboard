@@ -89,6 +89,7 @@ func (s *Server) Router() http.Handler {
 
 			r.Get("/me", s.handleMe)
 			r.Get("/organization", s.handleOrganization)
+			r.Get("/currencies", s.handleListCurrencies)
 
 			// Account self-service.
 			r.Patch("/account/profile", s.handleUpdateProfile)

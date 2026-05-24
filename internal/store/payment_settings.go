@@ -94,6 +94,25 @@ func (p *Pool) UpdatePaymentSettings(ctx context.Context, orgID uuid.UUID, in Pa
 	if err != nil {
 		return nil, err
 	}
+	// Sprint 023: country currency ∈ accepted. If the org has a
+	// country currency set, the new supported list must still contain
+	// it so a conversion target is always available.
+	org, err := p.OrganizationByID(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	if org.Currency != nil && *org.Currency != "" {
+		stillThere := false
+		for _, c := range supported {
+			if c == *org.Currency {
+				stillThere = true
+				break
+			}
+		}
+		if !stillThere {
+			return nil, errors.New("country currency must remain in supported_currencies (change it on the Organization page first)")
+		}
+	}
 	s := &PaymentSettings{}
 	err = scanPaymentSettings(p.QueryRow(ctx, `
 		INSERT INTO organization_payment_settings (
@@ -116,6 +135,31 @@ func (p *Pool) UpdatePaymentSettings(ctx context.Context, orgID uuid.UUID, in Pa
 	}
 	s.RateReadiness = p.paymentRateReadiness(ctx, s.SupportedCurrencies, now)
 	return s, nil
+}
+
+// EnsureCurrencyInSupported makes sure the given currency is in
+// organization_payment_settings.supported_currencies for the org.
+// Called from UpdateOrganizationProfile when the country currency is
+// (re)set so the country currency ∈ accepted invariant holds without
+// the operator having to touch the Payments page first.
+func (p *Pool) EnsureCurrencyInSupported(ctx context.Context, orgID uuid.UUID, currency string) error {
+	c, err := NormalizeCurrency(currency)
+	if err != nil {
+		return err
+	}
+	if err := p.EnsurePaymentSettings(ctx, orgID); err != nil {
+		return err
+	}
+	_, err = p.Exec(ctx, `
+		UPDATE organization_payment_settings
+		SET supported_currencies = (
+		    SELECT array_agg(DISTINCT v ORDER BY v)
+		    FROM unnest(supported_currencies || ARRAY[$2]::text[]) AS v
+		),
+		    updated_at = now()
+		WHERE organization_id = $1
+	`, orgID, c)
+	return err
 }
 
 func normalizePaymentSettings(in PaymentSettingsInput) (string, []string, []string, error) {
