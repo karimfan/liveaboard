@@ -254,9 +254,9 @@ function statusLabel(s: string): string {
 }
 
 function availableBerths(board: TripCabinBoard | null): { id: string; label: string }[] {
-  if (!board) return [];
+  if (!board || !board.cabins) return [];
   return board.cabins.flatMap((c) =>
-    c.berths
+    (c.berths ?? [])
       .filter((b) => !b.guest)
       .map((b) => ({ id: b.id, label: `${c.label} - ${b.display_label}` })),
   );

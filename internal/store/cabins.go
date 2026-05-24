@@ -658,13 +658,27 @@ func (p *Pool) TripCabinBoard(ctx context.Context, orgID, tripID uuid.UUID, now 
 	if err != nil {
 		return nil, err
 	}
-	board := &TripCabinBoard{TripID: tripID, BoatID: trip.BoatID}
+	// Initialize the slice fields so JSON marshals them as [] instead
+	// of null when the boat has no layout yet — the frontend treats
+	// missing arrays as crashes-waiting-to-happen.
+	board := &TripCabinBoard{
+		TripID:           tripID,
+		BoatID:           trip.BoatID,
+		Cabins:           []*TripCabinCabin{},
+		UnassignedGuests: []*TripCabinGuest{},
+	}
 	berthsByID := map[uuid.UUID]*TripCabinBerth{}
 	for _, c := range layout.Cabins {
 		if !c.IsActive {
 			continue
 		}
-		tc := &TripCabinCabin{ID: c.ID, Label: c.Label, Deck: c.Deck, SortOrder: c.SortOrder}
+		tc := &TripCabinCabin{
+			ID:        c.ID,
+			Label:     c.Label,
+			Deck:      c.Deck,
+			SortOrder: c.SortOrder,
+			Berths:    []*TripCabinBerth{}, // marshal as [] not null
+		}
 		for _, b := range c.Berths {
 			if !b.IsActive {
 				continue
