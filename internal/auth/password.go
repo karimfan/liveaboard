@@ -18,19 +18,33 @@ import (
 // active user) and emails it. ALWAYS returns nil to the caller — the
 // outward shape is identical regardless of whether the email matches,
 // to prevent enumeration.
+//
+// The function does emit slog lines about which branch it took so a
+// developer running the server can tell whether a missing email was a
+// typo, an inactive user, or a real send failure. These logs are
+// server-side only; the HTTP response stays identical.
 func (s *Service) ForgotPassword(ctx context.Context, rawEmail string) error {
 	em := normalizeEmail(rawEmail)
 	if em == "" {
+		if s.Log != nil {
+			s.Log.Info("forgot-password: empty email after normalization")
+		}
 		return nil
 	}
 	u, err := s.Store.UserByEmail(ctx, em)
 	if errors.Is(err, store.ErrNotFound) {
+		if s.Log != nil {
+			s.Log.Info("forgot-password: no user", "email", em)
+		}
 		return nil
 	}
 	if err != nil {
 		return err
 	}
 	if !u.IsActive {
+		if s.Log != nil {
+			s.Log.Info("forgot-password: user inactive", "email", em)
+		}
 		return nil
 	}
 	if err := s.Store.DeleteUnconsumedResetTokensForUser(ctx, u.ID); err != nil {
@@ -56,7 +70,16 @@ func (s *Service) ForgotPassword(ctx context.Context, rawEmail string) error {
 	}
 	msg.From = s.SenderFrom
 	msg.To = u.Email
-	return s.Email.Send(ctx, msg)
+	if err := s.Email.Send(ctx, msg); err != nil {
+		if s.Log != nil {
+			s.Log.Error("forgot-password: send failed", "email", em, "err", err)
+		}
+		return err
+	}
+	if s.Log != nil {
+		s.Log.Info("forgot-password: sent", "email", em)
+	}
+	return nil
 }
 
 // ResetPasswordResult is what the handler needs to set a fresh cookie.
