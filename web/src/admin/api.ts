@@ -425,8 +425,11 @@ export type PaymentSettings = {
   rate_readiness: {
     currency: string;
     ready: boolean;
+    status: "fresh" | "stale" | "missing";
+    fetched_at?: string;
     rate?: FXRate;
   }[];
+  auto_refresh_at?: string;
 };
 
 export type GuestFolioLine = {

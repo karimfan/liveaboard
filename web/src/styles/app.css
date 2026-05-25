@@ -606,6 +606,17 @@ h3 { font-size: var(--fs-xl); }
   margin-top: 8px;
   font-size: var(--fs-sm);
 }
+.rate-chip {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 2px var(--sp-sm);
+  border-radius: var(--r-full);
+  letter-spacing: 0.02em;
+}
+.rate-chip--fresh   { background: var(--c-success-bg); color: var(--c-success); }
+.rate-chip--stale   { background: var(--c-warning-bg); color: var(--c-warning); }
+.rate-chip--missing { background: var(--c-error-bg);   color: var(--c-error);   }
 
 /* --- Sprint 023 onboarding wizard --- */
 

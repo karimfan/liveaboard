@@ -10,6 +10,28 @@ const methods = [
   { value: "other", label: "Other" },
 ];
 
+function rateChipLabel(status: "fresh" | "stale" | "missing"): string {
+  switch (status) {
+    case "fresh": return "fresh";
+    case "stale": return "stale";
+    case "missing": return "rate needed";
+  }
+}
+
+function formatRefreshAgo(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return "recently";
+  const ms = Date.now() - t;
+  if (ms < 0) return "just now";
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
 export function OrganizationPayments() {
   const [settings, setSettings] = useState<PaymentSettings | null>(null);
   const [orgCurrency, setOrgCurrency] = useState<string | null>(null);
@@ -92,17 +114,22 @@ export function OrganizationPayments() {
                 .filter((c) => c !== "USD")
                 .map((c) => {
                   const r = settings.rate_readiness.find((x) => x.currency === c);
+                  const status = r?.status ?? "missing";
                   return (
-                    <span key={c} className={r?.ready ? "muted" : "error-inline"}>
-                      {c}: {r?.ready ? "rate ready" : "rate needed"}
+                    <span key={c} className={`rate-chip rate-chip--${status}`}>
+                      {c}: {rateChipLabel(status)}
                     </span>
                   );
                 })}
             </div>
             <div className="muted" style={{ marginTop: "var(--sp-xs)" }}>
-              USD is always supported. The country currency (set on
-              Organization) is also locked here so a conversion target
-              is always available.
+              Rates auto-refresh daily from the European Central Bank
+              (via Frankfurter). USD is always supported; the country
+              currency is locked here so a conversion target is
+              always available.
+              {settings.auto_refresh_at && (
+                <> Last refresh {formatRefreshAgo(settings.auto_refresh_at)}.</>
+              )}
             </div>
           </div>
           <div className="form-grid">
