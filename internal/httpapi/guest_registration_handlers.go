@@ -246,6 +246,7 @@ func guestInviteLookupView(v *auth.GuestInviteLookup) map[string]any {
 		"start_date":        v.StartDate.Format("2006-01-02"),
 		"end_date":          v.EndDate.Format("2006-01-02"),
 		"expires_at":        v.ExpiresAt,
+		"has_account":       v.HasAccount,
 	}
 }
 

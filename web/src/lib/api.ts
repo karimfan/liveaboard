@@ -98,6 +98,7 @@ export type GuestInviteLookup = {
   start_date: string;
   end_date: string;
   expires_at: string;
+  has_account: boolean;
 };
 
 export type GuestRegistration = {

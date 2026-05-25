@@ -33,6 +33,10 @@ type GuestInviteLookup struct {
 	StartDate        time.Time
 	EndDate          time.Time
 	ExpiresAt        time.Time
+	// HasAccount tells the UI whether this email already has a guest
+	// account in the org. True → render a sign-in prompt; false →
+	// render a create-account prompt with the password rules visible.
+	HasAccount bool
 }
 
 type AcceptGuestInviteResult struct {
@@ -91,6 +95,12 @@ func (s *Service) LookupGuestInvite(ctx context.Context, rawToken string) (*Gues
 	if err != nil {
 		return nil, err
 	}
+	hasAccount := false
+	if _, err := s.Store.GuestUserByEmail(ctx, normalizeEmail(view.Guest.Email)); err == nil {
+		hasAccount = true
+	} else if !errors.Is(err, store.ErrNotFound) {
+		return nil, err
+	}
 	return &GuestInviteLookup{
 		Token:            rawToken,
 		TripGuestID:      view.Guest.ID,
@@ -102,6 +112,7 @@ func (s *Service) LookupGuestInvite(ctx context.Context, rawToken string) (*Gues
 		StartDate:        view.TripStartDate,
 		EndDate:          view.TripEndDate,
 		ExpiresAt:        view.Invitation.ExpiresAt,
+		HasAccount:       hasAccount,
 	}, nil
 }
 
