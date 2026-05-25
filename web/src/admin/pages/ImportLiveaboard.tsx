@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { adminApi } from "../api";
 import type { ApiError } from "../../lib/api";
 import { ImportJobView } from "./ImportJob";
 
 export function ImportLiveaboard() {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const returnTo = params.get("return"); // e.g. "onboarding/boats"
   const [url, setUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +20,13 @@ export function ImportLiveaboard() {
     setSubmitting(true);
     try {
       const job = await adminApi.kickLiveaboardImport(url.trim());
+      // If we came from the onboarding wizard, hand the in-flight job
+      // back to it so the operator can watch progress + auto-advance
+      // to layouts in one place.
+      if (returnTo === "onboarding/boats") {
+        navigate(`/admin/onboarding?step=boats&job=${encodeURIComponent(job.id)}`, { replace: true });
+        return;
+      }
       setJobId(job.id);
     } catch (err) {
       const apiErr = err as ApiError;

@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../lib/api";
 import {
   adminApi,
+  type ImportJob,
   type OnboardingState,
   type OnboardingStep,
   type OnboardingBoatWithoutLayout,
@@ -128,7 +129,19 @@ export function Onboarding() {
         {stepKey === "currency" && (
           <CurrencyStep state={state} onSaved={() => void load().then(advance)} />
         )}
-        {stepKey === "boats" && <BoatsStep state={state} />}
+        {stepKey === "boats" && (
+          <BoatsStep
+            state={state}
+            onImportFinished={() => {
+              // Drop the ?job param and advance to layouts.
+              const p = new URLSearchParams(params);
+              p.delete("job");
+              p.set("step", "layouts");
+              setParams(p, { replace: true });
+              void load();
+            }}
+          />
+        )}
         {stepKey === "layouts" && <LayoutsStep state={state} />}
         {stepKey === "directors" && <DirectorsStep />}
       </section>
@@ -242,8 +255,23 @@ function CurrencyStep({ state, onSaved }: { state: OnboardingState; onSaved: () 
   );
 }
 
-function BoatsStep({ state }: { state: OnboardingState }) {
+function BoatsStep({
+  state,
+  onImportFinished,
+}: {
+  state: OnboardingState;
+  onImportFinished: () => void;
+}) {
+  const [params] = useSearchParams();
+  const jobId = params.get("job");
   const done = state.steps.find((s) => s.key === "boats")?.done;
+
+  if (jobId) {
+    return (
+      <BoatsStepImportProgress jobId={jobId} onFinished={onImportFinished} />
+    );
+  }
+
   return (
     <div className="onboarding__choices">
       {done && (
@@ -263,6 +291,83 @@ function BoatsStep({ state }: { state: OnboardingState }) {
         <strong>Open Fleet</strong>
         <span className="muted">Add or edit boats by hand from the Fleet page.</span>
       </Link>
+    </div>
+  );
+}
+
+function BoatsStepImportProgress({
+  jobId,
+  onFinished,
+}: {
+  jobId: string;
+  onFinished: () => void;
+}) {
+  const [job, setJob] = useState<ImportJob | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function tick() {
+      try {
+        const j = await adminApi.getImportJob(jobId);
+        if (cancelled) return;
+        setJob(j);
+        if (j.status === "succeeded") {
+          // Give the wizard a beat to settle, then auto-advance.
+          timer = setTimeout(() => {
+            if (!cancelled) onFinished();
+          }, 600);
+          return;
+        }
+        if (j.status === "failed") {
+          return;
+        }
+        timer = setTimeout(tick, 2000);
+      } catch (e) {
+        if (cancelled) return;
+        setError((e as { message?: string })?.message ?? "Could not load import job.");
+      }
+    }
+    void tick();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [jobId, onFinished]);
+
+  if (error) return <div className="error">{error}</div>;
+  if (!job) return <div className="muted">Loading import…</div>;
+
+  return (
+    <div>
+      <p>
+        <strong>Import status:</strong> {job.status}
+        {job.status === "running" && (
+          <span className="muted"> — fetching trips, ~1 request per second</span>
+        )}
+      </p>
+      {job.status === "succeeded" && (
+        <div className="success">
+          Imported. Moving on to cabin layouts…
+          <ul style={{ marginTop: "var(--sp-sm)", listStyle: "none", padding: 0 }}>
+            <li>Trips inserted: {job.trips_inserted ?? 0}</li>
+            <li>Trips updated: {job.trips_updated ?? 0}</li>
+          </ul>
+        </div>
+      )}
+      {job.status === "failed" && (
+        <div className="error">
+          Import failed: {job.error_message ?? "unknown error"}
+        </div>
+      )}
+      {(job.status === "queued" || job.status === "running") && (
+        <p className="muted">
+          You can leave this page — the import keeps running. Come back
+          and the wizard will pick up where it left off.
+        </p>
+      )}
     </div>
   );
 }
