@@ -13,6 +13,7 @@ import (
 	"github.com/karimfan/liveaboard/internal/auth"
 	"github.com/karimfan/liveaboard/internal/config"
 	"github.com/karimfan/liveaboard/internal/email"
+	"github.com/karimfan/liveaboard/internal/fxauto"
 	"github.com/karimfan/liveaboard/internal/httpapi"
 	"github.com/karimfan/liveaboard/internal/imports"
 	"github.com/karimfan/liveaboard/internal/org"
@@ -119,6 +120,22 @@ func main() {
 		log.Info("expired import previews cleared", "count", n)
 	}
 
+	// Sprint 024 — automated FX refresher (Frankfurter / ECB). We
+	// construct + start it in every mode except `test`; tests run
+	// against testdb and must not make real HTTP egress. The PATCH
+	// handler also calls RefreshOnce(only=[newCurrency]) when an
+	// org adds a quote, so the page never has to wait a full tick.
+	var fxRefresher *fxauto.Refresher
+	if cfg.Mode != config.ModeTest {
+		fxRefresher = &fxauto.Refresher{
+			Fetcher: &fxauto.Client{},
+			Store:   pool,
+			Log:     log,
+		}
+		go fxRefresher.Run(ctx)
+		log.Info("fxauto refresher started", "interval", fxauto.DefaultInterval, "provider", fxauto.Provider)
+	}
+
 	srv := &httpapi.Server{
 		Org:          org.New(pool),
 		Log:          log,
@@ -129,6 +146,9 @@ func main() {
 		ImportRunner: importRunner,
 		DocumentsDir: cfg.DocumentsDir,
 		CookieSecure: cfg.CookieSecure,
+	}
+	if fxRefresher != nil {
+		srv.FXRefresher = fxRefresher
 	}
 	if cfg.Mode == config.ModeDev && cfg.EmailTransport == "filesystem" {
 		srv.DevInboxDir = cfg.EmailFilesystemDir
