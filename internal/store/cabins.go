@@ -735,6 +735,26 @@ type BoatLayoutSummary struct {
 	ActiveBerthCount int       `json:"active_berth_count"`
 }
 
+// UnconfiguredBoatCount returns the number of boats in the org that
+// have zero active berths. A boat without active berths is not a
+// usable layout (guests have nowhere to sleep), so this is the count
+// the Sprint 023 onboarding wizard surfaces as "needs cabins".
+func (p *Pool) UnconfiguredBoatCount(ctx context.Context, orgID uuid.UUID) (int, error) {
+	var n int
+	err := p.QueryRow(ctx, `
+		SELECT count(*)::int FROM (
+			SELECT b.id
+			FROM boats b
+			LEFT JOIN boat_cabin_berths bb
+			  ON bb.boat_id = b.id AND bb.organization_id = b.organization_id
+			WHERE b.organization_id = $1
+			GROUP BY b.id
+			HAVING count(bb.id) FILTER (WHERE bb.is_active) = 0
+		) t
+	`, orgID).Scan(&n)
+	return n, err
+}
+
 func (p *Pool) UnconfiguredBoats(ctx context.Context, orgID uuid.UUID) ([]BoatLayoutSummary, error) {
 	rows, err := p.Query(ctx, `
 		SELECT b.id, b.display_name, count(bb.id) FILTER (WHERE bb.is_active)::int

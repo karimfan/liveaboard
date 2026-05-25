@@ -276,8 +276,9 @@ func TestSetupCompletenessReflectsOrgState(t *testing.T) {
 	if sc.Percent != 0 {
 		t.Errorf("fresh org Percent=%d want 0", sc.Percent)
 	}
-	if len(sc.Steps) != 4 {
-		t.Fatalf("expected 4 steps, got %d", len(sc.Steps))
+	// Sprint 023 added the layouts step; total is now five.
+	if len(sc.Steps) != 5 {
+		t.Fatalf("expected 5 steps, got %d", len(sc.Steps))
 	}
 	for _, s := range sc.Steps {
 		if s.Done {
@@ -285,7 +286,7 @@ func TestSetupCompletenessReflectsOrgState(t *testing.T) {
 		}
 	}
 
-	// Add a boat → boats step done.
+	// Add a boat → boats step done (1 of 5 → 20%).
 	_, err = p.UpsertBoat(ctx, org.ID, "liveaboard.com", store.BoatScrape{
 		Slug: "x", Name: "X", URL: "https://x",
 	}, time.Now().UTC())
@@ -293,8 +294,8 @@ func TestSetupCompletenessReflectsOrgState(t *testing.T) {
 		t.Fatal(err)
 	}
 	sc, _ = p.SetupCompleteness(ctx, org.ID)
-	if sc.Percent != 25 {
-		t.Errorf("after-boat Percent=%d want 25", sc.Percent)
+	if sc.Percent != 20 {
+		t.Errorf("after-boat Percent=%d want 20", sc.Percent)
 	}
 }
 

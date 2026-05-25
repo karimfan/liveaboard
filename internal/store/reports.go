@@ -304,10 +304,21 @@ func (p *Pool) SetupCompleteness(ctx context.Context, orgID uuid.UUID) (*SetupCo
 	if err != nil {
 		return nil, err
 	}
+	unconfiguredBoats, err := p.UnconfiguredBoatCount(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
 	currencySet := org.Currency != nil && *org.Currency != ""
+	// A boat needs a usable layout: at least one active cabin AND at
+	// least one active berth. UnconfiguredBoatCount counts boats whose
+	// active-berth count is zero, which subsumes both. The layouts
+	// step is done iff there is at least one boat AND none of them
+	// is unconfigured.
+	layoutsDone := boatCount > 0 && unconfiguredBoats == 0
 	steps := []SetupStep{
 		{Key: "currency", Label: "Set organization currency", Done: currencySet, Hint: derefString(org.Currency), Href: "/admin/organization"},
 		{Key: "boats", Label: "Add or import a boat", Done: boatCount > 0, Hint: pluralizeNoun(boatCount, "boat", "boats"), Href: "/admin/fleet"},
+		{Key: "layouts", Label: "Lay out cabins for each boat", Done: layoutsDone, Hint: layoutsHint(boatCount, unconfiguredBoats), Href: "/admin/onboarding?step=layouts"},
 		{Key: "directors", Label: "Invite a Cruise Director", Done: directorCount > 0, Hint: pluralizeNoun(directorCount, "active", "active"), Href: "/admin/users"},
 		{Key: "trips", Label: "Create your first trip", Done: tripCount > 0, Hint: pluralizeNoun(tripCount, "trip", "trips"), Href: "/admin/trips"},
 	}
@@ -862,4 +873,100 @@ func pluralizeNoun(n int, sing, plur string) string {
 		return fmt.Sprintf("%d %s", n, sing)
 	}
 	return fmt.Sprintf("%d %s", n, plur)
+}
+
+// layoutsHint returns the SetupCompleteness hint string for the
+// Sprint 023 layouts step. "No boats yet" reads better than "0
+// configured" when boats step itself is incomplete.
+func layoutsHint(boatCount, unconfigured int) string {
+	if boatCount == 0 {
+		return ""
+	}
+	if unconfigured == 0 {
+		return "all boats configured"
+	}
+	return pluralizeNoun(unconfigured, "boat needs cabins", "boats need cabins")
+}
+
+// --- Sprint 023: onboarding wizard ---
+
+// OnboardingState is the unified payload the onboarding wizard reads.
+// onboarding_complete is computed from the four wizard steps only
+// (currency, boats, layouts, directors). It is independent of
+// SetupCompleteness.Percent, which also counts trips — including
+// trips would loop the wizard forever for orgs that finish setup but
+// haven't created a trip yet.
+type OnboardingState struct {
+	DismissedAt         *time.Time
+	OnboardingComplete  bool
+	SetupPercent        int
+	Steps               []OnboardingStep
+	BoatsWithoutLayouts []BoatLayoutSummary
+}
+
+type OnboardingStep struct {
+	Key   string // "currency" | "boats" | "layouts" | "directors"
+	Label string
+	Done  bool
+	Hint  string
+}
+
+// OnboardingState assembles the wizard payload. It reuses
+// SetupCompleteness as the source of step labels/done flags, derives
+// the wizard-only completion signal from the four onboarding steps,
+// and returns the boats-without-layouts list inline so the wizard
+// can render the layouts step without a second round-trip.
+func (p *Pool) OnboardingState(ctx context.Context, orgID uuid.UUID) (*OnboardingState, error) {
+	org, err := p.OrganizationByID(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	setup, err := p.SetupCompleteness(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	boatsWithout, err := p.UnconfiguredBoats(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	if boatsWithout == nil {
+		boatsWithout = []BoatLayoutSummary{}
+	}
+
+	// Pull the four wizard steps out of SetupCompleteness in their
+	// canonical order. trips is intentionally excluded.
+	wizardKeys := []string{"currency", "boats", "layouts", "directors"}
+	byKey := map[string]SetupStep{}
+	for _, s := range setup.Steps {
+		byKey[s.Key] = s
+	}
+	steps := make([]OnboardingStep, 0, len(wizardKeys))
+	complete := true
+	for _, k := range wizardKeys {
+		s, ok := byKey[k]
+		if !ok {
+			// Defensive: a missing key shouldn't happen, but treat
+			// as not-done rather than panic so the wizard renders.
+			steps = append(steps, OnboardingStep{Key: k, Done: false})
+			complete = false
+			continue
+		}
+		steps = append(steps, OnboardingStep{
+			Key:   s.Key,
+			Label: s.Label,
+			Done:  s.Done,
+			Hint:  s.Hint,
+		})
+		if !s.Done {
+			complete = false
+		}
+	}
+
+	return &OnboardingState{
+		DismissedAt:         org.OnboardingDismissedAt,
+		OnboardingComplete:  complete,
+		SetupPercent:        setup.Percent,
+		Steps:               steps,
+		BoatsWithoutLayouts: boatsWithout,
+	}, nil
 }

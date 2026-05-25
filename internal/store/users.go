@@ -29,11 +29,12 @@ type User struct {
 }
 
 type Organization struct {
-	ID        uuid.UUID
-	Name      string
-	Currency  *string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID                    uuid.UUID
+	Name                  string
+	Currency              *string
+	OnboardingDismissedAt *time.Time
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 // ErrEmailTaken is returned when a user insert hits the email unique
@@ -99,8 +100,8 @@ func (p *Pool) CreateOrgAndAdmin(
 	if err := tx.QueryRow(ctx, `
 		INSERT INTO organizations (name)
 		VALUES ($1)
-		RETURNING id, name, currency, created_at, updated_at
-	`, orgName).Scan(&org.ID, &org.Name, &org.Currency, &org.CreatedAt, &org.UpdatedAt); err != nil {
+		RETURNING id, name, currency, onboarding_dismissed_at, created_at, updated_at
+	`, orgName).Scan(&org.ID, &org.Name, &org.Currency, &org.OnboardingDismissedAt, &org.CreatedAt, &org.UpdatedAt); err != nil {
 		return nil, nil, err
 	}
 
