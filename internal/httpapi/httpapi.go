@@ -183,6 +183,9 @@ func (s *Server) Router() http.Handler {
 					r.Get("/overview", s.AdminAPI.HandleOverview)
 					// Sprint 022 — Admin reports.
 					r.Get("/reports", s.handleAdminReports)
+					// Sprint 023 — onboarding wizard state.
+					r.Get("/onboarding", s.handleGetOnboarding)
+					r.Post("/onboarding/dismiss", s.handleDismissOnboarding)
 					r.Get("/organization/payment-settings", s.handleGetPaymentSettings)
 					r.Patch("/organization/payment-settings", s.handleUpdatePaymentSettings)
 					r.Get("/boats", s.AdminAPI.HandleListBoats)
