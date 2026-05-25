@@ -89,15 +89,18 @@ export function AdminShell() {
   // stays consistent.
   const { submitting, error, signOut } = useSignOut();
 
+  // Hooks must run on every render in the same order — call this
+  // BEFORE any early return. The hook itself gates on isAdmin so a
+  // pre-load `false` is a safe no-op.
+  const isAdmin = me.loaded && me.me?.role === "org_admin";
+  useOnboardingAutoShow(isAdmin);
+
   if (!me.loaded) {
     return null; // brief flash; preferable to a spinner for Sprint 008
   }
   if (me.error || !me.me) {
     return <Navigate to="/login" replace />;
   }
-
-  const isAdmin = me.me!.role === "org_admin";
-  useOnboardingAutoShow(isAdmin);
   // Filter the parents the role can see; for each parent that
   // survives, also filter its children. A child whose adminOnly
   // would hide it disappears even if the parent stays visible.
