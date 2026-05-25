@@ -11,11 +11,20 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"context"
+
 	"github.com/karimfan/liveaboard/internal/auth"
 	"github.com/karimfan/liveaboard/internal/imports"
 	"github.com/karimfan/liveaboard/internal/org"
 	"github.com/karimfan/liveaboard/internal/store"
 )
+
+// FXRefresher is the on-demand entrypoint into fxauto.Refresher.
+// Implemented as an interface so the payments handler stays
+// decoupled from the goroutine machinery and tests can stub it.
+type FXRefresher interface {
+	RefreshOnce(ctx context.Context, only []string) error
+}
 
 // Server bundles dependencies the chi router needs. Sprint 009 replaced
 // the Clerk-backed Exchanger / WebhookReceiver / AdminHandlers surface
@@ -41,6 +50,13 @@ type Server struct {
 	// in dev mode + filesystem transport from cmd/server/main.go; empty in
 	// every other configuration.
 	DevInboxDir string
+
+	// FXRefresher, when non-nil, lets the payment-settings handler
+	// kick a targeted Frankfurter fetch the moment an org adds a new
+	// accepted currency. Wired in cmd/server/main.go in dev/prod
+	// mode; left nil in tests so no real HTTP traffic leaves the
+	// process. See internal/fxauto.Refresher.
+	FXRefresher FXRefresher
 }
 
 func (s *Server) Router() http.Handler {
