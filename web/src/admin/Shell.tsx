@@ -1,7 +1,40 @@
-import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { NavLink, Outlet, useLocation, Navigate, useNavigate } from "react-router-dom";
 
+import { adminApi } from "./api";
 import { useMe } from "./useMe";
 import { UserMenu, useSignOut } from "./UserMenu";
+
+// First-run auto-show: when a new Org Admin lands on /admin and their
+// onboarding wizard is neither complete nor dismissed, navigate them
+// to /admin/onboarding. One-shot per session — sessionStorage guards
+// against re-redirecting after the admin clicks back.
+function useOnboardingAutoShow(isAdmin: boolean) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (location.pathname !== "/admin") return;
+    if (sessionStorage.getItem("onboarding_auto_shown") === "1") return;
+    let cancelled = false;
+    adminApi
+      .onboarding()
+      .then((state) => {
+        if (cancelled) return;
+        sessionStorage.setItem("onboarding_auto_shown", "1");
+        if (!state.dismissed_at && !state.onboarding_complete) {
+          navigate("/admin/onboarding", { replace: true });
+        }
+      })
+      .catch(() => {
+        // Non-fatal: if the fetch fails (e.g. transient), don't pin
+        // the flag, so the next visit will retry.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, location.pathname, navigate]);
+}
 
 type NavItem = {
   to: string;
@@ -64,6 +97,7 @@ export function AdminShell() {
   }
 
   const isAdmin = me.me!.role === "org_admin";
+  useOnboardingAutoShow(isAdmin);
   // Filter the parents the role can see; for each parent that
   // survives, also filter its children. A child whose adminOnly
   // would hide it disappears even if the parent stays visible.

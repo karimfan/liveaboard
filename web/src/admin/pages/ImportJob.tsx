@@ -62,7 +62,11 @@ export function ImportJobView({ jobId }: { jobId: string }) {
             <li>Trips removed: {job.trips_deleted ?? 0}</li>
           </ul>
           <p style={{ marginTop: "var(--sp-md)" }}>
-            <Link to="/admin/trips">View trips →</Link>
+            <Link className="primary-link" to="/admin/onboarding?step=layouts">
+              Set up cabin layouts →
+            </Link>
+            {" · "}
+            <Link to="/admin/trips">View trips</Link>
           </p>
         </div>
       )}

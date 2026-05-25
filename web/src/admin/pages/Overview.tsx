@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { adminApi, type Overview as OverviewT } from "../api";
+import { adminApi, type Overview as OverviewT, type OnboardingState } from "../api";
 import { api, type ApiError, type CruiseDirectorOverview } from "../../lib/api";
 import { useMe } from "../useMe";
 
@@ -20,6 +20,7 @@ export function Overview() {
 
 function AdminOverview() {
   const [data, setData] = useState<OverviewT | null>(null);
+  const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,6 +29,12 @@ function AdminOverview() {
       .overview()
       .then((d) => !cancelled && setData(d))
       .catch((e) => !cancelled && setError(e?.message ?? "Failed to load."));
+    adminApi
+      .onboarding()
+      .then((o) => !cancelled && setOnboarding(o))
+      .catch(() => {
+        // Best-effort; the setup card still renders without the CTA.
+      });
     return () => {
       cancelled = true;
     };
@@ -51,6 +58,13 @@ function AdminOverview() {
         <div className="admin-card">
           <h2 className="admin-card__title">Setup completeness</h2>
           <div className="setup-pct">{data.setup.pct}%</div>
+          {onboarding && !onboarding.onboarding_complete && (
+            <p style={{ marginTop: "var(--sp-sm)" }}>
+              <Link to="/admin/onboarding" className="primary-link">
+                {onboarding.dismissed_at ? "Resume setup →" : "Start setup →"}
+              </Link>
+            </p>
+          )}
           <ul className="setup-list">
             {data.setup.steps.map((s) => (
               <li

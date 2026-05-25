@@ -739,6 +739,17 @@ h3 { font-size: var(--fs-xl); }
   justify-content: flex-end;
 }
 
+/* primary-link is the "underlined CTA" style used when we need an
+   action that's a Link, not a button — e.g. the Start/Resume setup
+   row on Overview, or the post-import "Set up cabin layouts" link. */
+.primary-link {
+  color: var(--c-primary);
+  font-weight: 600;
+}
+.primary-link:hover {
+  text-decoration: underline;
+}
+
 .chip {
   display: inline-block;
   font-size: var(--fs-xs);
