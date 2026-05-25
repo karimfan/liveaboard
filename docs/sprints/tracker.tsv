@@ -21,4 +21,4 @@ sprint_id	title	status	created_at	updated_at
 020	Pricing Overrides and Currency Defaults	completed	2026-05-10T20:19:46Z	2026-05-10T20:19:47Z
 021	Filesystem Email Transport for End-to-End Testing	completed	2026-05-23T18:27:32Z	2026-05-23T18:51:27Z
 022	Analytical Reports Across Personas + Postgres-Only Storage	completed	2026-05-23T20:38:09Z	2026-05-23T21:02:52Z
-023	Initial Org Onboarding Wizard	planned	2026-05-25T04:07:29Z	2026-05-25T04:07:29Z
+023	Initial Org Onboarding Wizard	completed	2026-05-25T04:07:29Z	2026-05-25T16:28:30Z

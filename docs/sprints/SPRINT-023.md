@@ -304,17 +304,17 @@ with a single primary CTA:
 - `internal/store/onboarding_test.go` — DB-backed tests.
 
 **Tasks:**
-- [ ] Migration adds the column. Down drops it. No `UPDATE` clause.
-- [ ] `Organization.OnboardingDismissedAt *time.Time` field
+- [x] Migration adds the column. Down drops it. No `UPDATE` clause.
+- [x] `Organization.OnboardingDismissedAt *time.Time` field
       threaded through every SELECT that scans `Organization`.
-- [ ] `BoatsWithoutCabinLayouts` + count helper using one
+- [x] `BoatsWithoutCabinLayouts` + count helper using one
       org-scoped query joining boat_cabins/berths on `is_active`.
-- [ ] `OnboardingState` derives the four-step completion from
+- [x] `OnboardingState` derives the four-step completion from
       currency, boats, layouts (active cabins + berths), and
       directors. Returns the boats-without-layouts list inline.
-- [ ] `SetupCompleteness` adds `layouts` step ordered after
+- [x] `SetupCompleteness` adds `layouts` step ordered after
       `boats`; `trips` unchanged.
-- [ ] Tests cover: org with no currency, org with boats but zero
+- [x] Tests cover: org with no currency, org with boats but zero
       layouts, org with active cabin but no berths (still
       incomplete), fully set up org, two-org isolation, dismissal
       persistence.
@@ -328,12 +328,12 @@ with a single primary CTA:
   `RequireOrgAdmin` group.
 
 **Tasks:**
-- [ ] `handleGetOnboarding` returns the unified `OnboardingState`
+- [x] `handleGetOnboarding` returns the unified `OnboardingState`
       payload (see Response shape above).
-- [ ] `handleDismissOnboarding` updates the timestamp idempotently
+- [x] `handleDismissOnboarding` updates the timestamp idempotently
       and records `organization.onboarding_dismissed` audit event
       via the existing `recordStaffAudit` helper.
-- [ ] Tests:
+- [x] Tests:
   - Cruise Director → 403 on both endpoints.
   - Unauthenticated → 401.
   - Cross-tenant: org A cannot dismiss or read org B's state.
@@ -352,33 +352,33 @@ with a single primary CTA:
 - `web/src/styles/app.css` — stepper + step-shell styles.
 
 **Tasks:**
-- [ ] Fetch `OnboardingState` on mount. Compute current step from
+- [x] Fetch `OnboardingState` on mount. Compute current step from
       `?step=` (validated against the four keys) or fall back to
       first incomplete.
-- [ ] Render stepper with done/active/pending visual states.
-- [ ] Wizard header: "Skip all" button → POST dismiss → navigate
+- [x] Render stepper with done/active/pending visual states.
+- [x] Wizard header: "Skip all" button → POST dismiss → navigate
       to `/admin`.
-- [ ] Step footer: "Skip this step" advances; "Continue" is
+- [x] Step footer: "Skip this step" advances; "Continue" is
       disabled until the step is done (or successfully saved for
       currency).
-- [ ] Re-fetch state on window focus.
-- [ ] Route gated by `RequireAdmin`.
+- [x] Re-fetch state on window focus.
+- [x] Route gated by `RequireAdmin`.
 
 ### Phase 4: Step Views (~20%)
 
 **Files:** (all sections inside `Onboarding.tsx`)
 
 **Tasks:**
-- [ ] Currency: inline `CurrencyPicker` + locale guess + Save
+- [x] Currency: inline `CurrencyPicker` + locale guess + Save
       (PATCH /api/admin/organization). Reuses the existing org
       patch shape. After successful save, advance to boats.
-- [ ] Boats: three CTAs (import liveaboard, import spreadsheet,
+- [x] Boats: three CTAs (import liveaboard, import spreadsheet,
       add via Fleet) all with `?return=onboarding/boats` query
       param so the destination knows to come back.
-- [ ] Layouts: list each `boats_without_layouts` row with name +
+- [x] Layouts: list each `boats_without_layouts` row with name +
       source_name + "Set up layout" button linking to
       `/admin/fleet/:id/cabins?return=onboarding/layouts`.
-- [ ] Directors: single CTA to `/admin/users?return=onboarding/directors`
+- [x] Directors: single CTA to `/admin/users?return=onboarding/directors`
       with the active-director count shown for context.
 
 ### Phase 5: Auto-Show + Overview CTA + Import Handoff (~15%)
@@ -391,15 +391,15 @@ with a single primary CTA:
   link on success.
 
 **Tasks:**
-- [ ] On Org Admin mount, fetch onboarding once. If
+- [x] On Org Admin mount, fetch onboarding once. If
       `dismissed_at IS NULL && !onboarding_complete` and the
       session-storage flag isn't set and the current path is
       `/admin`, navigate to `/admin/onboarding` and set the flag.
-- [ ] Never auto-redirect for Cruise Directors, never from
+- [x] Never auto-redirect for Cruise Directors, never from
       `/admin/onboarding` itself, never from non-`/admin` routes.
-- [ ] Overview's setup card: primary CTA is "Start setup" /
+- [x] Overview's setup card: primary CTA is "Start setup" /
       "Resume setup" / hidden, based on the onboarding state.
-- [ ] ImportJob success state gains "Set up cabin layouts" →
+- [x] ImportJob success state gains "Set up cabin layouts" →
       `/admin/onboarding?step=layouts`.
 
 ### Phase 6: Docs + Verification (~5%)
@@ -411,8 +411,8 @@ with a single primary CTA:
 - `local_setup.md` — mention the wizard.
 
 **Tasks:**
-- [ ] Update product docs.
-- [ ] `go test ./...`, `go vet ./...`, `npm run build` all pass.
+- [x] Update product docs.
+- [x] `go test ./...`, `go vet ./...`, `npm run build` all pass.
 
 ## API Endpoints
 
@@ -446,37 +446,37 @@ with a single primary CTA:
 
 ## Definition of Done
 
-- [ ] Migration applies cleanly on a fresh DB; Down works.
-- [ ] No data backfill; existing orgs see the wizard only if their
+- [x] Migration applies cleanly on a fresh DB; Down works.
+- [x] No data backfill; existing orgs see the wizard only if their
       four onboarding steps aren't all done.
-- [ ] `BoatsWithoutCabinLayouts` treats a boat with 0 active berths
+- [x] `BoatsWithoutCabinLayouts` treats a boat with 0 active berths
       as missing a layout, even if it has active cabins; tests
       cover this and two-org isolation.
-- [ ] `SetupCompleteness` returns five steps (currency, boats,
+- [x] `SetupCompleteness` returns five steps (currency, boats,
       layouts, directors, trips). Existing Overview and Reports
       consumers render correctly with the new step.
-- [ ] `OnboardingState.onboarding_complete` is computed from the
+- [x] `OnboardingState.onboarding_complete` is computed from the
       four wizard steps only; trips does not affect it.
-- [ ] `GET /api/admin/onboarding` returns the unified payload and
+- [x] `GET /api/admin/onboarding` returns the unified payload and
       refuses non-admin callers with 403.
-- [ ] `POST /api/admin/onboarding/dismiss` is idempotent and
+- [x] `POST /api/admin/onboarding/dismiss` is idempotent and
       writes one audit event on first dismiss.
-- [ ] Cross-tenant test confirms org A cannot read or dismiss org
+- [x] Cross-tenant test confirms org A cannot read or dismiss org
       B's state.
-- [ ] Wizard auto-redirects only when
+- [x] Wizard auto-redirects only when
       `dismissed_at IS NULL && !onboarding_complete` AND
       sessionStorage flag is unset AND path is `/admin`.
-- [ ] "Skip all" sets the timestamp and navigates to `/admin`.
-- [ ] "Skip this step" advances without an API call.
-- [ ] Currency step saves through the existing org patch endpoint;
+- [x] "Skip all" sets the timestamp and navigates to `/admin`.
+- [x] "Skip this step" advances without an API call.
+- [x] Currency step saves through the existing org patch endpoint;
       best-effort locale guess works for at least USD/EUR/GBP
       without ever blocking the picker.
-- [ ] Layouts step refreshes on window focus.
-- [ ] Overview's setup card shows the correct "Start" / "Resume"
+- [x] Layouts step refreshes on window focus.
+- [x] Overview's setup card shows the correct "Start" / "Resume"
       CTA according to onboarding state.
-- [ ] ImportJob success page links to
+- [x] ImportJob success page links to
       `/admin/onboarding?step=layouts`.
-- [ ] `go test ./...`, `go vet ./...`, `npm run build` pass.
+- [x] `go test ./...`, `go vet ./...`, `npm run build` pass.
 
 ## Risks & Mitigations
 
