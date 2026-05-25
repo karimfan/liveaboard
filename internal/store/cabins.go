@@ -729,6 +729,20 @@ func (p *Pool) BoatActiveBerthCount(ctx context.Context, orgID, boatID uuid.UUID
 	return n, err
 }
 
+// BoatHasUsableLayout returns true when a boat has at least one
+// active berth — the Sprint 023 definition of "usable layout"
+// (a berth implies an active cabin since cabin is its parent).
+// Trip mutations that depend on a configured boat call this
+// through the requireBoatLayout HTTP helper to refuse the action
+// with a redirect-friendly error.
+func (p *Pool) BoatHasUsableLayout(ctx context.Context, orgID, boatID uuid.UUID) (bool, error) {
+	n, err := p.BoatActiveBerthCount(ctx, orgID, boatID)
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
 type BoatLayoutSummary struct {
 	BoatID           uuid.UUID `json:"boat_id"`
 	BoatName         string    `json:"boat_name"`

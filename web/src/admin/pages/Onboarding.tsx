@@ -142,7 +142,14 @@ export function Onboarding() {
             }}
           />
         )}
-        {stepKey === "layouts" && <LayoutsStep state={state} />}
+        {stepKey === "layouts" && (
+          <LayoutsStep
+            state={state}
+            fromGate={params.get("from_gate") === "1"}
+            highlightBoatId={params.get("boat") ?? undefined}
+            highlightBoatName={params.get("boat_name") ?? undefined}
+          />
+        )}
         {stepKey === "directors" && <DirectorsStep />}
       </section>
 
@@ -372,30 +379,55 @@ function BoatsStepImportProgress({
   );
 }
 
-function LayoutsStep({ state }: { state: OnboardingState }) {
+function LayoutsStep({
+  state,
+  fromGate,
+  highlightBoatId,
+  highlightBoatName,
+}: {
+  state: OnboardingState;
+  fromGate?: boolean;
+  highlightBoatId?: string;
+  highlightBoatName?: string;
+}) {
   const boats = state.boats_without_layouts;
-  if (boats.length === 0) {
-    return (
-      <div className="muted">
-        Every boat in your fleet has a usable cabin layout. Move on or open
-        Fleet to refine any layout.
-      </div>
-    );
-  }
   return (
-    <ul className="onboarding__rows">
-      {boats.map((b: OnboardingBoatWithoutLayout) => (
-        <li key={b.boat_id} className="onboarding__row">
-          <span>{b.boat_name}</span>
-          <Link
-            className="secondary"
-            to={`/admin/fleet/${encodeURIComponent(b.boat_id)}/cabins?return=onboarding/layouts`}
-          >
-            Set up layout →
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <>
+      {fromGate && (
+        <div className="callout" style={{ marginBottom: "var(--sp-md)" }}>
+          <strong>That action needs a cabin layout first.</strong>{" "}
+          {highlightBoatName
+            ? `Configure ${highlightBoatName}'s cabins below, then return to what you were doing.`
+            : "Configure the boat's cabins below, then return to what you were doing."}
+        </div>
+      )}
+      {boats.length === 0 ? (
+        <div className="muted">
+          Every boat in your fleet has a usable cabin layout. Move on or open
+          Fleet to refine any layout.
+        </div>
+      ) : (
+        <ul className="onboarding__rows">
+          {boats.map((b: OnboardingBoatWithoutLayout) => (
+            <li
+              key={b.boat_id}
+              className={
+                "onboarding__row" +
+                (b.boat_id === highlightBoatId ? " is-highlight" : "")
+              }
+            >
+              <span>{b.boat_name}</span>
+              <Link
+                className="secondary"
+                to={`/admin/fleet/${encodeURIComponent(b.boat_id)}/cabins?return=onboarding/layouts`}
+              >
+                Set up layout →
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 

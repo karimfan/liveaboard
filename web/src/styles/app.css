@@ -733,6 +733,10 @@ h3 { font-size: var(--fs-xl); }
   background: var(--c-50);
   margin-bottom: 6px;
 }
+.onboarding__row.is-highlight {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 2px rgba(229, 133, 59, 0.18);
+}
 .onboarding__footer {
   display: flex;
   gap: var(--sp-sm);

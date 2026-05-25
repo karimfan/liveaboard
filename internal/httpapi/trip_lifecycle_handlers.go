@@ -40,6 +40,14 @@ func (s *Server) handleTripLifecycle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleStartTrip(w http.ResponseWriter, r *http.Request) {
+	tripID, ok := uuidParam(w, r, "id")
+	if !ok {
+		return
+	}
+	u := auth.UserFromContext(r.Context())
+	if _, ok := s.requireBoatLayoutForTrip(w, r, u.OrganizationID, tripID); !ok {
+		return
+	}
 	s.handleLifecycleTransition(w, r, "start")
 }
 

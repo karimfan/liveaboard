@@ -1,9 +1,24 @@
 package httpapi_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/karimfan/liveaboard/internal/store"
 )
+
+func parseUUID(t *testing.T, s string) uuid.UUID {
+	t.Helper()
+	id, err := uuid.Parse(s)
+	if err != nil {
+		t.Fatalf("parse uuid %q: %v", s, err)
+	}
+	return id
+}
 
 func TestOnboardingRequiresAuth(t *testing.T) {
 	h := newHarness(t)
@@ -71,6 +86,97 @@ func TestOnboardingRequiresOrgAdmin(t *testing.T) {
 	steps, _ := body["steps"].([]any)
 	if len(steps) != 4 {
 		t.Errorf("steps len=%d want 4", len(steps))
+	}
+}
+
+// TestAssignCruiseDirectorRequiresBoatLayout exercises the Sprint 023
+// gate: the assign-director endpoint refuses with
+// "boat_layout_required" + boat_id when the trip's boat has no
+// usable cabin layout.
+func TestAssignCruiseDirectorRequiresBoatLayout(t *testing.T) {
+	h := newHarness(t)
+	c := &http.Client{}
+	adminCookie := signupAndVerify(t, h, c, "Acme", "owner@x.test", "Owner", "Sup3rStrong!")
+
+	// Get the admin's org id by hitting /api/me.
+	resp, body := doJSON(t, c, "GET", h.server.URL+"/api/me", nil, adminCookie)
+	if resp.StatusCode != 200 {
+		t.Fatalf("me: %d %v", resp.StatusCode, body)
+	}
+	orgIDStr, _ := body["organization_id"].(string)
+	if orgIDStr == "" {
+		t.Fatalf("no organization_id in /api/me: %v", body)
+	}
+
+	ctx := context.Background()
+	// Insert a boat directly (no cabin layout) and a trip on it.
+	boat, err := h.pool.UpsertBoat(ctx, parseUUID(t, orgIDStr), "liveaboard.com",
+		store.BoatScrape{Slug: "no-layout", Name: "No Layout", URL: "https://x/no-layout"},
+		time.Now().UTC(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var tripID string
+	if err := h.pool.QueryRow(ctx, `
+		INSERT INTO trips (organization_id, boat_id, start_date, end_date, itinerary,
+		                   source_provider, source_trip_key, source_url, source_last_synced_at, status)
+		VALUES ($1, $2, current_date + 7, current_date + 14, 'Test',
+		        'liveaboard.com', 'k1', 'https://x/t1', now(), 'planned')
+		RETURNING id
+	`, orgIDStr, boat.ID).Scan(&tripID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Invite a director (real user we can assign).
+	resp, body = doJSON(t, c, "POST", h.server.URL+"/api/invitations", map[string]any{
+		"email":     "dir@x.test",
+		"full_name": "Dir Dee",
+		"role":      "cruise_director",
+	}, adminCookie)
+	if resp.StatusCode != 201 {
+		t.Fatalf("invite: %d %v", resp.StatusCode, body)
+	}
+	tok := tokenFromLink(t, h.mail.LinkFor("dir@x.test", "/invitations/"))
+	resp, _ = doJSON(t, c, "POST", h.server.URL+"/api/invitations/accept", map[string]any{
+		"token":    tok,
+		"password": "Sup3rStrong!",
+	})
+	if resp.StatusCode != 200 {
+		t.Fatalf("accept: %d", resp.StatusCode)
+	}
+	// Pull the director's user id.
+	resp, body = doJSON(t, c, "GET", h.server.URL+"/api/admin/users", nil, adminCookie)
+	if resp.StatusCode != 200 {
+		t.Fatalf("users list: %d", resp.StatusCode)
+	}
+	users, _ := body["users"].([]any)
+	var dirID string
+	for _, u := range users {
+		row, _ := u.(map[string]any)
+		if row["email"] == "dir@x.test" {
+			dirID, _ = row["id"].(string)
+		}
+	}
+	if dirID == "" {
+		t.Fatal("director id not found")
+	}
+
+	// Try to assign — should 409 with boat_layout_required + boat_id.
+	resp, body = doJSON(t, c, "POST",
+		h.server.URL+"/api/admin/trips/"+tripID+"/cruise-directors",
+		map[string]any{"user_id": dirID}, adminCookie)
+	if resp.StatusCode != 409 {
+		t.Fatalf("assign without layout=%d %v want 409", resp.StatusCode, body)
+	}
+	if body["error"] != "boat_layout_required" {
+		t.Errorf("error code=%v want boat_layout_required", body["error"])
+	}
+	if body["boat_id"] != boat.ID.String() {
+		t.Errorf("boat_id=%v want %v", body["boat_id"], boat.ID)
+	}
+	if body["boat_name"] != "No Layout" {
+		t.Errorf("boat_name=%v want 'No Layout'", body["boat_name"])
 	}
 }
 

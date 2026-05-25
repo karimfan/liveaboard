@@ -186,6 +186,9 @@ func (s *Server) handleAssignGuestCabin(w http.ResponseWriter, r *http.Request) 
 	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
 		return
 	}
+	if _, ok := s.requireBoatLayoutForTrip(w, r, u.OrganizationID, tripID); !ok {
+		return
+	}
 	var req cabinAssignReq
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())

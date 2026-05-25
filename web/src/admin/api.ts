@@ -34,7 +34,28 @@ async function parseResponse<T>(resp: Response, label: string): Promise<T> {
     }
   }
   if (!resp.ok) {
-    throw (parsed ?? { error: "unknown", message: resp.statusText }) as ApiError;
+    const err = (parsed ?? { error: "unknown", message: resp.statusText }) as ApiError & {
+      boat_id?: string;
+      boat_name?: string;
+    };
+    // Sprint 023 invariant: the backend refuses operational trip
+    // mutations (assign director, start trip, add guest, assign
+    // cabin) until the trip's boat has a usable cabin layout. When
+    // that gate fires, redirect the operator into the onboarding
+    // wizard's layouts step so they can fix the gap and try again.
+    if (err.error === "boat_layout_required" && err.boat_id) {
+      const target =
+        "/admin/onboarding?step=layouts&from_gate=1&boat=" +
+        encodeURIComponent(err.boat_id) +
+        (err.boat_name ? "&boat_name=" + encodeURIComponent(err.boat_name) : "");
+      // Full-page navigate so any in-flight component state on the
+      // current page is dropped — the operator is mid-task and the
+      // wizard takes priority.
+      if (typeof window !== "undefined") {
+        window.location.assign(target);
+      }
+    }
+    throw err as ApiError;
   }
   return parsed as T;
 }

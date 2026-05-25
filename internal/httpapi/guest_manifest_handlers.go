@@ -64,6 +64,9 @@ func (s *Server) handleAddTripGuest(w http.ResponseWriter, r *http.Request) {
 	if !s.ensureTripMutable(w, r, u.OrganizationID, tripID) {
 		return
 	}
+	if _, ok := s.requireBoatLayoutForTrip(w, r, u.OrganizationID, tripID); !ok {
+		return
+	}
 	var req addTripGuestReq
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
@@ -264,6 +267,46 @@ func (s *Server) ensureTripMutable(w http.ResponseWriter, r *http.Request, orgID
 		return false
 	}
 	return true
+}
+
+// requireBoatLayoutForTrip enforces the Sprint 023 invariant that
+// operational trip mutations (start, assign director, add guest,
+// assign cabin) can only happen on trips whose boat has a usable
+// cabin layout (≥1 active berth). When the layout is missing the
+// helper writes a 409 with code "boat_layout_required" plus the
+// boat id and name so the frontend can redirect the operator into
+// the onboarding wizard's layouts step.
+//
+// Returns the trip on success so callers don't have to re-look it
+// up — and false on failure (the helper has already written the
+// response).
+func (s *Server) requireBoatLayoutForTrip(w http.ResponseWriter, r *http.Request, orgID, tripID uuid.UUID) (*store.Trip, bool) {
+	trip, err := s.Auth.Store.TripByID(r.Context(), orgID, tripID)
+	if err != nil {
+		writeGuestServiceError(w, err)
+		return nil, false
+	}
+	ok, err := s.Auth.Store.BoatHasUsableLayout(r.Context(), orgID, trip.BoatID)
+	if err != nil {
+		s.Log.Error("layout gate: lookup", "err", err)
+		writeError(w, http.StatusInternalServerError, "internal", "internal error")
+		return nil, false
+	}
+	if !ok {
+		boat, berr := s.Auth.Store.BoatByID(r.Context(), orgID, trip.BoatID)
+		boatName := ""
+		if berr == nil {
+			boatName = boat.DisplayName
+		}
+		writeJSON(w, http.StatusConflict, map[string]any{
+			"error":     "boat_layout_required",
+			"message":   "This trip's boat needs a cabin layout before this action is allowed.",
+			"boat_id":   trip.BoatID,
+			"boat_name": boatName,
+		})
+		return nil, false
+	}
+	return trip, true
 }
 
 func manifestRowsView(rows []*store.TripGuestManifestRow) []map[string]any {

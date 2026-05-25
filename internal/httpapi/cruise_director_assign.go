@@ -51,6 +51,14 @@ func (s *Server) handleAssignCruiseDirector(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Sprint 023 invariant: assigning a director only makes sense
+	// once the boat has a usable cabin layout. The helper returns a
+	// 409 with boat_id so the frontend can redirect into the
+	// wizard's layouts step.
+	if _, ok := s.requireBoatLayoutForTrip(w, r, admin.OrganizationID, tripID); !ok {
+		return
+	}
+
 	trip, err := s.tripForOrg(r.Context(), admin.OrganizationID, tripID)
 	if err != nil {
 		writeTripLookupError(w, err)
