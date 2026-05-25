@@ -92,6 +92,23 @@ export function BoatCabins() {
     }
   }
 
+  async function setCabinDeck(cabinId: string, deck: string | null) {
+    setError(null);
+    const c = layout?.cabins.find((x) => x.id === cabinId);
+    if (!c) return;
+    try {
+      await adminApi.updateBoatCabin(boat.id, cabinId, {
+        label: c.label,
+        deck,
+        sort_order: c.sort_order,
+        notes: c.notes,
+      });
+      await load();
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? "Could not update deck.");
+    }
+  }
+
   async function deactivateBerth(cabinId: string, berthId: string) {
     setError(null);
     try {
@@ -130,7 +147,15 @@ export function BoatCabins() {
               <div className="field"><label>From cabin</label><input type="number" min="1" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} /></div>
               <div className="field"><label>To cabin</label><input type="number" min="1" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} /></div>
               <div className="field"><label>Berths</label><input value={rangeBerths} onChange={(e) => setRangeBerths(e.target.value)} placeholder="A,B" /></div>
-              <div className="field"><label>Deck</label><input value={rangeDeck} onChange={(e) => setRangeDeck(e.target.value)} placeholder="Lower" /></div>
+              <div className="field">
+                <label>Deck</label>
+                <select value={rangeDeck} onChange={(e) => setRangeDeck(e.target.value)}>
+                  <option value="">— none —</option>
+                  <option value="Upper">Upper</option>
+                  <option value="Main">Main</option>
+                  <option value="Lower">Lower</option>
+                </select>
+              </div>
             </div>
           )}
           {mode === "paste" && (
@@ -167,7 +192,18 @@ export function BoatCabins() {
             {layout.cabins.map((c) => (
               <tr key={c.id} className={!c.is_active ? "is-muted" : ""}>
                 <td>{c.label}</td>
-                <td>{c.deck ?? "—"}</td>
+                <td>
+                  <select
+                    value={c.deck ?? ""}
+                    disabled={!c.is_active}
+                    onChange={(e) => void setCabinDeck(c.id, e.target.value === "" ? null : e.target.value)}
+                  >
+                    <option value="">— none —</option>
+                    <option value="Upper">Upper</option>
+                    <option value="Main">Main</option>
+                    <option value="Lower">Lower</option>
+                  </select>
+                </td>
                 <td>
                   <div className="berth-list">
                     {c.berths.map((b) => (
