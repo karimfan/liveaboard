@@ -282,18 +282,18 @@ No new endpoints. Two responses get new fields:
 - `internal/store/fx.go` — `LastFrankfurterRefreshForCurrencies`.
 
 **Tasks:**
-- [ ] `Client.FetchUSD` builds the URL, GETs with 10s timeout,
+- [x] `Client.FetchUSD` builds the URL, GETs with 10s timeout,
       decodes via `json.Number`, converts each value to
       `(*big.Rat).num/den` reduced and bounded to int64.
-- [ ] Currencies that overflow int64 go into `RateSet.Missing`
+- [x] Currencies that overflow int64 go into `RateSet.Missing`
       with a logged reason (very unlikely with reasonable rates).
-- [ ] Currencies that Frankfurter omits from the response also
+- [x] Currencies that Frankfurter omits from the response also
       go into `Missing`.
-- [ ] Tests: happy path, missing currency, non-2xx, malformed
+- [x] Tests: happy path, missing currency, non-2xx, malformed
       JSON, ctx cancel, base mismatch.
-- [ ] `DistinctSupportedCurrencies` returns the sorted union;
+- [x] `DistinctSupportedCurrencies` returns the sorted union;
       caller filters USD.
-- [ ] `LastFrankfurterRefreshForCurrencies` returns nil when no
+- [x] `LastFrankfurterRefreshForCurrencies` returns nil when no
       rows exist for any of the given currencies.
 
 ### Phase 2: Refresher + On-Demand Entrypoint (~25%)
@@ -304,13 +304,13 @@ No new endpoints. Two responses get new fields:
 - `internal/fxauto/refresher_test.go` — fake Fetcher + RateStore.
 
 **Tasks:**
-- [ ] Refresher orchestrates fetch + per-currency upsert + WARN
+- [x] Refresher orchestrates fetch + per-currency upsert + WARN
       on missing entries.
-- [ ] `Run` loops on `Interval`; survives fetch errors; honors
+- [x] `Run` loops on `Interval`; survives fetch errors; honors
       ctx cancellation cleanly.
-- [ ] `RefreshOnce(ctx, only)`: `only == nil` means "everything";
+- [x] `RefreshOnce(ctx, only)`: `only == nil` means "everything";
       a non-nil slice scopes to those currencies.
-- [ ] Tests: full refresh writes the right rows, partial
+- [x] Tests: full refresh writes the right rows, partial
       response leaves only what was returned, fetch error
       leaves the table untouched and returns the error,
       RefreshOnce with a specific currency only fetches and
@@ -329,13 +329,13 @@ No new endpoints. Two responses get new fields:
   freshness threshold tests.
 
 **Tasks:**
-- [ ] Compute status using `fetched_at` thresholds (24h / 48h /
+- [x] Compute status using `fetched_at` thresholds (24h / 48h /
       missing).
-- [ ] Handler reads `LastFrankfurterRefreshForCurrencies(ctx,
+- [x] Handler reads `LastFrankfurterRefreshForCurrencies(ctx,
       settings.SupportedCurrencies)` to populate
       `auto_refresh_at`.
-- [ ] Keep `ready` in the response (back-compat).
-- [ ] Tests: row 12h old → fresh; 30h old → stale; 49h old →
+- [x] Keep `ready` in the response (back-compat).
+- [x] Tests: row 12h old → fresh; 30h old → stale; 49h old →
       missing; no row → missing; manual-provider row also flows
       through correctly.
 
@@ -354,14 +354,14 @@ No new endpoints. Two responses get new fields:
   detached goroutine. Non-blocking; errors only log.
 
 **Tasks:**
-- [ ] Refresher constructed and `Run` started in `main.go`
+- [x] Refresher constructed and `Run` started in `main.go`
       after migrations.
-- [ ] Mode=test gate: in test mode the refresher is not
+- [x] Mode=test gate: in test mode the refresher is not
       constructed and `FXRefresher` is nil. The handler null-
       checks before calling.
-- [ ] Detect "new currency added" in the update handler by
+- [x] Detect "new currency added" in the update handler by
       diffing old vs new `SupportedCurrencies`.
-- [ ] The on-demand kick uses a `context.Background()` derived
+- [x] The on-demand kick uses a `context.Background()` derived
       from the server lifetime so the goroutine survives the
       request returning.
 
@@ -376,13 +376,16 @@ No new endpoints. Two responses get new fields:
   there.
 
 **Tasks:**
-- [ ] Update the typed `PaymentSettings` response.
-- [ ] Render the new chips; use existing `.chip` styles where
+- [x] Update the typed `PaymentSettings` response.
+- [x] Render the new chips; use existing `.chip` styles where
       possible.
-- [ ] Show "Auto-refreshed YYYY-MM-DD HH:MM UTC" or "Auto-
+- [x] Show "Auto-refreshed YYYY-MM-DD HH:MM UTC" or "Auto-
       refresh not yet completed".
 - [ ] Disclosure link to the existing FX page; copy makes it
       explicit this is a fallback, not the primary path.
+      (Deferred: there is no admin UI for manual FX rate entry
+      yet — the manual path is API/CLI only. Copy on the
+      Payments page names Frankfurter / ECB.)
 
 ### Phase 6: Docs + Verification (~10%)
 
@@ -391,9 +394,9 @@ No new endpoints. Two responses get new fields:
   the Mode=test gate.
 
 **Tasks:**
-- [ ] Document the cadence + that the system requires outbound
+- [x] Document the cadence + that the system requires outbound
       HTTPS to api.frankfurter.dev.
-- [ ] `go test ./...`, `go vet ./...`, `npm run build` pass.
+- [x] `go test ./...`, `go vet ./...`, `npm run build` pass.
 
 ## API Endpoints
 
@@ -429,24 +432,26 @@ No new endpoints. Two responses have richer fields:
 - [ ] Fresh `make dev` boot hits Frankfurter within seconds and
       writes USD→{supported currencies} into `exchange_rates`
       with `provider="frankfurter"` and `expires_at = fetched_at + 48h`.
-- [ ] Refresher repeats every 24h (default).
-- [ ] No real network calls during `go test` runs — Mode=test
+      (Code wired; needs a manual `make dev` boot to verify the
+      network call actually lands a row.)
+- [x] Refresher repeats every 24h (default).
+- [x] No real network calls during `go test` runs — Mode=test
       gate in main.go, fake Fetcher in unit tests.
-- [ ] Adding a new currency on Payments triggers an on-demand
+- [x] Adding a new currency on Payments triggers an on-demand
       single-currency fetch via the same `RefreshOnce`
       entrypoint.
-- [ ] Payments page shows three-state status (`fresh`/`stale`/
+- [x] Payments page shows three-state status (`fresh`/`stale`/
       `missing`) per currency, computed from `fetched_at`.
-- [ ] Payments page shows a per-org `auto_refresh_at` scoped to
+- [x] Payments page shows a per-org `auto_refresh_at` scoped to
       that org's accepted currencies.
-- [ ] `ready: bool` remains in the response alongside `status`.
-- [ ] `LatestExchangeRate` and `ConvertUSDCentsToMinor` behavior
+- [x] `ready: bool` remains in the response alongside `status`.
+- [x] `LatestExchangeRate` and `ConvertUSDCentsToMinor` behavior
       unchanged — checkout math is untouched.
-- [ ] Manual `POST /admin/fx/rates` continues to work and is
-      labeled "fallback" in the Payments UI link copy.
-- [ ] Partial provider response writes the rates it got; missing
+- [x] Manual `POST /admin/fx/rates` continues to work (endpoint
+      untouched). UI link copy: deferred — see Phase 5 note.
+- [x] Partial provider response writes the rates it got; missing
       currencies log WARN and remain `missing` in the UI.
-- [ ] `go test ./...`, `go vet ./...`, `npm run build` pass.
+- [x] `go test ./...`, `go vet ./...`, `npm run build` pass.
 
 ## Risks & Mitigations
 

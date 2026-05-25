@@ -70,6 +70,31 @@ LIVEABOARD_DATABASE_URL=postgres://me@127.0.0.1:5432/my_local_db
 
 Production never reads `.env.local`. In production, supply secrets via the process environment (CI secret store, secret manager output piped into env, etc.).
 
+## Automated FX rates (Sprint 024)
+
+The backend ships a built-in foreign-exchange refresher that pulls
+USD→quote rates from [Frankfurter](https://frankfurter.dev), an
+ECB-backed open data API. It needs no API key and no config.
+
+- **Provider:** `frankfurter` (constant in `internal/fxauto`).
+- **Cadence:** 24h ticker, started by `cmd/server/main.go`. The
+  first tick fires at boot so a freshly-restored server has rates
+  within seconds.
+- **On-demand:** when an org adds a new accepted currency, the
+  payments PATCH handler kicks a targeted `RefreshOnce` in a
+  detached goroutine. The HTTP response is never blocked on
+  Frankfurter latency.
+- **Storage:** appends to the existing `exchange_rates` table with
+  `provider='frankfurter'`. `expires_at = fetched_at + 48h`. The
+  payments page computes a three-state status
+  (`fresh` < 24h, `stale` < 48h, else `missing`) from `fetched_at`.
+- **Fallback:** manual `UpsertExchangeRate` rows still work and the
+  same `LatestExchangeRate` lookup feeds checkout — the refresher
+  is additive, not a hard dependency.
+- **Test mode:** the refresher is intentionally **not constructed**
+  when `LIVEABOARD_MODE=test`, so the test suite never makes real
+  HTTP egress.
+
 ## Loader behavior worth knowing
 
 - `Config.String()` redacts any field tagged `secret:"true"`. Use it (or structured-log helpers) when logging config; never log the struct directly.
