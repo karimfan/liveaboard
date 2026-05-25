@@ -37,6 +37,7 @@ import { OrganizationPricing } from "./admin/pages/OrganizationPricing";
 import { AuditEvents } from "./admin/pages/AuditEvents";
 import { GuestFolio } from "./admin/pages/GuestFolio";
 import { Reports } from "./admin/pages/Reports";
+import { Onboarding } from "./admin/pages/Onboarding";
 import { Account } from "./admin/pages/Account";
 import { Import } from "./admin/pages/Import";
 import { ImportLiveaboard } from "./admin/pages/ImportLiveaboard";
@@ -119,6 +120,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route
             path="reports"
             element={<RequireAdmin><Reports /></RequireAdmin>}
+          />
+          <Route
+            path="onboarding"
+            element={<RequireAdmin><Onboarding /></RequireAdmin>}
           />
           <Route
             path="import"

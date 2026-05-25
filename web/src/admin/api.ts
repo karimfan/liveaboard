@@ -807,6 +807,31 @@ export const adminApi = {
       "GET",
       "/currencies",
     ),
+
+  // --- Sprint 023 onboarding wizard ---
+  onboarding: () => call<OnboardingState>("GET", "/admin/onboarding"),
+  dismissOnboarding: () =>
+    call<OnboardingState>("POST", "/admin/onboarding/dismiss"),
+};
+
+export type OnboardingStep = {
+  key: "currency" | "boats" | "layouts" | "directors";
+  label: string;
+  done: boolean;
+  hint: string;
+};
+
+export type OnboardingBoatWithoutLayout = {
+  boat_id: string;
+  boat_name: string;
+};
+
+export type OnboardingState = {
+  dismissed_at: string | null;
+  onboarding_complete: boolean;
+  setup_pct: number;
+  steps: OnboardingStep[];
+  boats_without_layouts: OnboardingBoatWithoutLayout[];
 };
 
 // --- Sprint 022 report types ---
