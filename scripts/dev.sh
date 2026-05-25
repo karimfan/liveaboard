@@ -14,6 +14,27 @@ cd "${LIVEABOARD_REPO_ROOT}"
 # correct VITE_* values without us maintaining a parallel hierarchy.
 "${SCRIPT_DIR}/lib/sync-web-env.sh"
 
+# Free up the ports we expect to bind. A previous `make dev` that
+# was Ctrl-C'd while a child held the port can leave a squatter
+# behind; Vite would then fall back to 5174/5175/... and the proxy
+# the SPA expects (/api → :8080) silently breaks. Send SIGTERM
+# first; if anything's still there after a beat, escalate to SIGKILL.
+free_port() {
+  local port="$1"
+  local pids
+  pids=$(lsof -tiTCP:"${port}" -sTCP:LISTEN 2>/dev/null || true)
+  if [[ -z "${pids}" ]]; then return 0; fi
+  echo "dev.sh: freeing port :${port} (pids: ${pids})" >&2
+  kill ${pids} 2>/dev/null || true
+  sleep 0.5
+  pids=$(lsof -tiTCP:"${port}" -sTCP:LISTEN 2>/dev/null || true)
+  if [[ -n "${pids}" ]]; then
+    kill -9 ${pids} 2>/dev/null || true
+  fi
+}
+free_port 5173
+free_port 8080
+
 cleanup() {
   trap - EXIT
   if [[ -n "${BACKEND_PID:-}" ]]; then kill "${BACKEND_PID}" 2>/dev/null || true; fi
