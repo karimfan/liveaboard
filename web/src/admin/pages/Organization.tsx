@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { api } from "../../lib/api";
 import { adminApi } from "../api";
@@ -12,6 +13,7 @@ type OrgView = {
 };
 
 export function Organization() {
+  const navigate = useNavigate();
   const [org, setOrg] = useState<OrgView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -55,6 +57,7 @@ export function Organization() {
         created_at: updated.created_at,
       });
       setSaved(true);
+      navigate("/admin", { replace: true });
     } catch (e) {
       setError((e as { message?: string })?.message ?? "Save failed.");
     } finally {
