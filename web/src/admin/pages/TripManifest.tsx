@@ -2,9 +2,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { adminApi, type TripCabinBoard, type TripLifecycle, type TripManifest as TripManifestData } from "../api";
+import { useDevFlags } from "../../lib/devFlags";
+import { fakeGuestIdentity } from "../../lib/fakeData";
 
 export function TripManifest() {
   const { id = "" } = useParams<{ id: string }>();
+  const devFlags = useDevFlags();
   const [data, setData] = useState<TripManifestData | null>(null);
   const [board, setBoard] = useState<TripCabinBoard | null>(null);
   const [lifecycle, setLifecycle] = useState<TripLifecycle | null>(null);
@@ -14,6 +17,7 @@ export function TripManifest() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [filling, setFilling] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [transitionReason, setTransitionReason] = useState("");
 
@@ -55,6 +59,44 @@ export function TripManifest() {
       setError((err as { message?: string })?.message ?? "Failed to add guest.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  // fillBoat is the dev-only "fill the boat with test guests"
+  // action. It walks the available berths and creates one fake guest
+  // per berth, sequentially so we don't race a unique-email retry.
+  // If a single create fails, we stop and surface the message, but
+  // keep the guests we already created.
+  async function fillBoat() {
+    if (filling) return;
+    const berths = availableBerths(board);
+    if (berths.length === 0) {
+      setError("No available berths to fill.");
+      return;
+    }
+    setFilling(true);
+    setError(null);
+    setMessage(null);
+    let created = 0;
+    try {
+      for (const b of berths) {
+        const ident = fakeGuestIdentity();
+        await adminApi.addTripGuest(id, {
+          full_name: ident.full_name,
+          email: ident.email,
+          berth_id: b.id,
+        });
+        created++;
+      }
+      setMessage(`Filled boat with ${created} test ${created === 1 ? "guest" : "guests"}.`);
+    } catch (err) {
+      setError(
+        (err as { message?: string })?.message ??
+          `Failed after creating ${created} ${created === 1 ? "guest" : "guests"}.`,
+      );
+    } finally {
+      setFilling(false);
+      await load();
     }
   }
 
@@ -181,6 +223,23 @@ export function TripManifest() {
 
       <form className="admin-card manifest-add" onSubmit={addGuest}>
         <h2 className="admin-card__title">Add guest</h2>
+        {devFlags.filesystem_email && board !== null && availableBerths(board).length > 0 && (
+          <div className="callout" style={{ marginBottom: "var(--sp-md)" }}>
+            <strong>Dev affordance:</strong>{" "}
+            <button
+              type="button"
+              className="secondary"
+              style={{ marginLeft: 8 }}
+              disabled={filling}
+              onClick={() => void fillBoat()}
+            >
+              {filling ? "Filling…" : `Fill boat with ${availableBerths(board).length} test guests`}
+            </button>
+            <span className="muted" style={{ marginLeft: 8 }}>
+              One synthetic guest per available berth — emails go to /tmp/inbox.
+            </span>
+          </div>
+        )}
         {board !== null && availableBerths(board).length === 0 ? (
           <div className="callout">
             No cabin berths available yet. Set up the boat's cabin

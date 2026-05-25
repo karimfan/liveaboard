@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 
 import { api, type GuestDocument } from "../lib/api";
 import { appConfig } from "../lib/config";
+import { useDevFlags } from "../lib/devFlags";
+import { fakeRegistrationPayload } from "../lib/fakeData";
 import {
   RegistrationSections,
   emptyRegistrationPayload,
@@ -131,6 +133,8 @@ export function GuestRegistration() {
         {error && <div className="error">{error}</div>}
         {message && <div className="callout">{message}</div>}
 
+        <DevFillButton onFill={(next) => setPayload(next)} />
+
         <RegistrationSections mode="edit" payload={payload} onChange={update} />
 
         <section className="registration-section">
@@ -232,4 +236,30 @@ function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${Math.round(n / 1024)} KiB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MiB`;
+}
+
+// DevFillButton renders a "Fill test data" button only when the app
+// is configured to send mail to the filesystem (dev mode). Clicking
+// it replaces the registration payload in state with synthetic but
+// plausible values so a developer can submit a complete registration
+// without typing.
+function DevFillButton({ onFill }: { onFill: (p: RegistrationPayload) => void }) {
+  const flags = useDevFlags();
+  if (!flags.filesystem_email) return null;
+  return (
+    <div className="callout" style={{ marginBottom: "var(--sp-md)" }}>
+      <strong>Dev affordance:</strong>{" "}
+      <button
+        type="button"
+        className="secondary"
+        style={{ marginLeft: 8 }}
+        onClick={() => onFill(fakeRegistrationPayload())}
+      >
+        Fill with test data
+      </button>
+      <span className="muted" style={{ marginLeft: 8 }}>
+        Only visible because LIVEABOARD_EMAIL_TRANSPORT=filesystem.
+      </span>
+    </div>
+  );
 }

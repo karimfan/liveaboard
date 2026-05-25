@@ -52,6 +52,11 @@ func (s *Server) Router() http.Handler {
 	r.Use(middleware.Timeout(15 * time.Second))
 
 	r.Route("/api", func(r chi.Router) {
+		// Public dev-mode flags so dev-only UI affordances (fill-test-
+		// data buttons, fake-guest generators) can self-gate without
+		// requiring an auth session. See dev_flags_handlers.go.
+		r.Get("/dev/flags", s.handleDevFlags)
+
 		// Public auth surface — no session required.
 		r.Post("/auth/signup", s.handleSignup)
 		r.Post("/auth/verify-email", s.handleVerifyEmail)
