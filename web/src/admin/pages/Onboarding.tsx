@@ -31,6 +31,9 @@ export function Onboarding() {
   const [params, setParams] = useSearchParams();
   const [state, setState] = useState<OnboardingState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [importJob, setImportJob] = useState<ImportJob | null>(null);
+
+  const jobId = params.get("job");
 
   async function load() {
     setError(null);
@@ -54,6 +57,53 @@ export function Onboarding() {
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
+
+  // Wizard-level import poll: when ?job= is set, poll the job
+  // status every 2s, irrespective of which step the operator is
+  // currently viewing. They can keep configuring layouts or kick
+  // off another import while the scrape runs. On success we strip
+  // the ?job param, refresh state, and (only if the operator is
+  // still on the boats step) auto-advance to layouts.
+  useEffect(() => {
+    if (!jobId) {
+      setImportJob(null);
+      return;
+    }
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function tick() {
+      try {
+        const j = await adminApi.getImportJob(jobId!);
+        if (cancelled) return;
+        setImportJob(j);
+        if (j.status === "succeeded" || j.status === "failed") {
+          await load();
+          // Drop ?job once terminal so the banner clears. If the
+          // operator is still parked on the boats step, also jump
+          // them to layouts — they came here to set those up.
+          const p = new URLSearchParams(params);
+          p.delete("job");
+          if (j.status === "succeeded" && p.get("step") === "boats") {
+            p.set("step", "layouts");
+          }
+          setParams(p, { replace: true });
+          return;
+        }
+        timer = setTimeout(tick, 2000);
+      } catch {
+        if (cancelled) return;
+        // Soft-fail: keep the banner showing the last-known status;
+        // the user can refresh.
+      }
+    }
+    void tick();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
 
   const stepKey = useMemo<StepKey>(() => {
     const raw = params.get("step");
@@ -123,25 +173,15 @@ export function Onboarding() {
 
       <Stepper state={state} current={stepKey} onPick={setStep} />
 
+      {importJob && <ImportBanner job={importJob} />}
+
       <section className="onboarding__step">
         <h2>{state.steps.find((s) => s.key === stepKey)?.label}</h2>
         <p className="muted">{STEP_INTRO[stepKey]}</p>
         {stepKey === "currency" && (
           <CurrencyStep state={state} onSaved={() => void load().then(advance)} />
         )}
-        {stepKey === "boats" && (
-          <BoatsStep
-            state={state}
-            onImportFinished={() => {
-              // Drop the ?job param and advance to layouts.
-              const p = new URLSearchParams(params);
-              p.delete("job");
-              p.set("step", "layouts");
-              setParams(p, { replace: true });
-              void load();
-            }}
-          />
-        )}
+        {stepKey === "boats" && <BoatsStep state={state} />}
         {stepKey === "layouts" && (
           <LayoutsStep
             state={state}
@@ -262,23 +302,8 @@ function CurrencyStep({ state, onSaved }: { state: OnboardingState; onSaved: () 
   );
 }
 
-function BoatsStep({
-  state,
-  onImportFinished,
-}: {
-  state: OnboardingState;
-  onImportFinished: () => void;
-}) {
-  const [params] = useSearchParams();
-  const jobId = params.get("job");
+function BoatsStep({ state }: { state: OnboardingState }) {
   const done = state.steps.find((s) => s.key === "boats")?.done;
-
-  if (jobId) {
-    return (
-      <BoatsStepImportProgress jobId={jobId} onFinished={onImportFinished} />
-    );
-  }
-
   return (
     <div className="onboarding__choices">
       {done && (
@@ -302,81 +327,36 @@ function BoatsStep({
   );
 }
 
-function BoatsStepImportProgress({
-  jobId,
-  onFinished,
-}: {
-  jobId: string;
-  onFinished: () => void;
-}) {
-  const [job, setJob] = useState<ImportJob | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    async function tick() {
-      try {
-        const j = await adminApi.getImportJob(jobId);
-        if (cancelled) return;
-        setJob(j);
-        if (j.status === "succeeded") {
-          // Give the wizard a beat to settle, then auto-advance.
-          timer = setTimeout(() => {
-            if (!cancelled) onFinished();
-          }, 600);
-          return;
-        }
-        if (j.status === "failed") {
-          return;
-        }
-        timer = setTimeout(tick, 2000);
-      } catch (e) {
-        if (cancelled) return;
-        setError((e as { message?: string })?.message ?? "Could not load import job.");
-      }
-    }
-    void tick();
-    return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-    };
-  }, [jobId, onFinished]);
-
-  if (error) return <div className="error">{error}</div>;
-  if (!job) return <div className="muted">Loading import…</div>;
-
-  return (
-    <div>
-      <p>
-        <strong>Import status:</strong> {job.status}
-        {job.status === "running" && (
-          <span className="muted"> — fetching trips, ~1 request per second</span>
-        )}
-      </p>
-      {job.status === "succeeded" && (
-        <div className="success">
-          Imported. Moving on to cabin layouts…
-          <ul style={{ marginTop: "var(--sp-sm)", listStyle: "none", padding: 0 }}>
-            <li>Trips inserted: {job.trips_inserted ?? 0}</li>
-            <li>Trips updated: {job.trips_updated ?? 0}</li>
-          </ul>
-        </div>
-      )}
-      {job.status === "failed" && (
-        <div className="error">
-          Import failed: {job.error_message ?? "unknown error"}
-        </div>
-      )}
-      {(job.status === "queued" || job.status === "running") && (
-        <p className="muted">
-          You can leave this page — the import keeps running. Come back
-          and the wizard will pick up where it left off.
-        </p>
-      )}
-    </div>
-  );
+// ImportBanner renders the in-flight job status above the step body
+// while the wizard's parent component polls. Visible on every step
+// so the operator can configure layouts or kick another import
+// without losing sight of the running job.
+function ImportBanner({ job }: { job: ImportJob }) {
+  if (job.status === "queued" || job.status === "running") {
+    return (
+      <div className="callout" style={{ marginBottom: "var(--sp-md)" }}>
+        <strong>Import in progress.</strong> Fetching trips, ~1 request per
+        second. You can keep using the wizard — we'll surface the
+        boat in the Layouts step as soon as it lands.
+      </div>
+    );
+  }
+  if (job.status === "succeeded") {
+    return (
+      <div className="success" style={{ marginBottom: "var(--sp-md)" }}>
+        Import succeeded. Trips inserted: {job.trips_inserted ?? 0},
+        updated: {job.trips_updated ?? 0}.
+      </div>
+    );
+  }
+  if (job.status === "failed") {
+    return (
+      <div className="error" style={{ marginBottom: "var(--sp-md)" }}>
+        Import failed: {job.error_message ?? "unknown error"}
+      </div>
+    );
+  }
+  return null;
 }
 
 function LayoutsStep({
