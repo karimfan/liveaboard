@@ -30,10 +30,20 @@ type PaymentSettings struct {
 	RateReadiness         []PaymentCurrencyRateStatus
 }
 
+// PaymentCurrencyRateStatus is the per-currency rate snapshot
+// surfaced on the Payments page. Sprint 024 adds Status and
+// FetchedAt computed from the row's fetched_at (not as_of, because
+// Frankfurter publishes daily with weekend/holiday gaps — the
+// operator-visible freshness is "is the automation still alive"
+// rather than "how old is the underlying market datum"). Ready
+// remains in place for back-compat: any non-expired rate row
+// (Frankfurter, manual fallback, anything) still gates checkout.
 type PaymentCurrencyRateStatus struct {
-	Currency string
-	Ready    bool
-	Rate     *ExchangeRate
+	Currency  string
+	Ready     bool
+	Status    string // "fresh" | "stale" | "missing"
+	Rate      *ExchangeRate
+	FetchedAt *time.Time
 }
 
 type PaymentSettingsInput struct {
@@ -224,13 +234,86 @@ func (p *Pool) paymentRateReadiness(ctx context.Context, currencies []string, no
 		status := PaymentCurrencyRateStatus{Currency: c}
 		if c == "USD" {
 			status.Ready = true
-		} else if rate, err := p.LatestExchangeRate(ctx, "USD", c, now); err == nil {
-			status.Ready = true
-			status.Rate = rate
+			status.Status = "fresh"
+			out = append(out, status)
+			continue
+		}
+		rate, err := p.LatestExchangeRate(ctx, "USD", c, now)
+		if err != nil {
+			// No non-expired rate exists for this quote.
+			status.Status = "missing"
+			out = append(out, status)
+			continue
+		}
+		status.Ready = true
+		status.Rate = rate
+		fetched := rate.FetchedAt
+		status.FetchedAt = &fetched
+		// Freshness from fetched_at: 24h fresh, 48h stale, then
+		// missing. (LatestExchangeRate already filters out
+		// expires_at <= now, so reaching here means we have a
+		// non-expired row; "missing" can still fire when the row
+		// is older than 48h, which usually coincides with expiry.)
+		age := now.Sub(fetched)
+		switch {
+		case age < 24*time.Hour:
+			status.Status = "fresh"
+		case age < 48*time.Hour:
+			status.Status = "stale"
+		default:
+			status.Status = "missing"
 		}
 		out = append(out, status)
 	}
 	return out
+}
+
+// DistinctSupportedCurrencies returns the deduplicated union of
+// every org's organization_payment_settings.supported_currencies.
+// USD is filtered out by the caller (it never needs a rate). Used
+// by fxauto.Refresher to know which currencies to fetch.
+func (p *Pool) DistinctSupportedCurrencies(ctx context.Context) ([]string, error) {
+	rows, err := p.Query(ctx, `
+		SELECT DISTINCT unnest(supported_currencies)
+		FROM organization_payment_settings
+		WHERE array_length(supported_currencies, 1) > 0
+		ORDER BY 1
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var c string
+		if err := rows.Scan(&c); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// LastFrankfurterRefreshForCurrencies returns the most recent
+// fetched_at for any row with provider='frankfurter' whose
+// quote_currency is in the given list. Returns nil when no such
+// row exists. The payment-settings handler scopes this to the
+// caller's supported_currencies so an org never sees an
+// auto_refresh_at inflated by another org's accepted currencies.
+func (p *Pool) LastFrankfurterRefreshForCurrencies(ctx context.Context, provider string, currencies []string) (*time.Time, error) {
+	if len(currencies) == 0 {
+		return nil, nil
+	}
+	var t *time.Time
+	if err := p.QueryRow(ctx, `
+		SELECT MAX(fetched_at)
+		FROM exchange_rates
+		WHERE provider = $1
+		  AND quote_currency = ANY($2::text[])
+	`, provider, currencies).Scan(&t); err != nil {
+		return nil, err
+	}
+	return t, nil
 }
 
 func cleanNullable(s *string) *string {
