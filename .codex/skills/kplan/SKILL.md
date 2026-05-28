@@ -32,7 +32,7 @@ Use TodoWrite to track progress through each phase.
 
 ### Steps
 
-1. Read `CLAUDE.md` for project conventions.
+1. Read `AGENTS.md` for project conventions (this repo uses AGENTS.md, not CLAUDE.md).
 
 2. Check sprint ledger status:
 
@@ -107,7 +107,7 @@ Write a brief **Orientation Summary** covering:
 
    ## Constraints
 
-   - Must follow project conventions in CLAUDE.md
+   - Must follow project conventions in AGENTS.md
    - Must integrate with existing architecture
    - Must follow sprint conventions in docs/sprints/README.md
    - [Any other constraints identified]
@@ -139,18 +139,23 @@ actual sprint number for `NNN`:
 
 ```bash
 codex exec \
-  --model gpt-5.5 \
   --sandbox workspace-write \
   "Please read docs/sprints/drafts/SPRINT-NNN-INTENT.md. This is the concentrated intent for our next sprint.
 
-Fully familiarize yourself with our sprint planning style by reading docs/sprints/README.md. Then read CLAUDE.md for project conventions and project goals. Review the recent sprint context referenced in the intent document, and inspect the relevant codebase areas before drafting.
+Fully familiarize yourself with our sprint planning style by reading docs/sprints/README.md. Then read AGENTS.md for project conventions and project goals. Review the recent sprint context referenced in the intent document, and inspect the relevant codebase areas before drafting.
 
 Write a comprehensive sprint plan to docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md.
 
 Follow the standard sprint template from docs/sprints/README.md. Include overview, use cases, architecture, implementation plan, files summary, definition of done, risks and mitigations, security considerations, dependencies, and open questions.
 
-Do not write the final sprint document. Only write the Codex draft."
+Do not write the final sprint document. Only write the Codex draft." < /dev/null
 ```
+
+Notes on the invocation:
+
+- `--model` is intentionally omitted — pinning a model name breaks when codex updates its model list. Let codex use its default.
+- `< /dev/null` closes stdin. When `codex exec` runs in a non-interactive or background context with stdin still open, it can hang waiting for input even though the prompt was provided as an argument.
+- The prompt references `AGENTS.md`, not `CLAUDE.md` — this repo does not have a `CLAUDE.md`.
 
 ### Wait for Codex to complete
 
@@ -193,7 +198,7 @@ Run this command, substituting the actual sprint number for `NNN`:
 
 ```bash
 claude -p \
-  "Please read docs/sprints/drafts/SPRINT-NNN-INTENT.md, docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md, docs/sprints/README.md, and CLAUDE.md.
+  "Please read docs/sprints/drafts/SPRINT-NNN-INTENT.md, docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md, docs/sprints/README.md, and AGENTS.md.
 
 Your job is to critique Codex's sprint draft, not to rewrite it.
 
@@ -282,8 +287,40 @@ Read `docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT-CLAUDE-CRITIQUE.md`.
    - Best ideas from Codex's draft
    - Valid critique from Claude Code
    - Interview refinements
-   - Project conventions from CLAUDE.md
+   - Project conventions from AGENTS.md
    - Sprint conventions from docs/sprints/README.md
+
+   **REQUIRED section: `## Documentation Manifest`**
+
+   Every sprint document MUST include a `## Documentation Manifest` section listing every ADR + cross-cutting doc that needs to be created or amended. This is the contract the `sprint` skill verifies before marking the sprint complete — items here are NOT optional and NOT collapsed into a Phase 6 task list buried in tables.
+
+   Format:
+
+   ```markdown
+   ## Documentation Manifest
+
+   The implementation sprint MUST land the following docs changes alongside the code. The `sprint` skill verifies each file in this list was modified before marking the sprint complete.
+
+   ### New ADRs
+
+   - `docs/adr/NNNN-<slug>.md` — one-paragraph summary of what it codifies.
+
+   ### Amended ADRs
+
+   - `docs/adr/NNNN-<existing>.md` — one-sentence note on which decision the amendment addresses.
+
+   ### Cross-cutting docs
+
+   - `current_status.md` — flip <gap row>, note new entity/capability.
+   - `docs/product-architecture.md` — section to update or add.
+   - `local_setup.md` — if a new fixture / CLI / setup step lands.
+
+   ### Skipped (with reasoning)
+
+   - `docs/adr/NNNN-X.md` — considered, not touched because <reason>.
+   ```
+
+   Sprints that genuinely require zero docs changes still get a Manifest section that explicitly says "No documentation changes required because <reason>." Empty manifest is forbidden — the planner must consciously decide.
 
 5. Update the ledger:
 
@@ -322,6 +359,7 @@ At the end of this workflow, you should have:
 - [ ] Claude Code critique written (`docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT-CLAUDE-CRITIQUE.md`)
 - [ ] Merge notes written (`docs/sprints/drafts/SPRINT-NNN-MERGE-NOTES.md`)
 - [ ] Final sprint document written (`docs/sprints/SPRINT-NNN.md`)
+- [ ] Final sprint document includes a `## Documentation Manifest` section (NEW ADRs + amended ADRs + cross-cutting docs, or an explicit "no docs required because …")
 - [ ] Ledger updated via `go run docs/sprints/tracker.go sync`
 - [ ] User approved the final document
 
@@ -330,7 +368,7 @@ At the end of this workflow, you should have:
 ## Reference
 
 - Sprint conventions: `docs/sprints/README.md`
-- Project overview: `CLAUDE.md`
+- Project overview: `AGENTS.md`
 - Recent sprints: `docs/sprints/SPRINT-*.md` using the highest numbers
 - Codex draft: `docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT.md`
 - Claude Code critique: `docs/sprints/drafts/SPRINT-NNN-CODEX-DRAFT-CLAUDE-CRITIQUE.md`
