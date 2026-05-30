@@ -20,6 +20,14 @@ fi
 # SMTP keys are optional at common.sh load (some scripts don't need them);
 # bootstrap.sh re-validates and warns if any are missing before deploying.
 
+# Pin gcloud to the personal account that owns this project. Multiple
+# gcloud accounts are common on this machine; without this, deploys
+# could accidentally target whichever account `gcloud config` last
+# remembered. Override GCP_ACCOUNT in env.sh if you ever need to.
+GCP_ACCOUNT="${GCP_ACCOUNT:-mr.karim.fanous@gmail.com}"
+gcloud config set account "${GCP_ACCOUNT}" --quiet >/dev/null
+printf "==> gcloud account: %s\n" "${GCP_ACCOUNT}"
+
 # Resource names. All cluster around a single VM-based deployment, so we
 # keep the names short and predictable. Override via gcp.env if needed.
 VM_NAME="${VM_NAME:-liveaboard}"
