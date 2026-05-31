@@ -51,6 +51,13 @@ type Server struct {
 	// every other configuration.
 	DevInboxDir string
 
+	// IsDev is true when the server is running in dev mode (cfg.Mode ==
+	// ModeDev). Drives the surfacing of dev-only affordances via
+	// /api/dev/flags — most importantly the Sprint 025 Triptych design-
+	// mode switcher. Independent of DevInboxDir, which is gated by the
+	// email transport choice and could be empty in dev.
+	IsDev bool
+
 	// FXRefresher, when non-nil, lets the payment-settings handler
 	// kick a targeted Frankfurter fetch the moment an org adds a new
 	// accepted currency. Wired in cmd/server/main.go in dev/prod

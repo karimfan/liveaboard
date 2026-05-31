@@ -2,8 +2,17 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
+// Token + theme + motion + foundation stylesheets must load BEFORE
+// app.css so app.css can override during the Sprint 025 migration
+// window. Phase 5 of Sprint 025 deletes app.css; for now it stays
+// to keep the 25 unmigrated pages rendering correctly.
 import "./styles/tokens.css";
+import "./styles/themes.css";
+import "./styles/motion.css";
+import "./styles/base.css";
 import "./styles/app.css";
+
+import { DesignModeProvider } from "./admin/design";
 
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
@@ -45,6 +54,7 @@ import { ImportSpreadsheet } from "./admin/pages/ImportSpreadsheet";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
+    <DesignModeProvider>
     <BrowserRouter>
       <Routes>
         {/* Public auth surface — no session required. */}
@@ -141,5 +151,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
+    </DesignModeProvider>
   </React.StrictMode>,
 );

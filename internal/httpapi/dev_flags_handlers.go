@@ -15,6 +15,7 @@ import "net/http"
 // learn whether it can offer test-data buttons.
 func (s *Server) handleDevFlags(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
-		"filesystem_email": s.DevInboxDir != "",
+		"filesystem_email":     s.DevInboxDir != "",
+		"ui_redesign_switcher": s.IsDev,
 	})
 }

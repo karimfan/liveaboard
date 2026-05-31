@@ -1,0 +1,123 @@
+/*
+ * Sprint 025 Triptych — palette rebinds.
+ *
+ * Each [data-palette] selector overrides the semantic tokens
+ * declared in tokens.css. Components don't know which palette
+ * is active — they only read var(--surface-*), var(--text-*),
+ * var(--accent-*), var(--border-*), var(--status-*).
+ *
+ * The body-level sea gradient (Sprint 011) is NOT part of this
+ * rebind set. It lives on <html, body> and is preserved
+ * verbatim under every palette.
+ */
+
+/* --- abyss: dark navy + bioluminescent cyan-green ----------- */
+
+[data-palette="abyss"] {
+  --surface-app: #050B17;
+  --surface-panel: #0A1428;
+  --surface-panel-strong: #07101E;
+  --surface-raised: #0E1A30;
+
+  --text-primary: #E8F4FA;
+  --text-muted: #7C94AB;
+  --text-inverse: #050B17;
+
+  --border-subtle: rgba(110, 210, 250, 0.18);
+  --border-strong: rgba(110, 210, 250, 0.35);
+
+  --accent-primary: #00E6D7;          /* bioluminescent */
+  --accent-primary-hover: #4FFFEE;
+  --accent-primary-subtle: rgba(0, 230, 215, 0.12);
+  --accent-secondary: #6DCEF0;        /* lagoon highlight */
+  --accent-selection: #FF6F61;        /* coral flash */
+
+  --status-success: #4ADE9C;
+  --status-success-bg: rgba(74, 222, 156, 0.14);
+  --status-warning: #F2C062;
+  --status-warning-bg: rgba(242, 192, 98, 0.14);
+  --status-error: #FF7A85;
+  --status-error-bg: rgba(255, 122, 133, 0.14);
+  --status-info: #6DCEF0;
+  --status-info-bg: rgba(109, 206, 240, 0.14);
+
+  --focus-ring: #00E6D7;
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-elevated: 0 0 40px -8px rgba(0, 230, 215, 0.35);
+
+  --backdrop-blur: 0px;
+}
+
+/* --- glass: translucent surfaces + backdrop-blur ------------ */
+
+[data-palette="glass"] {
+  --surface-app: rgba(255, 255, 255, 0.18);
+  --surface-panel: rgba(255, 255, 255, 0.72);
+  --surface-panel-strong: rgba(255, 255, 255, 0.86);
+  --surface-raised: rgba(255, 255, 255, 0.9);
+
+  --text-primary: #0E1726;
+  --text-muted: #475569;
+  --text-inverse: #FFFFFF;
+
+  --border-subtle: rgba(255, 255, 255, 0.45);
+  --border-strong: rgba(8, 41, 74, 0.22);
+
+  --accent-primary: #FF6F61;
+  --accent-primary-hover: #E55A4D;
+  --accent-primary-subtle: rgba(255, 111, 97, 0.16);
+  --accent-secondary: #0E95CB;
+  --accent-selection: #FF6F61;
+
+  --status-success: #1E7A47;
+  --status-success-bg: rgba(45, 157, 92, 0.18);
+  --status-warning: #A66E04;
+  --status-warning-bg: rgba(212, 147, 12, 0.18);
+  --status-error: #B5202F;
+  --status-error-bg: rgba(220, 53, 69, 0.18);
+  --status-info: #1F5BB5;
+  --status-info-bg: rgba(59, 124, 229, 0.18);
+
+  --focus-ring: #FF6F61;
+  --shadow-panel: 0 6px 18px -8px rgba(8, 86, 128, 0.25);
+  --shadow-elevated: 0 12px 40px -12px rgba(8, 86, 128, 0.35);
+
+  --backdrop-blur: 18px;
+}
+
+/* --- sunlit: saturated coral + cyan duotone, light ---------- */
+
+[data-palette="sunlit"] {
+  --surface-app: #F4FBFF;
+  --surface-panel: #FFFFFF;
+  --surface-panel-strong: #F4FBFF;
+  --surface-raised: #FFFFFF;
+
+  --text-primary: #08294A;
+  --text-muted: #086998;
+  --text-inverse: #FFFFFF;
+
+  --border-subtle: #6DCEF0;            /* sea-300 — a real color */
+  --border-strong: #0A76A6;
+
+  --accent-primary: #FF4D3D;           /* sun-coral */
+  --accent-primary-hover: #E03525;
+  --accent-primary-subtle: #FFE0DA;
+  --accent-secondary: #00B4D8;         /* open-ocean cyan */
+  --accent-selection: #FF4D3D;
+
+  --status-success: #1E7A47;
+  --status-success-bg: #E6FBEE;
+  --status-warning: #B07304;
+  --status-warning-bg: #FFF6DE;
+  --status-error: #C52535;
+  --status-error-bg: #FFE7E9;
+  --status-info: #086998;
+  --status-info-bg: #E1F2FA;
+
+  --focus-ring: #FF4D3D;
+  --shadow-panel: 0 1px 2px rgba(8, 41, 74, 0.06);
+  --shadow-elevated: 0 8px 24px -8px rgba(8, 41, 74, 0.18);
+
+  --backdrop-blur: 0px;
+}

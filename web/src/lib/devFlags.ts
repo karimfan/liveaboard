@@ -4,6 +4,15 @@ import { appConfig } from "./config";
 
 export type DevFlags = {
   filesystem_email: boolean;
+  // Sprint 025 Triptych — surfaces the floating bottom-right
+  // design-mode switcher dock. True in dev mode only; production
+  // and test see false and the dock never renders.
+  ui_redesign_switcher: boolean;
+};
+
+const ALL_FALSE: DevFlags = {
+  filesystem_email: false,
+  ui_redesign_switcher: false,
 };
 
 // Module-level cache so multiple components on the same page only
@@ -22,7 +31,7 @@ async function fetchFlags(): Promise<DevFlags> {
       })
       .catch(() => {
         // Non-fatal: on failure assume no dev affordances.
-        return { filesystem_email: false };
+        return ALL_FALSE;
       })
       .finally(() => {
         inFlight = null;
@@ -35,7 +44,7 @@ async function fetchFlags(): Promise<DevFlags> {
 // false until the fetch resolves so dev-only UI never flashes in
 // production builds.
 export function useDevFlags(): DevFlags {
-  const [flags, setFlags] = useState<DevFlags>(cache ?? { filesystem_email: false });
+  const [flags, setFlags] = useState<DevFlags>(cache ?? ALL_FALSE);
   useEffect(() => {
     let cancelled = false;
     void fetchFlags().then((f) => {

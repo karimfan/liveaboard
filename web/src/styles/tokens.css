@@ -85,4 +85,50 @@
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --dur-short: 180ms;
+
+  /*
+   * Sprint 025 Triptych — semantic tokens.
+   * Components in web/src/admin/components/ read ONLY these
+   * variables (never raw hex). themes.css rebinds them per
+   * [data-palette]. The defaults below mirror the legacy
+   * warm-slate-and-amber chrome so any component rendered
+   * before a theme is selected still looks sane. The body sea
+   * gradient lives above this layer and is not part of the
+   * semantic token set — it is preserved verbatim across
+   * every theme.
+   */
+  --surface-app: var(--c-50);
+  --surface-panel: #ffffff;
+  --surface-panel-strong: var(--c-50);
+  --surface-raised: #ffffff;
+
+  --text-primary: var(--c-900);
+  --text-muted: var(--c-500);
+  --text-inverse: #ffffff;
+
+  --border-subtle: var(--c-200);
+  --border-strong: var(--c-300);
+
+  --accent-primary: var(--c-primary);
+  --accent-primary-hover: var(--c-primary-hover);
+  --accent-primary-subtle: var(--c-primary-subtle);
+  --accent-secondary: var(--c-sea-600);
+  --accent-selection: var(--c-primary);
+
+  --status-success: var(--c-success);
+  --status-success-bg: var(--c-success-bg);
+  --status-warning: var(--c-warning);
+  --status-warning-bg: var(--c-warning-bg);
+  --status-error: var(--c-error);
+  --status-error-bg: var(--c-error-bg);
+  --status-info: #3b7ce5;
+  --status-info-bg: #eff6ff;
+
+  --focus-ring: var(--c-primary);
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 8px 24px -8px rgba(8, 41, 74, 0.18);
+
+  /* Triptych — opt-in backdrop-blur for glass palette. Defaults
+   * to 0px so legacy chrome doesn't get unexpected blur. */
+  --backdrop-blur: 0px;
 }

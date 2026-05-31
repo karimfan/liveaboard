@@ -1,0 +1,77 @@
+/*
+ * Sprint 025 Triptych — motion modes.
+ *
+ * [data-motion="minimal"] suppresses ambient motion entirely;
+ * [data-motion="living"] adds a slow caustic-light overlay over
+ * the body and a soft hover ripple on interactive elements;
+ * [data-motion="full"] adds page-enter slide transitions and a
+ * count-up affordance on <Stat> mounts (count-up is JS-driven
+ * via a useCountUp hook gated on data-motion).
+ *
+ * Every mode respects (prefers-reduced-motion: reduce) — when
+ * the OS says reduced, ambient motion is suppressed regardless
+ * of selection. The user's switcher choice is preserved so it
+ * returns when the OS preference flips back.
+ */
+
+/* --- caustic-light overlay (living + full) ----------------- */
+
+@keyframes triptych-caustics-drift {
+  0%   { transform: translate3d(0, 0, 0)        scale(1);    }
+  50%  { transform: translate3d(-3%, 2%, 0)     scale(1.04); }
+  100% { transform: translate3d(0, 0, 0)        scale(1);    }
+}
+
+html[data-motion="living"] body::after,
+html[data-motion="full"]   body::after {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60% 40% at 20% 30%, rgba(255, 255, 255, 0.18) 0%, transparent 60%),
+    radial-gradient(50% 35% at 80% 70%, rgba(110, 206, 240, 0.18) 0%, transparent 60%),
+    radial-gradient(40% 30% at 50% 90%, rgba(255, 255, 255, 0.12) 0%, transparent 60%);
+  mix-blend-mode: soft-light;
+  animation: triptych-caustics-drift 90s ease-in-out infinite;
+  opacity: 0.85;
+}
+
+/* Caustics layer must NOT cover actual content; #root sits at z-index 1. */
+#root { position: relative; z-index: 1; }
+
+/* --- hover ripple (living + full) -------------------------- */
+
+@keyframes triptych-ripple {
+  0%   { box-shadow: 0 0 0 0 var(--accent-primary-subtle); }
+  100% { box-shadow: 0 0 0 8px transparent; }
+}
+
+html[data-motion="living"] button:not(:disabled):hover,
+html[data-motion="full"]   button:not(:disabled):hover {
+  animation: triptych-ripple 600ms ease-out;
+}
+
+/* --- page-enter transition (full) -------------------------- */
+
+@keyframes triptych-page-slide {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+html[data-motion="full"] main {
+  animation: triptych-page-slide 280ms var(--ease-out, ease-out);
+}
+
+/* --- minimal: kill ambient motion, keep hover/focus -------- */
+
+html[data-motion="minimal"] body::after { display: none; }
+
+/* --- OS reduced-motion always wins ------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html body::after { display: none; }
+  html button:hover { animation: none; }
+  html main { animation: none; }
+}
