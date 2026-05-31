@@ -36,13 +36,15 @@ export const PALETTES: readonly PaletteMode[] = [
 export const LAYOUTS: readonly LayoutMode[] = ["rail", "spaces", "canvas"] as const;
 export const MOTIONS: readonly MotionMode[] = ["living", "minimal", "full"] as const;
 
-// Round 3 default (user-supplied theme bundle): the bundle's
-// README recommends Abyss & Flame "for the admin cockpit," so
-// that's what first-run visitors see. Layout stays `spaces`
-// (the most familiar shell); motion stays `living` (caustic
-// ambience without page-slide).
+// Round 4 default: user picked `manta-night` after seeing the
+// bundle's five themes against the original Sprint 011 body
+// composite. The dark-on-sea pairing — manta-night's deep
+// navy chrome + cyan/violet/magenta accents floating over the
+// original scuba-diver photograph — is what they wanted.
+// Layout stays `spaces` (the most familiar shell); motion
+// stays `living` (caustic ambience without page-slide).
 export const DEFAULT_MODE: DesignMode = {
-  palette: "abyss-flame",
+  palette: "manta-night",
   layout: "spaces",
   motion: "living",
 };

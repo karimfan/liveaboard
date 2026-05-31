@@ -1,32 +1,46 @@
 /*
- * Sprint 025 Triptych — foundation styles, theme-driven body
- * composite.
+ * Sprint 025 — round 4: original Sprint 011 body composite
+ * restored verbatim.
  *
- * Round 3 (user-supplied theme bundle) replaces the Sprint 011
- * body composite (white wash + sea gradient over the original
- * photo) with a PER-THEME composite: a `--background-overlay`
- * gradient that each theme defines, layered over a derived
- * underwater photograph (`/background-derived.jpg`) shipped
- * with the bundle. The underlying `--page-bg` color is a deep
- * fallback so the page never reads as bare white.
+ * Rounds 1-3 progressively rewrote the body. Round 4 user
+ * verdict: "manta night BUT with the original background
+ * theme. Do not change the background at all."
  *
- * This file loads LAST in main.tsx so these rules override the
- * legacy `app.css` body composite during the migration window.
+ * This file restores the Sprint 011 composite character-for-
+ * character — three layers, `background-attachment: fixed`
+ * on each, the original `/background.jpg` (the scuba diver
+ * the user said they liked from the start) under a white
+ * wash to keep working surfaces legible, with the sea
+ * gradient as the deep fallback. The per-theme
+ * `--background-overlay` from the bundle is no longer
+ * applied; manta-night's other tokens (sidebar, surfaces,
+ * accents) remain in effect and float on the original photo.
+ *
+ * base.css loads LAST in main.tsx so these rules win over
+ * both the legacy app.css body and any [data-palette]
+ * background-overlay rule from themes.css.
  */
 
 html, body {
   margin: 0;
   min-height: 100%;
-  background: var(--page-bg, #021b2d);
-  color: var(--text-primary);
+  color: var(--text-primary, var(--c-900));
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+html, body {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.55)),
+    url("/background.jpg") center / cover no-repeat,
+    var(--gradient-sea);
+  background-attachment: fixed, fixed, fixed;
 }
 
 body {
-  background-image: var(--background-overlay), url("/background-derived.jpg");
-  background-size: cover, cover;
-  background-position: center, center;
-  background-attachment: fixed, fixed;
-  background-repeat: no-repeat, no-repeat;
+  min-height: 100vh;
 }
 
 :focus-visible {

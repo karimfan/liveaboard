@@ -78,28 +78,35 @@ Components read **only** semantic tokens — never raw hex:
 Adding a fourth palette is one CSS block; removing one is
 deleting one CSS block. The component library never changes.
 
-## Body composite — theme-driven (round 3 departure from Sprint 011)
+## Body composite — restored to Sprint 011 verbatim (round 4)
 
-Rounds 1 and 2 preserved the Sprint 011 body composite
-verbatim (white wash + scuba-diver photo + sea gradient + all
-fixed). Round 3 explicitly REPLACES that composite with a
-per-theme one because the user's bundle ships its own
-background system:
+Round 3 swapped the body composite for a per-theme overlay
+system. Round 4 (user pick, 2026-05-31: "manta night BUT
+with the original background theme — do not change the
+background at all") reverts to the Sprint 011 composite
+character-for-character:
 
-- A per-theme `--background-overlay` (set on
-  `[data-palette="..."]`)
-- Layered over a derived underwater photograph
-  (`/background-derived.jpg`, shipped in the bundle)
-- Backed by a deep `--page-bg` fallback color
-- All three layers with `background-attachment: fixed`
+```css
+html, body {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.55)),
+    url("/background.jpg") center / cover no-repeat,
+    var(--gradient-sea);
+  background-attachment: fixed, fixed, fixed;
+}
+```
 
-The underwater-photo aesthetic the user originally liked is
-preserved — it's now a different (richer) photo whose tonal
-balance was tuned against the five overlays in the bundle.
-Sprint 011's `--gradient-sea` token survives in tokens.css
-but is no longer applied to `<body>`; the auth wordmark
-(`--c-sea-700`) and any other consumer keeps working
-unchanged.
+The original `/background.jpg` (245 KB, dated 2026-05-24) is
+preserved in `web/public/`. The bundle's
+`/background-derived.jpg` stays in `web/public/` too as an
+unused asset — round 5 may want to flip back. The bundle's
+`--background-overlay` tokens stay declared per theme but
+nothing reads them now.
+
+DEFAULT_MODE = `manta-night`. The other four palettes remain
+switchable via the dock; their accents/sidebars/surfaces work
+the same way, just floating on the original Sprint 011 body
+instead of their tuned overlays.
 
 ## Implementation Scope (Sprint 025)
 
