@@ -36,15 +36,18 @@
   cursor: not-allowed;
 }
 
-/* Primary — gradient pill from --primary to --accent (or
- * --accent-primary to --accent-selection on the semantic
- * side), with a colored glow shadow that matches the gradient
- * start. */
+/* Primary — gradient pill matching the active sidebar item via
+ * --sidebar-active-bg. Falls back to primary→accent when no
+ * theme is active. For manta-night this means cyan→violet, not
+ * cyan→magenta — the "blue" the user asked for. */
 .primary {
-  background: linear-gradient(
-    90deg,
-    var(--primary, var(--accent-primary)),
-    var(--accent, var(--accent-selection))
+  background: var(
+    --sidebar-active-bg,
+    linear-gradient(
+      90deg,
+      var(--primary, var(--accent-primary)),
+      var(--accent, var(--accent-selection))
+    )
   );
   color: var(--sidebar-active-text, var(--text-inverse));
   box-shadow: 0 16px 36px color-mix(in srgb, var(--primary, var(--accent-primary)) 28%, transparent);

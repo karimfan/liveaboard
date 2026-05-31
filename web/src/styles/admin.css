@@ -125,11 +125,14 @@ html[data-palette] .admin-card__title {
 }
 
 /* Buttons — gradient pill primary + translucent secondary +
- * inline quiet. Applies to ANY <button> inside a themed
- * admin shell. */
+ * inline quiet. Primary uses --sidebar-active-bg so the
+ * button pill matches the active sidebar item per theme. For
+ * manta-night specifically this means cyan→violet (the "blue"
+ * the user asked for), instead of the cyan→magenta primary
+ * →accent combination that read as "blue-to-reddish". */
 html[data-palette] button.primary,
 html[data-palette] .primary {
-  background: linear-gradient(90deg, var(--primary), var(--accent));
+  background: var(--sidebar-active-bg);
   color: var(--sidebar-active-text);
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -173,4 +176,43 @@ html[data-palette] .admin-main .muted {
 html[data-palette] .admin-main .error {
   background: color-mix(in srgb, var(--danger) 16%, transparent);
   color: var(--danger);
+}
+
+/*
+ * Setup completeness card — bigger + higher contrast on dark
+ * themes. The legacy app.css uses --c-900 (near-black) for
+ * the percent and --c-500 (warm grey) for the hint, both of
+ * which disappear against manta-night's --content-bg. These
+ * overrides remap to theme text tokens and bump the checklist
+ * row size from fs-sm (~14px) up to ~1.0625rem so the items
+ * read at a glance.
+ */
+html[data-palette] .setup-pct {
+  color: var(--text);
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+html[data-palette] .setup-list__item {
+  font-size: 1.0625rem;
+  line-height: 1.4;
+  color: var(--text);
+  font-weight: 600;
+}
+html[data-palette] .setup-list__label {
+  color: var(--text);
+}
+html[data-palette] .setup-list__hint {
+  color: var(--text-soft);
+  font-size: 0.875rem;
+  margin-top: 2px;
+}
+html[data-palette] .setup-list__check {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--success);
+}
+html[data-palette] .setup-list__check.is-pending {
+  color: var(--accent);
 }
