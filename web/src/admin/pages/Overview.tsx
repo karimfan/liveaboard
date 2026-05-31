@@ -3,16 +3,23 @@ import { Link } from "react-router-dom";
 
 import { adminApi, type Overview as OverviewT, type OnboardingState } from "../api";
 import { api, type ApiError, type CruiseDirectorOverview } from "../../lib/api";
+import { TodayCanvas } from "../components";
+import { useDesignMode } from "../design";
 import { useMe } from "../useMe";
 
 export function Overview() {
   const me = useMe();
+  const { mode } = useDesignMode();
 
   if (!me.loaded) return null;
 
-  // Org Admin sees the operational triage screen (Sprint 008).
-  // Cruise Director sees their personal landing (Sprint 010).
+  // Sprint 025: under the canvas layout, Org Admins (the only
+  // role with access to Overview's full data shape) see a
+  // spatial "today" surface instead of the card stack. Cruise
+  // Directors still get their personal landing — canvas-style
+  // CD landing is a future-sprint concern.
   if (me.me?.role === "org_admin") {
+    if (mode.layout === "canvas") return <TodayCanvas />;
     return <AdminOverview />;
   }
   return <CruiseDirectorLanding />;

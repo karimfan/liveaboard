@@ -41,3 +41,19 @@ export type { ActionBarProps } from "./ActionBar";
 
 export { DataTable } from "./DataTable";
 export type { Column, DataTableProps } from "./DataTable";
+
+export { SpacesNav } from "./SpacesNav";
+export type { SpacesNavProps } from "./SpacesNav";
+
+export { RailNav } from "./RailNav";
+export type { RailNavProps } from "./RailNav";
+
+export { CanvasNav } from "./CanvasNav";
+export type { CanvasNavProps } from "./CanvasNav";
+
+export { CommandBar, useGlobalCommandShortcut } from "./CommandBar";
+export type { CommandBarProps } from "./CommandBar";
+
+export { TodayCanvas } from "./TodayCanvas";
+
+export { TriptychSwitcher } from "./TriptychSwitcher";

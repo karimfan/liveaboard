@@ -1,0 +1,90 @@
+.canvas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-lg);
+}
+
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-md);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  color: var(--text-primary);
+  margin: var(--sp-md) 0 0;
+}
+
+.deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-md);
+}
+
+.tile {
+  position: relative;
+  display: block;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: var(--sp-lg);
+  text-decoration: none;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-panel);
+  transition: transform 200ms var(--ease-out, ease-out), box-shadow 200ms var(--ease-out, ease-out);
+  overflow: hidden;
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+}
+
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 24px var(--accent-primary-subtle);
+  opacity: 0.6;
+}
+
+.tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+}
+
+.tileBoat {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--accent-primary);
+  margin-bottom: var(--sp-xs);
+}
+
+.tileTrip {
+  font-size: var(--fs-base);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.tileMeta {
+  margin-top: var(--sp-sm);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tileReason {
+  margin-top: var(--sp-sm);
+  font-size: var(--fs-xs);
+  color: var(--status-warning);
+  font-weight: 500;
+}
+
+.error {
+  color: var(--status-error);
+}
+.muted {
+  color: var(--text-muted);
+}

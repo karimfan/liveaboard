@@ -11,6 +11,9 @@ import "./styles/themes.css";
 import "./styles/motion.css";
 import "./styles/base.css";
 import "./styles/app.css";
+// admin.css must load AFTER app.css so the [data-layout=...]
+// grid-template-columns overrides win specificity.
+import "./styles/admin.css";
 
 import { DesignModeProvider } from "./admin/design";
 

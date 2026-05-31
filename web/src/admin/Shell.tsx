@@ -1,7 +1,15 @@
 import { useEffect } from "react";
-import { NavLink, Outlet, useLocation, Navigate, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { adminApi } from "./api";
+import { useDesignMode } from "./design";
+import {
+  CanvasNav,
+  RailNav,
+  SpacesNav,
+  TriptychSwitcher,
+} from "./components";
+import { filterNavForRole, NAV } from "./nav";
 import { useMe } from "./useMe";
 import { UserMenu, useSignOut } from "./UserMenu";
 
@@ -27,8 +35,7 @@ function useOnboardingAutoShow(isAdmin: boolean) {
         }
       })
       .catch(() => {
-        // Non-fatal: if the fetch fails (e.g. transient), don't pin
-        // the flag, so the next visit will retry.
+        // Non-fatal.
       });
     return () => {
       cancelled = true;
@@ -36,141 +43,78 @@ function useOnboardingAutoShow(isAdmin: boolean) {
   }, [isAdmin, location.pathname, navigate]);
 }
 
-type NavItem = {
-  to: string;
-  label: string;
-  end?: boolean;
-  adminOnly?: boolean;
-  children?: NavItem[];
-};
-
-const navItems: NavItem[] = [
-  { to: "/admin", label: "Overview", end: true },
-  {
-    to: "/admin/organization",
-    label: "Organization",
-    adminOnly: true,
-    children: [
-      { to: "/admin/organization/payments", label: "Payments", adminOnly: true },
-      { to: "/admin/organization/pricing", label: "Pricing", adminOnly: true },
-    ],
-  },
-  { to: "/admin/audit", label: "Audit" },
-  {
-    to: "/admin/fleet",
-    label: "Fleet",
-    adminOnly: true,
-    children: [
-      { to: "/admin/inventory", label: "Inventory", adminOnly: true },
-    ],
-  },
-  {
-    to: "/admin/trips",
-    label: "Trips",
-    children: [
-      { to: "/admin/import", label: "Import", adminOnly: true },
-    ],
-  },
-  { to: "/admin/users", label: "Users", adminOnly: true },
-  { to: "/admin/reports", label: "Reports", adminOnly: true },
-];
-
 /**
- * AdminShell is the persistent chrome for the admin / Cruise Director
- * surface. The matched child route renders inside <Outlet />. Sidebar
- * items adjust by role: an Org Admin sees all 7; a Cruise Director sees
- * Overview + Trips only.
+ * AdminShell is the persistent chrome for the admin / Cruise
+ * Director surface. Sprint 025 refactor: shell now hosts
+ * design-mode dispatch — useMe + role filter + onboarding
+ * auto-show + sign-out + UserMenu all live HERE (one
+ * behavioral owner). The visual presentation is delegated to
+ * one of three nav renderers based on data-layout. Role
+ * filtering happens ONCE on the canonical NAV; whichever
+ * renderer is active receives the already-filtered list.
  */
 export function AdminShell() {
   const me = useMe();
-  // Logout state is owned at the Shell level so the popover item and
-  // the standalone footer button share the same `submitting` and
-  // `error`. Both call the same `signOut()` and the disabled state
-  // stays consistent.
+  const { mode } = useDesignMode();
   const { submitting, error, signOut } = useSignOut();
 
-  // Hooks must run on every render in the same order — call this
-  // BEFORE any early return. The hook itself gates on isAdmin so a
-  // pre-load `false` is a safe no-op.
+  // Hooks must run on every render in the same order — call
+  // this BEFORE any early return. The hook itself gates on
+  // isAdmin so a pre-load `false` is a safe no-op.
   const isAdmin = me.loaded && me.me?.role === "org_admin";
   useOnboardingAutoShow(isAdmin);
 
   if (!me.loaded) {
-    return null; // brief flash; preferable to a spinner for Sprint 008
+    return null;
   }
   if (me.error || !me.me) {
     return <Navigate to="/login" replace />;
   }
-  // Filter the parents the role can see; for each parent that
-  // survives, also filter its children. A child whose adminOnly
-  // would hide it disappears even if the parent stays visible.
-  const visible = navItems
-    .filter((n) => !n.adminOnly || isAdmin)
-    .map((n) => ({
-      ...n,
-      children: (n.children ?? []).filter((c) => !c.adminOnly || isAdmin),
-    }));
+
+  const filteredNav = filterNavForRole(NAV, isAdmin);
+  const footer = (
+    <>
+      <UserMenu
+        me={me.me}
+        signingOut={submitting}
+        signOutError={error}
+        onSignOut={signOut}
+      />
+      <button
+        type="button"
+        className="admin-sidebar__signout"
+        onClick={signOut}
+        disabled={submitting}
+      >
+        {submitting ? "Signing out…" : "Sign out"}
+      </button>
+    </>
+  );
+
+  const shellClass = `admin admin--${mode.layout}`;
 
   return (
-    <div className="admin">
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar__brand">Liveaboard</div>
-        <nav className="admin-nav">
-          {visible.map((item) => (
-            <div key={item.to} className="admin-nav__group">
-              <NavLink
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  "admin-nav__link" + (isActive ? " is-active" : "")
-                }
-              >
-                {item.label}
-              </NavLink>
-              {item.children.map((child) => (
-                <NavLink
-                  key={child.to}
-                  to={child.to}
-                  className={({ isActive }) =>
-                    "admin-nav__link admin-nav__link--child" +
-                    (isActive ? " is-active" : "")
-                  }
-                >
-                  {child.label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div className="admin-sidebar__footer">
-          <UserMenu
-            me={me.me}
-            signingOut={submitting}
-            signOutError={error}
-            onSignOut={signOut}
-          />
-          <button
-            type="button"
-            className="admin-sidebar__signout"
-            onClick={signOut}
-            disabled={submitting}
-          >
-            {submitting ? "Signing out…" : "Sign out"}
-          </button>
-        </div>
-      </aside>
+    <div className={shellClass} data-layout={mode.layout}>
+      {mode.layout === "rail" ? (
+        <RailNav nav={filteredNav} brand="Liveaboard" footer={footer} />
+      ) : mode.layout === "canvas" ? (
+        <CanvasNav nav={filteredNav} brand="Liveaboard" footer={footer} />
+      ) : (
+        <SpacesNav nav={filteredNav} brand="Liveaboard" footer={footer} />
+      )}
       <main className="admin-main">
         <Outlet />
       </main>
+      <TriptychSwitcher />
     </div>
   );
 }
 
 /**
- * RequireAdmin guards routes that only Org Admins should see. A Cruise
- * Director hitting one of these URLs gets bounced to /admin (their
- * Overview). The API itself ALSO 403s these requests — this is a UX
- * nicety, not the security boundary.
+ * RequireAdmin guards routes that only Org Admins should see. A
+ * Cruise Director hitting one of these URLs gets bounced to
+ * /admin (their Overview). The API itself ALSO 403s these
+ * requests — this is a UX nicety, not the security boundary.
  */
 export function RequireAdmin({ children }: { children: React.ReactNode }) {
   const me = useMe();

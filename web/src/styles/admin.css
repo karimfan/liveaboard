@@ -1,0 +1,38 @@
+/*
+ * Sprint 025 Triptych — admin shell composition per layout.
+ *
+ * The shell <div class="admin admin--<layout>" data-layout=...>
+ * lives inside <body> and is itself a CSS grid. The grid
+ * template changes per layout:
+ *   spaces — sidebar (240px) + main (1fr)
+ *   rail   — rail    (64px)  + main (1fr)
+ *   canvas — single column (top-bar is part of the chrome)
+ *
+ * The legacy .admin rule in app.css still defines a 220px-
+ * sidebar grid that targets the old `.admin-sidebar` markup.
+ * These [data-layout] overrides win by specificity so the new
+ * nav renderers (SpacesNav/RailNav/CanvasNav) get the right
+ * grid track. Once Phase 5 deletes app.css, the legacy rule
+ * disappears.
+ */
+
+html[data-layout="spaces"] .admin {
+  grid-template-columns: auto 1fr;
+}
+
+html[data-layout="rail"] .admin {
+  grid-template-columns: auto 1fr;
+}
+
+html[data-layout="canvas"] .admin {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+}
+
+/* The .admin-main padding-top in app.css uses a value tuned for
+ * the legacy 220px sidebar; under canvas the topbar sits ABOVE
+ * main and main needs a top margin so the page header doesn't
+ * crash into the bar. */
+html[data-layout="canvas"] .admin-main {
+  padding-top: var(--sp-lg);
+}
