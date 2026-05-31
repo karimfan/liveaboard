@@ -26,18 +26,24 @@ app. Three axes, three options each:
 
 | Axis | Options |
 |---|---|
-| **Palette** | `reef` (warm cream + hot coral + electric magenta + turquoise), `harbor` (sunset cream + coral + plum + gold), `midnight` (deep plum + magenta-pink + electric turquoise + ember) |
+| **Palette** | `coral-surge`, `manta-night`, `reef-carnival`, `abyss-flame`, `seaglass-electric` (user-supplied bundle, round 3) |
 | **Layout** | `rail` (56-64px icon rail + ⌘K command bar), `spaces` (three labeled sidebar groups), `canvas` (spatial top-bar with TodayCanvas landing) |
 | **Motion** | `living` (caustic overlay + ripple), `minimal`, `full` (everything + page-slide + count-up) |
 
-**Palette round 1 was rejected** — abyss (navy + cyan-green),
-glass (translucent + backdrop-blur), and sunlit (coral on
-white) all read as safe SaaS rather than adventurous. Round 2
-(above) drops navy and cyan-as-primary, drops translucent
-glass entirely, and leans into the warm-saturated colors a
-diver actually sees: tropical-fish-in-sunlight (reef),
-sunset-on-the-boat-deck (harbor), and a night dive with
-bioluminescent plankton against deep plum (midnight).
+**Palette rounds 1 and 2 were both rejected.** Round 1 (abyss
+/ glass / sunlit) read as safe SaaS. Round 2 (reef / harbor /
+midnight) was still "weak, tepid, cold, boring" — the warm-
+saturated direction was right but the execution was timid and
+the sidebar floated disconnected from the main body. Round 3
+ships the user's hand-crafted theme bundle from
+~/Downloads/liveaboard-themes.zip verbatim: five paired
+sidebar-and-content surface designs with per-theme background
+overlays, gradient active-state pills, and translucent
+content areas with backdrop-blur. The bundle README's "best
+first tries" calls out Abyss & Flame for the admin cockpit,
+Coral Surge for the public SaaS site, and Manta Night for
+premium dark mode — `abyss-flame` is the new DEFAULT_MODE
+palette.
 
 3 × 3 × 3 = 27 combinations. A floating bottom-right dock
 (`TriptychSwitcher`) exposes three segmented controls.
@@ -72,15 +78,28 @@ Components read **only** semantic tokens — never raw hex:
 Adding a fourth palette is one CSS block; removing one is
 deleting one CSS block. The component library never changes.
 
-## Body Sea Gradient — Verbatim
+## Body composite — theme-driven (round 3 departure from Sprint 011)
 
-The Sprint 011 body composite (white wash + scuba-diver
-photograph + sea gradient at the bottom, all
-`background-attachment: fixed`) is preserved character-for-
-character. No theme rebinds it. The sea palette tokens
-(`--c-sea-*`) and `--gradient-sea` are untouched. Themes
-change only the working-surface tokens that sit above the
-gradient.
+Rounds 1 and 2 preserved the Sprint 011 body composite
+verbatim (white wash + scuba-diver photo + sea gradient + all
+fixed). Round 3 explicitly REPLACES that composite with a
+per-theme one because the user's bundle ships its own
+background system:
+
+- A per-theme `--background-overlay` (set on
+  `[data-palette="..."]`)
+- Layered over a derived underwater photograph
+  (`/background-derived.jpg`, shipped in the bundle)
+- Backed by a deep `--page-bg` fallback color
+- All three layers with `background-attachment: fixed`
+
+The underwater-photo aesthetic the user originally liked is
+preserved — it's now a different (richer) photo whose tonal
+balance was tuned against the five overlays in the bundle.
+Sprint 011's `--gradient-sea` token survives in tokens.css
+but is no longer applied to `<body>`; the auth wordmark
+(`--c-sea-700`) and any other consumer keeps working
+unchanged.
 
 ## Implementation Scope (Sprint 025)
 

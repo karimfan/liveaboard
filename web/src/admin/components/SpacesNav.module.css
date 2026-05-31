@@ -2,14 +2,13 @@
   display: flex;
   flex-direction: column;
   width: 240px;
-  background: var(--surface-panel);
-  border-right: 1px solid var(--border-subtle);
+  background: var(--sidebar-bg, var(--surface-panel));
+  border-right: 1px solid var(--sidebar-border, var(--border-subtle));
   padding: var(--sp-lg) 0;
   height: 100vh;
   position: sticky;
   top: 0;
-  backdrop-filter: blur(var(--backdrop-blur));
-  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  color: var(--sidebar-text, var(--text-primary));
 }
 
 .brand {
@@ -17,9 +16,9 @@
   font-size: var(--fs-xl);
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--text-primary);
+  color: var(--sidebar-text, var(--text-primary));
   padding: 0 var(--sp-lg) var(--sp-lg);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid color-mix(in srgb, var(--sidebar-text, var(--border-subtle)) 18%, transparent);
 }
 
 .nav {
@@ -39,10 +38,10 @@
 
 .spaceLabel {
   font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--sidebar-muted, var(--text-muted));
   padding: 0 var(--sp-sm) var(--sp-xs);
 }
 
@@ -55,17 +54,17 @@
 .link {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
-  font-weight: 500;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--sidebar-text, var(--text-primary));
   padding: var(--sp-sm) var(--sp-md);
   border-radius: var(--r-md);
   text-decoration: none;
   display: block;
+  opacity: 0.82;
 }
 
 .link:hover {
-  color: var(--text-primary);
-  background: var(--accent-primary-subtle);
+  opacity: 1;
 }
 
 .child {
@@ -74,15 +73,18 @@
 }
 
 .active {
-  color: var(--accent-primary);
-  background: var(--accent-primary-subtle);
-  font-weight: 600;
+  background: var(--sidebar-active-bg, var(--accent-primary));
+  color: var(--sidebar-active-text, var(--text-inverse));
+  opacity: 1;
+  font-weight: 700;
+  box-shadow: 0 12px 34px color-mix(in srgb, var(--primary, var(--accent-primary)) 28%, transparent);
 }
 
 .footer {
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid color-mix(in srgb, var(--sidebar-text, var(--border-subtle)) 18%, transparent);
   padding: var(--sp-md) var(--sp-lg);
   display: flex;
   flex-direction: column;
   gap: var(--sp-sm);
+  color: var(--sidebar-text, var(--text-primary));
 }

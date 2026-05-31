@@ -10,7 +10,13 @@
 // can validate persisted/URL values before reflecting them into
 // the DOM. Anything off the allowlist falls back to defaults.
 
-export type PaletteMode = "reef" | "harbor" | "midnight";
+export type PaletteMode =
+  | "coral-surge"
+  | "manta-night"
+  | "reef-carnival"
+  | "abyss-flame"
+  | "seaglass-electric";
+
 export type LayoutMode = "rail" | "spaces" | "canvas";
 export type MotionMode = "living" | "minimal" | "full";
 
@@ -20,18 +26,23 @@ export type DesignMode = {
   motion: MotionMode;
 };
 
-export const PALETTES: readonly PaletteMode[] = ["reef", "harbor", "midnight"] as const;
+export const PALETTES: readonly PaletteMode[] = [
+  "coral-surge",
+  "manta-night",
+  "reef-carnival",
+  "abyss-flame",
+  "seaglass-electric",
+] as const;
 export const LAYOUTS: readonly LayoutMode[] = ["rail", "spaces", "canvas"] as const;
 export const MOTIONS: readonly MotionMode[] = ["living", "minimal", "full"] as const;
 
-// The default combination on first run when no localStorage + no
-// ?triptych= URL. Round 2 picks `reef` (warm tropical, coral +
-// magenta + turquoise) as the bold-but-bright opener instead of
-// the rejected navy `abyss`. The layout default stays `spaces`
-// (most familiar shell); motion stays `living` (caustic ambience
-// without page-slide).
+// Round 3 default (user-supplied theme bundle): the bundle's
+// README recommends Abyss & Flame "for the admin cockpit," so
+// that's what first-run visitors see. Layout stays `spaces`
+// (the most familiar shell); motion stays `living` (caustic
+// ambience without page-slide).
 export const DEFAULT_MODE: DesignMode = {
-  palette: "reef",
+  palette: "abyss-flame",
   layout: "spaces",
   motion: "living",
 };

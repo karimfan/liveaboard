@@ -1,129 +1,231 @@
 /*
- * Sprint 025 Triptych — palette rebinds (round 2).
+ * Sprint 025 Triptych — palette rebinds (round 3, user-supplied).
  *
- * Round 1 (abyss / glass / sunlit) was rejected as "weak,
- * tepid, cold, boring" — the navy+cyan+translucent palette
- * is the default for every B2B dashboard and reads as safe
- * SaaS no matter how many "bioluminescent" labels it carries.
+ * Round 1 (abyss / glass / sunlit) and round 2 (reef / harbor /
+ * midnight) were both rejected. The user shipped a hand-crafted
+ * bundle of five themes via ~/Downloads/liveaboard-themes.zip
+ * with paired sidebar-and-content-area surfaces (so the sidebar
+ * and main body read as belonging to the same theme), gradient
+ * active states, and a per-theme background overlay that goes
+ * over a derived underwater photo (/background-derived.jpg).
  *
- * Round 2 leans into what divers and liveaboard operators
- * actually see: tropical fish in sunlight (reef), sunset on
- * the boat deck (harbor), and a night dive with magenta-and-
- * turquoise bioluminescent plankton against deep plum
- * (midnight). All three palettes are warm-leaning, saturated,
- * and energetic. No navy, no cyan-as-primary, no greys.
+ * This file:
+ *   1. Drops in the user's five [data-palette] blocks verbatim —
+ *      same hex codes, gradients, and shadow values, with one
+ *      mechanical change: `.theme-NAME { ... }` selectors become
+ *      `[data-palette="NAME"] { ... }` so the runtime switcher's
+ *      <html data-palette="NAME"> reflects the right theme.
+ *   2. Adds ONE shared translation block at the bottom mapping
+ *      the bundle's tokens (--primary, --sidebar-bg, --content-bg,
+ *      …) onto my existing semantic tokens (--accent-primary,
+ *      --surface-panel, …) so every component module that reads
+ *      semantic tokens picks up the theme without any per-
+ *      component edit.
  *
- * The body-level sea gradient + scuba-diver photo composite
- * from Sprint 011 is preserved verbatim under every palette.
+ * The body sea-gradient composite from Sprint 011 is no longer
+ * "verbatim" — the user's bundle replaces it with a per-theme
+ * `--background-overlay` over `/background-derived.jpg`. The
+ * underwater-photo aesthetic the user originally liked is
+ * preserved (now via the new image asset shipped with the
+ * bundle). Sprint 011's `--gradient-sea` token survives in
+ * tokens.css but is no longer applied to <body>; any consumer
+ * referencing it (auth wordmark color) keeps working.
  */
 
-/* --- REEF — tropical fish in sunlight, coral + magenta + turquoise --- */
+/* === Coral Surge — flame primary + teal counter on cream content === */
 
-[data-palette="reef"] {
-  --surface-app: #FFF6EC;
-  --surface-panel: #FFFFFF;
-  --surface-panel-strong: #FFF1E5;
-  --surface-raised: #FFFFFF;
-
-  --text-primary: #0B3B4F;            /* deep teal — warm-leaning dark */
-  --text-muted: #5A6F7A;
-  --text-inverse: #FFFFFF;
-
-  --border-subtle: #FFD6CF;
-  --border-strong: #FF4D6D;           /* hot coral edge */
-
-  --accent-primary: #E91E63;           /* electric magenta CTAs */
-  --accent-primary-hover: #C2185B;
-  --accent-primary-subtle: #FFE4EC;
-  --accent-secondary: #00BFA5;         /* electric turquoise */
-  --accent-selection: #FFB627;         /* gold flash */
-
-  --status-success: #00897B;
-  --status-success-bg: #E0F7F4;
-  --status-warning: #FF6B35;
-  --status-warning-bg: #FFE4D6;
-  --status-error: #D32F2F;
-  --status-error-bg: #FFE0E0;
-  --status-info: #0B3B4F;
-  --status-info-bg: #E0F0F5;
-
-  --focus-ring: #E91E63;
-  --shadow-panel: 0 2px 6px rgba(255, 77, 109, 0.18);
-  --shadow-elevated: 0 12px 32px -12px rgba(233, 30, 99, 0.32);
-
-  --backdrop-blur: 0px;
+[data-palette="coral-surge"] {
+  --page-bg: #021b2d;
+  --background-overlay: linear-gradient(90deg, rgba(2, 27, 45, 0.88), rgba(3, 78, 105, 0.38), rgba(255, 111, 97, 0.18));
+  --sidebar-bg: #08102f;
+  --sidebar-border: #ff7a5c;
+  --sidebar-text: #b8f3ee;
+  --sidebar-muted: #62c9c3;
+  --sidebar-active-bg: linear-gradient(90deg, #ff5f6d, #ffb347);
+  --sidebar-active-text: #07152f;
+  --content-bg: rgba(255, 246, 228, 0.92);
+  --surface: #fff3df;
+  --surface-strong: #ffe2bd;
+  --surface-glass: rgba(255, 243, 223, 0.78);
+  --text: #07152f;
+  --text-soft: #225266;
+  --text-bright: #004e64;
+  --primary: #ff5f6d;
+  --primary-hover: #ff3f55;
+  --secondary: #00c2c7;
+  --accent: #ffb347;
+  --success: #00d68f;
+  --danger: #ff3f55;
+  --border: rgba(0, 78, 100, 0.22);
+  --shadow: 0 24px 70px rgba(255, 95, 109, 0.22);
+  --focus-ring-color: 0 0 0 4px rgba(0, 194, 199, 0.28);
 }
 
-/* --- HARBOR — sunset on the boat deck, orange + plum + gold ----------- */
+/* === Manta Night — bioluminescent on near-black + violet === */
 
-[data-palette="harbor"] {
-  --surface-app: #FFEDDB;
-  --surface-panel: #FFFFFF;
-  --surface-panel-strong: #FFE4C2;
-  --surface-raised: #FFFFFF;
-
-  --text-primary: #3D1E4F;            /* deep plum */
-  --text-muted: #6E5A6E;
-  --text-inverse: #FFFFFF;
-
-  --border-subtle: #FFCFA8;
-  --border-strong: #FF6B35;           /* sunset orange */
-
-  --accent-primary: #FF4757;          /* sunset coral CTAs */
-  --accent-primary-hover: #E03525;
-  --accent-primary-subtle: #FFE2E2;
-  --accent-secondary: #FFB627;        /* golden yellow */
-  --accent-selection: #6A0DAD;        /* plum punch */
-
-  --status-success: #2E7D32;
-  --status-success-bg: #E8F5E9;
-  --status-warning: #E65100;
-  --status-warning-bg: #FFF3E0;
-  --status-error: #C62828;
-  --status-error-bg: #FFE0E0;
-  --status-info: #3D1E4F;
-  --status-info-bg: #F1E5F9;
-
-  --focus-ring: #FF4757;
-  --shadow-panel: 0 2px 6px rgba(61, 30, 79, 0.14);
-  --shadow-elevated: 0 12px 32px -12px rgba(255, 71, 87, 0.32);
-
-  --backdrop-blur: 0px;
+[data-palette="manta-night"] {
+  --page-bg: #020617;
+  --background-overlay: radial-gradient(circle at 20% 10%, rgba(0, 255, 209, 0.22), transparent 34%), radial-gradient(circle at 82% 30%, rgba(124, 58, 237, 0.32), transparent 36%), linear-gradient(90deg, rgba(2, 6, 23, 0.92), rgba(8, 47, 73, 0.48));
+  --sidebar-bg: #07051f;
+  --sidebar-border: #00ffd1;
+  --sidebar-text: #d8fff8;
+  --sidebar-muted: #78e7dc;
+  --sidebar-active-bg: linear-gradient(90deg, #00ffd1, #7c3aed);
+  --sidebar-active-text: #020617;
+  --content-bg: rgba(3, 18, 34, 0.84);
+  --surface: rgba(6, 32, 55, 0.86);
+  --surface-strong: rgba(10, 52, 83, 0.94);
+  --surface-glass: rgba(6, 32, 55, 0.68);
+  --text: #f0fffb;
+  --text-soft: #a8efe7;
+  --text-bright: #00ffd1;
+  --primary: #00ffd1;
+  --primary-hover: #3bffe0;
+  --secondary: #7c3aed;
+  --accent: #ff4fd8;
+  --success: #53ff9a;
+  --danger: #ff4f6d;
+  --border: rgba(0, 255, 209, 0.24);
+  --shadow: 0 28px 90px rgba(0, 255, 209, 0.18);
+  --focus-ring-color: 0 0 0 4px rgba(255, 79, 216, 0.28);
 }
 
-/* --- MIDNIGHT — night dive with bioluminescence on deep plum ---------- */
+/* === Reef Carnival — saturated coral-and-teal on cream === */
 
-[data-palette="midnight"] {
-  --surface-app: #14062B;
-  --surface-panel: #1E0938;
-  --surface-panel-strong: #2D1A4B;
-  --surface-raised: #371E5A;
+[data-palette="reef-carnival"] {
+  --page-bg: #003b46;
+  --background-overlay: linear-gradient(120deg, rgba(0, 59, 70, 0.82), rgba(7, 168, 173, 0.42), rgba(255, 196, 61, 0.24));
+  --sidebar-bg: #05223a;
+  --sidebar-border: #ffc43d;
+  --sidebar-text: #edfff9;
+  --sidebar-muted: #90f1d6;
+  --sidebar-active-bg: linear-gradient(90deg, #ff6b35, #ffc43d);
+  --sidebar-active-text: #05223a;
+  --content-bg: rgba(255, 251, 232, 0.93);
+  --surface: #fff8d6;
+  --surface-strong: #e4fff4;
+  --surface-glass: rgba(255, 248, 214, 0.74);
+  --text: #05223a;
+  --text-soft: #116466;
+  --text-bright: #007f7f;
+  --primary: #ff6b35;
+  --primary-hover: #ff4d1f;
+  --secondary: #07a8ad;
+  --accent: #ffc43d;
+  --success: #23ce6b;
+  --danger: #ff3366;
+  --border: rgba(7, 168, 173, 0.3);
+  --shadow: 0 24px 70px rgba(255, 107, 53, 0.24);
+  --focus-ring-color: 0 0 0 4px rgba(255, 196, 61, 0.38);
+}
 
-  --text-primary: #FFE8D6;            /* warm cream */
-  --text-muted: #B5A0C8;
-  --text-inverse: #14062B;
+/* === Abyss & Flame — flame primary, cyan counter on cool cream === */
 
-  --border-subtle: rgba(255, 92, 141, 0.25);
-  --border-strong: #FF1F5A;           /* hot magenta edge */
+[data-palette="abyss-flame"] {
+  --page-bg: #00111c;
+  --background-overlay: linear-gradient(90deg, rgba(0, 17, 28, 0.92), rgba(0, 68, 89, 0.48), rgba(255, 94, 20, 0.2));
+  --sidebar-bg: #050b18;
+  --sidebar-border: #ff5e14;
+  --sidebar-text: #e6fbff;
+  --sidebar-muted: #78dce8;
+  --sidebar-active-bg: linear-gradient(90deg, #ff5e14, #00d9ff);
+  --sidebar-active-text: #050b18;
+  --content-bg: rgba(241, 255, 252, 0.91);
+  --surface: #ecfffb;
+  --surface-strong: #d4fbff;
+  --surface-glass: rgba(236, 255, 251, 0.72);
+  --text: #04111f;
+  --text-soft: #14546a;
+  --text-bright: #006c89;
+  --primary: #ff5e14;
+  --primary-hover: #ff3d00;
+  --secondary: #00d9ff;
+  --accent: #ffd166;
+  --success: #00c896;
+  --danger: #ff2d55;
+  --border: rgba(0, 108, 137, 0.24);
+  --shadow: 0 24px 80px rgba(255, 94, 20, 0.22);
+  --focus-ring-color: 0 0 0 4px rgba(0, 217, 255, 0.3);
+}
 
-  --accent-primary: #FF5C8D;          /* vivid magenta-pink CTAs */
-  --accent-primary-hover: #FF85AB;
-  --accent-primary-subtle: rgba(255, 92, 141, 0.16);
-  --accent-secondary: #00E6C9;        /* electric turquoise */
-  --accent-selection: #FFAB40;        /* ember */
+/* === Sea Glass Electric — mint primary, hot pink counter === */
 
-  --status-success: #4ADE9C;
-  --status-success-bg: rgba(74, 222, 156, 0.18);
-  --status-warning: #FFAB40;
-  --status-warning-bg: rgba(255, 171, 64, 0.18);
-  --status-error: #FF6B85;
-  --status-error-bg: rgba(255, 107, 133, 0.18);
-  --status-info: #00E6C9;
-  --status-info-bg: rgba(0, 230, 201, 0.14);
+[data-palette="seaglass-electric"] {
+  --page-bg: #003f5c;
+  --background-overlay: radial-gradient(circle at 15% 12%, rgba(77, 255, 219, 0.28), transparent 32%), radial-gradient(circle at 78% 24%, rgba(255, 92, 205, 0.24), transparent 34%), linear-gradient(90deg, rgba(0, 63, 92, 0.78), rgba(0, 191, 166, 0.28));
+  --sidebar-bg: #041c32;
+  --sidebar-border: #4dffdb;
+  --sidebar-text: #effffb;
+  --sidebar-muted: #9df7e7;
+  --sidebar-active-bg: linear-gradient(90deg, #4dffdb, #ff5ccd);
+  --sidebar-active-text: #041c32;
+  --content-bg: rgba(244, 255, 248, 0.92);
+  --surface: #f4fff8;
+  --surface-strong: #dcfff4;
+  --surface-glass: rgba(244, 255, 248, 0.72);
+  --text: #041c32;
+  --text-soft: #006c67;
+  --text-bright: #008c84;
+  --primary: #00bfa6;
+  --primary-hover: #009e8a;
+  --secondary: #ff5ccd;
+  --accent: #c6ff3d;
+  --success: #00d084;
+  --danger: #ff3864;
+  --border: rgba(0, 191, 166, 0.26);
+  --shadow: 0 24px 72px rgba(0, 191, 166, 0.2);
+  --focus-ring-color: 0 0 0 4px rgba(255, 92, 205, 0.26);
+}
 
-  --focus-ring: #FF5C8D;
-  --shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.5);
-  --shadow-elevated: 0 0 40px -8px rgba(255, 92, 141, 0.45);
+/*
+ * === Shared translation: bundle tokens → my semantic tokens ===
+ *
+ * This block applies to EVERY palette ([data-palette] matches
+ * the attribute regardless of value) and is loaded after the
+ * five blocks above, so its declarations win. Each line maps
+ * a bundle-token-VALUE into a semantic-token-NAME the component
+ * library consumes. The bundle tokens are the source of truth;
+ * the semantic tokens are downstream aliases.
+ */
 
-  --backdrop-blur: 0px;
+[data-palette] {
+  /* Surfaces */
+  --surface-app: var(--content-bg);
+  --surface-panel: var(--surface);
+  --surface-panel-strong: var(--surface-strong);
+  --surface-raised: var(--surface-glass);
+
+  /* Text */
+  --text-primary: var(--text);
+  --text-muted: var(--text-soft);
+  --text-inverse: var(--sidebar-active-text);
+
+  /* Borders */
+  --border-subtle: var(--border);
+  --border-strong: var(--primary);
+
+  /* Accents */
+  --accent-primary: var(--primary);
+  --accent-primary-hover: var(--primary-hover);
+  --accent-primary-subtle: color-mix(in srgb, var(--primary) 16%, transparent);
+  --accent-secondary: var(--secondary);
+  --accent-selection: var(--accent);
+
+  /* Status */
+  --status-success: var(--success);
+  --status-success-bg: color-mix(in srgb, var(--success) 18%, transparent);
+  --status-warning: var(--accent);
+  --status-warning-bg: color-mix(in srgb, var(--accent) 18%, transparent);
+  --status-error: var(--danger);
+  --status-error-bg: color-mix(in srgb, var(--danger) 16%, transparent);
+  --status-info: var(--secondary);
+  --status-info-bg: color-mix(in srgb, var(--secondary) 16%, transparent);
+
+  /* Focus + shadows */
+  --focus-ring: var(--primary);
+  --shadow-panel: var(--shadow);
+  --shadow-elevated: var(--shadow);
+
+  /* Backdrop blur — every bundled theme uses a blur on cards */
+  --backdrop-blur: 14px;
 }

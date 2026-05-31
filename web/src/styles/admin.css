@@ -36,3 +36,29 @@ html[data-layout="canvas"] .admin {
 html[data-layout="canvas"] .admin-main {
   padding-top: var(--sp-lg);
 }
+
+/*
+ * Sidebar + main body alignment (round 3 user feedback).
+ *
+ * The legacy app.css sets `.admin-main { background:
+ * var(--c-50) }` — a fixed warm-slate near-white — which
+ * leaves the sidebar (now styled by the theme via the bundle's
+ * `--sidebar-bg` dark navy) visually disconnected from the
+ * main body. Under any [data-palette], `.admin-main` now
+ * consumes the bundle's `--content-bg` (the theme's content
+ * area background, typically a semi-transparent cream or dark
+ * tint that lets the body composite show through). This makes
+ * the sidebar and main body read as parts of one theme rather
+ * than a dark chrome stapled to a light page.
+ *
+ * The .admin shell drops the legacy box-shadow when themed so
+ * it doesn't fight the per-theme shadow.
+ */
+html[data-palette] .admin-main {
+  background: var(--content-bg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+}
+html[data-palette] .admin {
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.26);
+}

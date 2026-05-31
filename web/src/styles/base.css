@@ -1,18 +1,33 @@
 /*
- * Sprint 025 Triptych — foundation styles that survive the
- * app.css teardown.
+ * Sprint 025 Triptych — foundation styles, theme-driven body
+ * composite.
  *
- * NOTE: The body composite background (white wash + scuba
- * diver photo + sea gradient + background-attachment:fixed) is
- * the asset the user explicitly likes and is preserved
- * VERBATIM by app.css through Phase 5. Once Phase 5 deletes
- * app.css, the body composite moves here unchanged.
+ * Round 3 (user-supplied theme bundle) replaces the Sprint 011
+ * body composite (white wash + sea gradient over the original
+ * photo) with a PER-THEME composite: a `--background-overlay`
+ * gradient that each theme defines, layered over a derived
+ * underwater photograph (`/background-derived.jpg`) shipped
+ * with the bundle. The underlying `--page-bg` color is a deep
+ * fallback so the page never reads as bare white.
  *
- * For now this file only carries focus-visible defaults that
- * the new components rely on. Adding the body composite here
- * before Phase 5 would compete with the equivalent rules in
- * app.css for no benefit.
+ * This file loads LAST in main.tsx so these rules override the
+ * legacy `app.css` body composite during the migration window.
  */
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--page-bg, #021b2d);
+  color: var(--text-primary);
+}
+
+body {
+  background-image: var(--background-overlay), url("/background-derived.jpg");
+  background-size: cover, cover;
+  background-position: center, center;
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat, no-repeat;
+}
 
 :focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -20,9 +35,6 @@
   border-radius: var(--r-sm);
 }
 
-/* Modern button reset for the new components — app.css's
- * existing button rules still cover legacy markup. Component
- * modules opt in with their own classes. */
 button.triptych-reset {
   appearance: none;
   background: none;

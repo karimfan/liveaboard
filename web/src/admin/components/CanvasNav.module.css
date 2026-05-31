@@ -3,20 +3,19 @@
   align-items: center;
   gap: var(--sp-lg);
   padding: var(--sp-sm) var(--sp-lg);
-  background: var(--surface-panel);
-  border-bottom: 1px solid var(--border-subtle);
+  background: var(--sidebar-bg, var(--surface-panel));
+  border-bottom: 1px solid var(--sidebar-border, var(--border-subtle));
   position: sticky;
   top: 0;
   z-index: 10;
-  backdrop-filter: blur(var(--backdrop-blur));
-  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  color: var(--sidebar-text, var(--text-primary));
 }
 
 .brand {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 800;
   font-size: var(--fs-lg);
-  color: var(--text-primary);
+  color: var(--sidebar-text, var(--text-primary));
 }
 
 .nav {
@@ -30,27 +29,31 @@
 .link {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
-  font-weight: 500;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--sidebar-text, var(--text-muted));
   text-decoration: none;
   padding: var(--sp-xs) var(--sp-sm);
   border-radius: var(--r-sm);
+  opacity: 0.78;
 }
 
 .link:hover {
-  color: var(--text-primary);
+  opacity: 1;
 }
 
 .active {
-  color: var(--accent-primary);
-  font-weight: 600;
+  background: var(--sidebar-active-bg, var(--accent-primary));
+  color: var(--sidebar-active-text, var(--text-inverse));
+  opacity: 1;
+  font-weight: 800;
+  box-shadow: 0 12px 34px color-mix(in srgb, var(--primary, var(--accent-primary)) 28%, transparent);
 }
 
 .search {
   appearance: none;
-  background: var(--surface-panel-strong);
-  border: 1px solid var(--border-strong);
-  color: var(--text-muted);
+  background: color-mix(in srgb, var(--sidebar-text, var(--text-muted)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sidebar-text, var(--border-subtle)) 22%, transparent);
+  color: var(--sidebar-text, var(--text-muted));
   padding: var(--sp-xs) var(--sp-md);
   border-radius: var(--r-md);
   font-family: var(--font-mono);
@@ -59,10 +62,11 @@
   align-items: center;
   gap: var(--sp-sm);
   cursor: pointer;
+  opacity: 0.85;
 }
 
 .search:hover {
-  color: var(--text-primary);
+  opacity: 1;
 }
 
 .searchHint {

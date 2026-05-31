@@ -2,18 +2,25 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-// Token + theme + motion + foundation stylesheets must load BEFORE
-// app.css so app.css can override during the Sprint 025 migration
-// window. Phase 5 of Sprint 025 deletes app.css; for now it stays
-// to keep the 25 unmigrated pages rendering correctly.
+// CSS load order, per the Sprint 025 migration plan:
+//   tokens.css   — semantic token contract + sea palette tokens
+//   themes.css   — five [data-palette] rebinds + the
+//                  bundle→semantic translation block
+//   motion.css   — three [data-motion] rules + reduced-motion
+//   app.css      — legacy chrome (still needed until Phase 5
+//                  migrates all 25 pages off it)
+//   admin.css    — [data-layout] grid overrides and content
+//                  area theme alignment, wins over app.css
+//   base.css     — theme-driven <body> composite + focus
+//                  defaults. Loads LAST so its `html, body`
+//                  rule overrides app.css's legacy Sprint 011
+//                  white-wash composite during the migration.
 import "./styles/tokens.css";
 import "./styles/themes.css";
 import "./styles/motion.css";
-import "./styles/base.css";
 import "./styles/app.css";
-// admin.css must load AFTER app.css so the [data-layout=...]
-// grid-template-columns overrides win specificity.
 import "./styles/admin.css";
+import "./styles/base.css";
 
 import { DesignModeProvider } from "./admin/design";
 
