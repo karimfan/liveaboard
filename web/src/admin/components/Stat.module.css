@@ -1,0 +1,31 @@
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2xs);
+}
+
+.label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.value {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}

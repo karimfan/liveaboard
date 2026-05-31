@@ -1,0 +1,11 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-lg);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-lg);
+}
