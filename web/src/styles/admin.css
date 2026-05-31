@@ -207,6 +207,17 @@ html[data-palette] .setup-list__hint {
   color: var(--text-soft);
   font-size: 0.875rem;
   margin-top: 2px;
+  /* Align every hint on the right edge of column 3 — without
+   * this the auto column sizes to "0 boats" (the longest) and
+   * shorter hints like "IDR" sit flush LEFT inside the cell,
+   * which reads as misaligned. With justify-self: end every
+   * hint hugs the right edge; .admin-card's --sp-lg (24px)
+   * right padding gives the buffer between text and box edge.
+   * padding-left keeps a comfortable gap from the label
+   * column when a long label flows close to the hint. */
+  justify-self: end;
+  text-align: right;
+  padding-left: var(--sp-md);
 }
 html[data-palette] .setup-list__check {
   font-size: 1.125rem;
@@ -215,4 +226,54 @@ html[data-palette] .setup-list__check {
 }
 html[data-palette] .setup-list__check.is-pending {
   color: var(--accent);
+}
+
+/*
+ * UserMenu trigger in the sidebar footer — legacy app.css
+ * uses --c-900 / --c-500 (warm slate) which disappears
+ * against manta-night's dark --sidebar-bg. Map every piece
+ * to the sidebar token set so the name, chevron, email, and
+ * role read at full contrast on dark themes (and stay
+ * legible on the light ones too — sidebar tokens are theme-
+ * appropriate for the sidebar surface regardless of palette).
+ */
+html[data-palette] .admin-sidebar__trigger {
+  color: var(--sidebar-text);
+}
+html[data-palette] .admin-sidebar__trigger:hover {
+  background: color-mix(in srgb, var(--sidebar-text) 10%, transparent);
+}
+html[data-palette] .admin-sidebar__trigger-name {
+  color: var(--sidebar-text);
+  font-weight: 700;
+}
+html[data-palette] .admin-sidebar__chevron {
+  color: var(--sidebar-muted);
+}
+html[data-palette] .admin-sidebar__trigger-meta {
+  color: var(--sidebar-muted);
+}
+html[data-palette] .admin-sidebar__signout {
+  color: var(--sidebar-muted);
+}
+html[data-palette] .admin-sidebar__signout:hover:not(:disabled) {
+  color: var(--sidebar-text);
+}
+
+/* The user-menu popover that floats above the trigger — keep
+ * it on a content surface so the email/sign-out items read
+ * well against a light backdrop regardless of which theme
+ * surrounds it. */
+html[data-palette] .user-menu {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+html[data-palette] .user-menu__item {
+  color: var(--text);
+}
+html[data-palette] .user-menu__item:hover {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--text-bright);
 }
