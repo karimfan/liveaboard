@@ -26,9 +26,18 @@ app. Three axes, three options each:
 
 | Axis | Options |
 |---|---|
-| **Palette** | `abyss` (dark navy + bioluminescent cyan-green), `glass` (translucent + backdrop-blur), `sunlit` (saturated coral + cyan duotone) |
+| **Palette** | `reef` (warm cream + hot coral + electric magenta + turquoise), `harbor` (sunset cream + coral + plum + gold), `midnight` (deep plum + magenta-pink + electric turquoise + ember) |
 | **Layout** | `rail` (56-64px icon rail + ⌘K command bar), `spaces` (three labeled sidebar groups), `canvas` (spatial top-bar with TodayCanvas landing) |
 | **Motion** | `living` (caustic overlay + ripple), `minimal`, `full` (everything + page-slide + count-up) |
+
+**Palette round 1 was rejected** — abyss (navy + cyan-green),
+glass (translucent + backdrop-blur), and sunlit (coral on
+white) all read as safe SaaS rather than adventurous. Round 2
+(above) drops navy and cyan-as-primary, drops translucent
+glass entirely, and leans into the warm-saturated colors a
+diver actually sees: tropical-fish-in-sunlight (reef),
+sunset-on-the-boat-deck (harbor), and a night dive with
+bioluminescent plankton against deep plum (midnight).
 
 3 × 3 × 3 = 27 combinations. A floating bottom-right dock
 (`TriptychSwitcher`) exposes three segmented controls.
