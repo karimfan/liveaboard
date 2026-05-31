@@ -1,8 +1,11 @@
 /* Design tokens — see DESIGN.md for the source of truth. */
 :root {
-  /* Typography */
-  --font-display: "General Sans", "DM Sans", system-ui, sans-serif;
-  --font-body: "DM Sans", system-ui, sans-serif;
+  /* Typography. Round 5: Inter supplies the 800-900 weights the
+   * bundle design language calls for; DM Sans + General Sans
+   * remain second/third in the stack so any legacy chrome that
+   * still names them resolves correctly through Phase 5. */
+  --font-display: Inter, "General Sans", "DM Sans", system-ui, sans-serif;
+  --font-body: Inter, "DM Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --fs-xs: 0.75rem;

@@ -62,3 +62,115 @@ html[data-palette] .admin-main {
 html[data-palette] .admin {
   box-shadow: 0 0 100px rgba(0, 0, 0, 0.26);
 }
+
+/*
+ * Sprint 025 round 5: pull the bundle's typography + button +
+ * card patterns onto the LEGACY chrome too, so the bundle look
+ * applies on every page — not just the few that already use
+ * the new web/src/admin/components/ primitives. These rules
+ * are scoped behind [data-palette] so they only fire when a
+ * theme is active; the unthemed/auth-shell pages keep their
+ * existing styling.
+ */
+
+/* Page titles + subtitles — bold heavy typography from the
+ * contact sheet. */
+html[data-palette] .admin-page-title {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.07em;
+  color: var(--text);
+}
+html[data-palette] .admin-page-subtitle {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-soft);
+  max-width: 560px;
+}
+
+/* Cards — translucent surface, theme-colored border + shadow,
+ * radial accent bloom on the top-right. The body keeps its
+ * existing padding/layout from app.css. */
+html[data-palette] .admin-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 16px);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  color: var(--text);
+}
+html[data-palette] .admin-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top right,
+    color-mix(in srgb, var(--accent) 22%, transparent),
+    transparent 42%
+  );
+  pointer-events: none;
+}
+html[data-palette] .admin-card > * {
+  position: relative;
+}
+html[data-palette] .admin-card__title {
+  color: var(--text);
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+/* Buttons — gradient pill primary + translucent secondary +
+ * inline quiet. Applies to ANY <button> inside a themed
+ * admin shell. */
+html[data-palette] button.primary,
+html[data-palette] .primary {
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  color: var(--sidebar-active-text);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  min-height: 38px;
+  padding: 0 var(--sp-lg);
+  border-radius: 999px;
+  border: 0;
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+html[data-palette] button.primary:hover:not(:disabled),
+html[data-palette] .primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 20px 42px color-mix(in srgb, var(--primary) 38%, transparent);
+}
+html[data-palette] button.secondary {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  border-radius: 999px;
+  font-weight: 700;
+}
+html[data-palette] button.secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text) 14%, transparent);
+}
+html[data-palette] button.ghost {
+  background: transparent;
+  color: var(--text-soft);
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+}
+html[data-palette] button.ghost:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+/* Generic muted text + body text inside admin so prose
+ * reads against the new content surface. */
+html[data-palette] .admin-main .muted {
+  color: var(--text-soft);
+}
+html[data-palette] .admin-main .error {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+}

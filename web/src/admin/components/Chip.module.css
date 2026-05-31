@@ -1,36 +1,43 @@
+/*
+ * Sprint 025 round 5: Chip matches the bundle's status-pill —
+ * fully rounded, semi-transparent semantic tint, bright text,
+ * uppercase-feel with tight tracking.
+ */
+
 .chip {
   display: inline-flex;
   align-items: center;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  padding: 2px var(--sp-sm);
-  border-radius: var(--r-full);
-  letter-spacing: 0.02em;
+  min-height: 24px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0 var(--sp-md);
+  border-radius: 999px;
+  letter-spacing: 0.04em;
   border: 1px solid transparent;
 }
 
 .neutral {
-  background: var(--surface-panel-strong);
-  color: var(--text-muted);
-  border-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--secondary, var(--accent-secondary)) 18%, transparent);
+  color: var(--text-bright, var(--text-primary));
 }
 
 .success {
-  background: var(--status-success-bg);
-  color: var(--status-success);
+  background: color-mix(in srgb, var(--success, var(--status-success)) 22%, transparent);
+  color: var(--success, var(--status-success));
 }
 
 .warning {
-  background: var(--status-warning-bg);
-  color: var(--status-warning);
+  background: color-mix(in srgb, var(--accent, var(--status-warning)) 22%, transparent);
+  color: var(--accent, var(--status-warning));
 }
 
 .error {
-  background: var(--status-error-bg);
-  color: var(--status-error);
+  background: color-mix(in srgb, var(--danger, var(--status-error)) 22%, transparent);
+  color: var(--danger, var(--status-error));
 }
 
 .info {
-  background: var(--status-info-bg);
-  color: var(--status-info);
+  background: color-mix(in srgb, var(--secondary, var(--status-info)) 22%, transparent);
+  color: var(--text-bright, var(--status-info));
 }

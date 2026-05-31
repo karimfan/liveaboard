@@ -1,27 +1,50 @@
+/*
+ * Sprint 025 round 5: card matches the contact-sheet pattern —
+ * translucent surface with backdrop-blur+saturate, theme-
+ * colored border + shadow, and a soft radial gradient that
+ * blooms from the top-right corner using --accent. The body
+ * sits above the ::before overlay via position: relative.
+ */
+
 .card {
-  background: var(--surface-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-panel);
+  position: relative;
   overflow: hidden;
-  backdrop-filter: blur(var(--backdrop-blur));
-  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  background: var(--surface-glass, var(--surface-panel));
+  border: 1px solid var(--border, var(--border-subtle));
+  border-radius: var(--radius-md, var(--r-lg));
+  box-shadow: var(--shadow, var(--shadow-panel));
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top right,
+    color-mix(in srgb, var(--accent, var(--accent-selection)) 22%, transparent),
+    transparent 42%
+  );
+  pointer-events: none;
 }
 
 .header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-md);
   padding: var(--sp-md) var(--sp-lg);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border, var(--border-subtle));
 }
 
 .title {
   font-family: var(--font-display);
-  font-size: var(--fs-lg);
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  color: var(--text, var(--text-primary));
   margin: 0;
 }
 
@@ -32,12 +55,16 @@
 }
 
 .body {
+  position: relative;
   padding: var(--sp-lg);
-  color: var(--text-primary);
+  color: var(--text, var(--text-primary));
+  font-size: 0.82rem;
+  line-height: 1.48;
 }
 
 .footer {
+  position: relative;
   padding: var(--sp-md) var(--sp-lg);
-  border-top: 1px solid var(--border-subtle);
-  background: var(--surface-panel-strong);
+  border-top: 1px solid var(--border, var(--border-subtle));
+  background: color-mix(in srgb, var(--surface-strong, var(--surface-panel-strong)) 86%, transparent);
 }
