@@ -58,6 +58,12 @@ type Server struct {
 	// email transport choice and could be empty in dev.
 	IsDev bool
 
+	// UIRedesignSwitcher forces the Triptych switcher visible even
+	// when IsDev is false. Set via LIVEABOARD_UI_REDESIGN_SWITCHER so
+	// the user can evaluate the Sprint 025 redesign on the production
+	// VM and flip it off once Sprint 026 collapses to one combo.
+	UIRedesignSwitcher bool
+
 	// FXRefresher, when non-nil, lets the payment-settings handler
 	// kick a targeted Frankfurter fetch the moment an org adds a new
 	// accepted currency. Wired in cmd/server/main.go in dev/prod

@@ -31,6 +31,14 @@ type Config struct {
 	// CookieSecure controls the Secure flag on the session cookie.
 	CookieSecure bool `env:"LIVEABOARD_COOKIE_SECURE" default:"false"`
 
+	// UIRedesignSwitcher, when true, exposes the Sprint 025 Triptych
+	// design-mode switcher dock to the SPA via /api/dev/flags. In dev
+	// mode the dock is on automatically (cfg.Mode == ModeDev); this
+	// env var lets staging/production temporarily show the dock while
+	// the user picks a winning combination, then flip it off once
+	// Sprint 026 collapses to one combo. Defaults false.
+	UIRedesignSwitcher bool `env:"LIVEABOARD_UI_REDESIGN_SWITCHER" default:"false"`
+
 	BcryptCost           int           `env:"LIVEABOARD_BCRYPT_COST" default:"12"`
 	SessionDuration      time.Duration `env:"LIVEABOARD_SESSION_DURATION" default:"336h"`
 	VerificationDuration time.Duration `env:"LIVEABOARD_VERIFICATION_DURATION" default:"24h"`

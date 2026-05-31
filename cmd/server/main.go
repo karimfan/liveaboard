@@ -146,7 +146,8 @@ func main() {
 		ImportRunner: importRunner,
 		DocumentsDir: cfg.DocumentsDir,
 		CookieSecure: cfg.CookieSecure,
-		IsDev:        cfg.Mode == config.ModeDev,
+		IsDev:              cfg.Mode == config.ModeDev,
+		UIRedesignSwitcher: cfg.UIRedesignSwitcher,
 	}
 	if fxRefresher != nil {
 		srv.FXRefresher = fxRefresher

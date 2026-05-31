@@ -16,6 +16,6 @@ import "net/http"
 func (s *Server) handleDevFlags(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"filesystem_email":     s.DevInboxDir != "",
-		"ui_redesign_switcher": s.IsDev,
+		"ui_redesign_switcher": s.IsDev || s.UIRedesignSwitcher,
 	})
 }
