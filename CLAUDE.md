@@ -57,6 +57,10 @@ In QA mode, flag any code that doesn't match DESIGN.md.
 - `go vet` and linter must pass (backend)
 - Code must be formatted (`gofmt` for Go, `prettier` for TypeScript)
 - Each commit should be focused — no unrelated changes
+- Web visual/layout changes go through `web/src/admin/components/`;
+  page files reference only semantic tokens (`var(--surface-*)`,
+  `var(--accent-*)`, etc.), never raw hex. See ADR 0004 for the
+  Triptych token contract.
 
 ## Branching
 
