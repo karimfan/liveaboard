@@ -238,3 +238,76 @@ button.ghost {
   border-color: var(--border-subtle);
   color: var(--text-primary);
 }
+.admin-main .counts__value {
+  color: var(--text-primary);
+}
+.admin-main .counts__label {
+  color: var(--text-muted);
+}
+
+/* Alert rows (Overview/Reports) */
+.admin-main .alert-row {
+  border-bottom-color: var(--border-subtle);
+}
+.admin-main .alert-row__title {
+  color: var(--text-primary);
+}
+.admin-main .alert-row__sub {
+  color: var(--text-muted);
+}
+
+/* Boat detail header */
+.admin-main .boat-detail-header {
+  background: var(--surface-panel);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+.admin-main .boat-detail-header__image {
+  background: var(--surface-raised);
+}
+.admin-main .boat-detail-header__source,
+.admin-main .boat-stat__label {
+  color: var(--text-muted);
+}
+.admin-main .boat-stat__value {
+  color: var(--text-primary);
+}
+
+/* Currency picker */
+.admin-main .currency-chip {
+  background: var(--accent-primary-subtle);
+  color: var(--text-primary);
+}
+.admin-main .currency-chip.is-locked {
+  background: var(--surface-raised);
+  color: var(--text-muted);
+}
+.admin-main .currency-chip__x,
+.admin-main .currency-picker__clear,
+.admin-main .currency-picker__name {
+  color: var(--text-muted);
+}
+.admin-main .currency-chip__x:hover {
+  color: var(--text-primary);
+}
+.admin-main .currency-picker__menu {
+  background: var(--surface-panel);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+.admin-main .currency-picker__row:hover,
+.admin-main .currency-picker__row.is-selected {
+  background: var(--surface-panel-strong);
+}
+
+/* Director assignment chips */
+.admin-main .director-chip {
+  background: var(--accent-primary-subtle);
+  color: var(--accent-primary);
+}
+.admin-main .director-chip__x {
+  color: var(--accent-primary);
+}
+.admin-main .director-chip__x:hover {
+  background: var(--accent-primary-subtle);
+}
