@@ -104,3 +104,137 @@ button.ghost {
 .user-menu__item:hover {
   background: var(--accent-primary-subtle);
 }
+
+/* ============================================================
+ * Sprint 028 — admin surface token bridge.
+ *
+ * app.css styles the shared page surfaces (tables, stat cards,
+ * tabs, chips, inputs, modals) against the light --c-* palette,
+ * which is correct for the auth/guest pages that also use them
+ * but wrong inside the dark cockpit shell. These overrides are
+ * scoped under .admin-main so they only repaint the authenticated
+ * admin surface onto semantic tokens; auth/public pages keep the
+ * light app.css rules untouched. Loads after app.css, so it wins.
+ *
+ * This is the interim bridge for Sprint 028; pages migrating to
+ * CSS modules will drop their reliance on these classes over time.
+ * ============================================================ */
+
+/* Forms */
+.admin-main input,
+.admin-main select,
+.admin-main textarea {
+  background: var(--surface-raised);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+.admin-main input::placeholder,
+.admin-main textarea::placeholder {
+  color: var(--text-muted);
+}
+.admin-main input:focus,
+.admin-main select:focus,
+.admin-main textarea:focus {
+  outline-color: var(--focus-ring);
+  border-color: var(--accent-primary);
+}
+.admin-main label {
+  color: var(--text-primary);
+}
+
+/* Stat cards */
+.admin-main .stat-card {
+  background: var(--surface-raised);
+  border-color: var(--border-subtle);
+}
+.admin-main .stat-label {
+  color: var(--text-muted);
+}
+.admin-main .stat-value {
+  color: var(--text-primary);
+}
+
+/* Tables */
+.admin-main .admin-table {
+  background: var(--surface-panel);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+.admin-main .admin-table thead {
+  background: var(--surface-panel-strong);
+}
+.admin-main .admin-table th {
+  color: var(--text-muted);
+  border-bottom-color: var(--border-subtle);
+}
+.admin-main .admin-table td {
+  color: var(--text-primary);
+  border-bottom-color: var(--border-subtle);
+}
+.admin-main .admin-table tr.is-clickable:hover {
+  background: var(--surface-panel-strong);
+}
+
+/* Tabs */
+.admin-main .tabs,
+.admin-main .trips-toolbar {
+  border-bottom-color: var(--border-subtle);
+}
+.admin-main .tabs__link,
+.admin-main .tab {
+  color: var(--text-muted);
+}
+.admin-main .tabs__link:hover,
+.admin-main .tab:hover {
+  color: var(--text-primary);
+}
+.admin-main .tabs__link.is-active,
+.admin-main .tab.is-active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+/* Neutral chips (status chips keep their --status-* colors, which
+ * already read well on the dark surface) */
+.admin-main .chip--planned,
+.admin-main .chip--archived {
+  background: var(--accent-primary-subtle);
+  color: var(--text-primary);
+}
+
+/* Inline numeric inputs + inline selects */
+.admin-main .inline-num,
+.admin-main select.select-inline {
+  background: var(--surface-raised);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+/* Modals + empty states */
+.admin-main .modal {
+  background: var(--surface-panel);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+.admin-main .empty-state {
+  background: var(--surface-raised);
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
+}
+.admin-main .empty-state h3 {
+  color: var(--text-primary);
+}
+
+/* Click rows + skipped rows */
+.admin-main .click-row:hover,
+.admin-main tr.is-skipped td {
+  background: var(--surface-panel-strong);
+}
+
+/* Generic cards / contact cards / counts */
+.admin-main .contact-card,
+.admin-main .counts {
+  background: var(--surface-raised);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
