@@ -9,7 +9,7 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 | Persona | Scope | Primary use |
 |---|---|---|
 | Organization Admin | Org-wide | Configure the org and oversee operations: fleet, catalog, pricing, trip planning, user management, reporting and financial oversight. |
-| Cruise Director | Single trip | Run one trip end-to-end: manifest, consumption, onboard ops. |
+| Cruise Director | Single trip | Run assigned trips end-to-end from the Voyage Cockpit: manifest, consumption, onboard ops, readiness, and folio closeout. |
 | Guest | Self only | Accept a trip invite and complete their own trip registration. Future scope includes tab, dive schedule, and trip details. |
 
 ---
@@ -20,6 +20,8 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 
 **Owns:**
 - Organization profile and defaults (name, currency).
+- The Org Admin Voyage Cockpit: fleet pulse, voyage lanes, blockers,
+  money, readiness, activity, and command routing.
 - Payment settings: supported checkout currencies, offline payment
   methods, card transaction fee percentage, and folio email footer.
 - Fleet: boats (name, image, source linkage) and reusable cabin layouts
@@ -53,6 +55,9 @@ When a story or feature could plausibly belong to two personas, the boundary tab
 
 **Owns:**
 - Their own profile: full name, contact phone (free-text). Editable from `/admin/account`.
+- The Cruise Director Voyage Cockpit for assigned trips: run sheet,
+  readiness, manifest gaps, berth gaps, ledger shortcuts, and folio
+  pressure.
 - Mid-trip manifest operations: add/revoke/reassign guests once the trip is `active`.
 - Guest registration readiness for assigned trips: invite guests, resend/revoke registration links, and review submitted registration details.
 - Guest document readiness for assigned trips: review, upload, download,

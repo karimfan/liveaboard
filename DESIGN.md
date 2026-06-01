@@ -1,5 +1,39 @@
 # Design System — Liveaboard
 
+## Sprint 027: Voyage Cockpit Reboot
+
+The authenticated app now leads with a role-specific Voyage Cockpit.
+This supersedes Triptych as a production concept: no runtime palette
+switching, no layout switching, and no floating design dock.
+
+### Cockpit Visual Contract
+
+- **Surface:** one dark expedition workplane, not nested cards.
+- **Grid:** header strip 72px; VoyageMap min 360px / max 480px;
+  signal row `320px / 320px / 1fr`; MoneyStrip 96px; ActivityStream
+  240px.
+- **Tile sizes:** small 220x96, medium 320x140, large full-width x
+  200; below 768px all tiles become 100% width.
+- **Density:** body 14px/1.45, tabular data 13px/1.4 with
+  `tabular-nums`, section labels 11px uppercase with 0.06em tracking.
+- **Tokens:** cyan for idle action, violet for selection/focus,
+  magenta/coral for blockers, ember/gold for money/warnings, deep
+  navy for surfaces.
+- **Motion:** ambient depth is allowed, but reduced-motion suppresses
+  ambient animation and transitions.
+- **Background:** the cockpit may use route-scoped immersive imagery
+  or lighting if contrast stays excellent. Auth and non-cockpit public
+  pages can retain the Sprint 011 background until redesigned.
+
+### Cockpit Anti-Patterns
+
+- No nested cards.
+- No heavy drop-shadow stacks.
+- No animated counters on first paint.
+- No filled buttons in the cockpit body except one clear primary route
+  action when state demands it.
+- No new page-level dependencies on `web/src/styles/app.css`.
+
 ## Product Context
 - **What this is:** Operations platform for scuba diving liveaboard operators
 - **Who it's for:** Organization owners, org admins, and site directors managing fleet operations, trips, guest manifests, and onboard consumption

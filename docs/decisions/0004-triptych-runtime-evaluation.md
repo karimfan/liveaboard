@@ -1,7 +1,16 @@
 # 0004 — Triptych Runtime UI Evaluation
 
-**Status:** Accepted (Sprint 025) — partial implementation
+**Status:** Superseded by [0005 — Voyage Cockpit Reboot](0005-voyage-cockpit-reboot.md)
 **Date:** 2026-05-30
+
+## Sprint 027 Supersession
+
+Sprint 027 closes Triptych as a production concept. The runtime
+palette/layout/motion switcher, losing palettes, rail/canvas shell
+renderers, and `ui_redesign_switcher` plumbing are deleted rather
+than kept dev-only. Useful ideas survive only when folded into the
+Voyage Cockpit: the spatial `TodayCanvas` direction becomes part of
+`VoyageMap`, and `CommandBar` becomes the cockpit command palette.
 
 ## Context
 

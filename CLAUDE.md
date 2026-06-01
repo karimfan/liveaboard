@@ -49,6 +49,13 @@ All font choices, colors, spacing, and aesthetic direction are defined there.
 Do not deviate without explicit user approval.
 In QA mode, flag any code that doesn't match DESIGN.md.
 
+Sprint 027 closes Triptych. Do not reintroduce runtime palette/layout
+switching, the floating design switcher, rail/canvas shell renderers,
+or `ui_redesign_switcher`. New authenticated admin UI should follow
+the Voyage Cockpit contract in DESIGN.md and avoid new page-level
+dependencies on `web/src/styles/app.css`; use semantic tokens,
+component primitives, and page-local CSS modules instead.
+
 ## Development Rules
 
 - Code must compile before committing

@@ -59,6 +59,7 @@ These are the product-level decisions that frame the backlog. Confirmed unless m
 | Guest registration | Guests use separate guest accounts and sessions. Registration can be saved as a draft and completed later. | Keeps staff auth clean and supports long forms that are hard to complete in one transaction. |
 | Guest checkout | Cruise Directors close one end-of-trip folio per guest/trip. Payments are handled offline; Liveaboard records the closed paid folio and sends the itemized email. | Avoids payment-processing scope while supporting real checkout operations. |
 | Trip booking fees | Out of scope. Catalog covers onboard consumption only. | |
+| Voyage Cockpit | Sprint 027 consolidates existing operational oversight stories into `/admin`: fleet pulse, voyage lanes, blockers, money, readiness, activity, and commands. It does not mark public funnel or guest portal stories shipped. | The product reboot makes the first screen the operating surface before expanding external surfaces. |
 
 ---
 

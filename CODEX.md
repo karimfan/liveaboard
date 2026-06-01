@@ -108,14 +108,17 @@ Default databases are `liveaboard` and `liveaboard_test`.
 
 ## Frontend Notes
 
-This is an operational dashboard, not a tourism landing page.
+The authenticated first screen is now the Sprint 027 Voyage Cockpit,
+not a generic dashboard. New admin UI work should plug into the
+cockpit spine first: role-scoped aggregate data, command palette
+routes, dense operational panels, and semantic-token styling.
 
-- Follow `DESIGN.md`: slate working surfaces, amber primary actions,
-  sea gradient only at the page/chrome background level.
-- Do not introduce ocean imagery, decorative illustrations, or heavy
-  marketing layouts.
-- Keep admin pages dense, scannable, and predictable.
-- Use existing CSS tokens and component patterns in `app.css`.
+- Follow `DESIGN.md`'s cockpit visual contract.
+- Do not reintroduce Triptych runtime switching, losing palettes,
+  rail/canvas shell renderers, or `ui_redesign_switcher`.
+- Do not add new page-level dependencies on `web/src/styles/app.css`.
+- Use semantic tokens and component/page-local CSS modules; legacy
+  `app.css` rules are compatibility only.
 - For responsive work, verify tables and compact controls do not
   overlap or resize awkwardly.
 
