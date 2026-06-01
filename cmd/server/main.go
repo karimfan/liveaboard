@@ -137,17 +137,16 @@ func main() {
 	}
 
 	srv := &httpapi.Server{
-		Org:                org.New(pool),
-		Log:                log,
-		Auth:               authSvc,
-		Session:            session,
-		GuestSession:       guestSession,
-		AdminAPI:           &httpapi.AdminHandlers{Store: pool},
-		ImportRunner:       importRunner,
-		DocumentsDir:       cfg.DocumentsDir,
-		CookieSecure:       cfg.CookieSecure,
-		IsDev:              cfg.Mode == config.ModeDev,
-		UIRedesignSwitcher: cfg.UIRedesignSwitcher,
+		Org:          org.New(pool),
+		Log:          log,
+		Auth:         authSvc,
+		Session:      session,
+		GuestSession: guestSession,
+		AdminAPI:     &httpapi.AdminHandlers{Store: pool},
+		ImportRunner: importRunner,
+		DocumentsDir: cfg.DocumentsDir,
+		CookieSecure: cfg.CookieSecure,
+		IsDev:        cfg.Mode == config.ModeDev,
 	}
 	if fxRefresher != nil {
 		srv.FXRefresher = fxRefresher

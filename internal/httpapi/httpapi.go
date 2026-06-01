@@ -52,17 +52,10 @@ type Server struct {
 	DevInboxDir string
 
 	// IsDev is true when the server is running in dev mode (cfg.Mode ==
-	// ModeDev). Drives the surfacing of dev-only affordances via
-	// /api/dev/flags — most importantly the Sprint 025 Triptych design-
-	// mode switcher. Independent of DevInboxDir, which is gated by the
-	// email transport choice and could be empty in dev.
+	// ModeDev). Reserved for dev-only affordances. Independent of
+	// DevInboxDir, which is gated by the email transport choice and
+	// could be empty in dev.
 	IsDev bool
-
-	// UIRedesignSwitcher forces the Triptych switcher visible even
-	// when IsDev is false. Set via LIVEABOARD_UI_REDESIGN_SWITCHER so
-	// the user can evaluate the Sprint 025 redesign on the production
-	// VM and flip it off once Sprint 026 collapses to one combo.
-	UIRedesignSwitcher bool
 
 	// FXRefresher, when non-nil, lets the payment-settings handler
 	// kick a targeted Frankfurter fetch the moment an org adds a new
@@ -190,6 +183,7 @@ func (s *Server) Router() http.Handler {
 				// + trips). The handler enforces the role itself; we
 				// mount it inside the authenticated group, not the
 				// admin-only group.
+				r.Get("/cockpit", s.handleCockpit)
 				r.Get("/cruise-director-overview", s.handleCruiseDirectorOverview)
 				r.Get("/audit-events", s.handleAuditEvents)
 
