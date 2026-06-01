@@ -93,7 +93,7 @@
    * Sprint 025 Triptych — semantic tokens.
    * Components in web/src/admin/components/ read ONLY these
    * variables (never raw hex). themes.css rebinds them per
-   * [data-palette]. The defaults below mirror the legacy
+   * production theme. The defaults below mirror the legacy
    * warm-slate-and-amber chrome so any component rendered
    * before a theme is selected still looks sane. The body sea
    * gradient lives above this layer and is not part of the

@@ -1,279 +1,102 @@
 /*
- * Sprint 025 Triptych — admin shell composition per layout.
- *
- * The shell <div class="admin admin--<layout>" data-layout=...>
- * lives inside <body> and is itself a CSS grid. The grid
- * template changes per layout:
- *   spaces — sidebar (240px) + main (1fr)
- *   rail   — rail    (64px)  + main (1fr)
- *   canvas — single column (top-bar is part of the chrome)
- *
- * The legacy .admin rule in app.css still defines a 220px-
- * sidebar grid that targets the old `.admin-sidebar` markup.
- * These [data-layout] overrides win by specificity so the new
- * nav renderers (SpacesNav/RailNav/CanvasNav) get the right
- * grid track. Once Phase 5 deletes app.css, the legacy rule
- * disappears.
+ * Sprint 027 — single production admin shell.
+ * Legacy app.css still carries many page-level rules for unmigrated
+ * pages; this file owns the shell composition and token alignment.
  */
 
-html[data-layout="spaces"] .admin {
+.admin {
   grid-template-columns: auto 1fr;
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.26);
 }
 
-html[data-layout="rail"] .admin {
-  grid-template-columns: auto 1fr;
-}
-
-html[data-layout="canvas"] .admin {
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr;
-}
-
-/* The .admin-main padding-top in app.css uses a value tuned for
- * the legacy 220px sidebar; under canvas the topbar sits ABOVE
- * main and main needs a top margin so the page header doesn't
- * crash into the bar. */
-html[data-layout="canvas"] .admin-main {
-  padding-top: var(--sp-lg);
-}
-
-/*
- * Sidebar + main body alignment (round 3 user feedback).
- *
- * The legacy app.css sets `.admin-main { background:
- * var(--c-50) }` — a fixed warm-slate near-white — which
- * leaves the sidebar (now styled by the theme via the bundle's
- * `--sidebar-bg` dark navy) visually disconnected from the
- * main body. Under any [data-palette], `.admin-main` now
- * consumes the bundle's `--content-bg` (the theme's content
- * area background, typically a semi-transparent cream or dark
- * tint that lets the body composite show through). This makes
- * the sidebar and main body read as parts of one theme rather
- * than a dark chrome stapled to a light page.
- *
- * The .admin shell drops the legacy box-shadow when themed so
- * it doesn't fight the per-theme shadow.
- */
-html[data-palette] .admin-main {
+.admin-main {
   background: var(--content-bg);
   backdrop-filter: blur(var(--backdrop-blur));
   -webkit-backdrop-filter: blur(var(--backdrop-blur));
 }
-html[data-palette] .admin {
-  box-shadow: 0 0 100px rgba(0, 0, 0, 0.26);
-}
 
-/*
- * Sprint 025 round 5: pull the bundle's typography + button +
- * card patterns onto the LEGACY chrome too, so the bundle look
- * applies on every page — not just the few that already use
- * the new web/src/admin/components/ primitives. These rules
- * are scoped behind [data-palette] so they only fire when a
- * theme is active; the unthemed/auth-shell pages keep their
- * existing styling.
- */
-
-/* Page titles + subtitles — bold heavy typography from the
- * contact sheet. */
-html[data-palette] .admin-page-title {
+.admin-page-title {
   font-family: var(--font-display);
   font-size: 2.4rem;
   font-weight: 900;
   line-height: 0.95;
-  letter-spacing: -0.07em;
-  color: var(--text);
-}
-html[data-palette] .admin-page-subtitle {
-  font-size: 0.92rem;
-  line-height: 1.5;
-  color: var(--text-soft);
-  max-width: 560px;
+  color: var(--text-primary);
 }
 
-/* Cards — translucent surface, theme-colored border + shadow,
- * radial accent bloom on the top-right. The body keeps its
- * existing padding/layout from app.css. */
-html[data-palette] .admin-card {
-  position: relative;
-  overflow: hidden;
-  background: var(--surface-glass);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md, 16px);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  color: var(--text);
-}
-html[data-palette] .admin-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at top right,
-    color-mix(in srgb, var(--accent) 22%, transparent),
-    transparent 42%
-  );
-  pointer-events: none;
-}
-html[data-palette] .admin-card > * {
-  position: relative;
-}
-html[data-palette] .admin-card__title {
-  color: var(--text);
-  font-weight: 850;
-  letter-spacing: -0.03em;
+.admin-page-subtitle,
+.admin-main .muted {
+  color: var(--text-muted);
 }
 
-/* Buttons — gradient pill primary + translucent secondary +
- * inline quiet. Primary uses --sidebar-active-bg so the
- * button pill matches the active sidebar item per theme. For
- * manta-night specifically this means cyan→violet (the "blue"
- * the user asked for), instead of the cyan→magenta primary
- * →accent combination that read as "blue-to-reddish". */
-html[data-palette] button.primary,
-html[data-palette] .primary {
+.admin-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-panel);
+  color: var(--text-primary);
+}
+
+.admin-card__title {
+  color: var(--text-primary);
+}
+
+button.primary,
+.primary {
   background: var(--sidebar-active-bg);
   color: var(--sidebar-active-text);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  min-height: 38px;
-  padding: 0 var(--sp-lg);
-  border-radius: 999px;
   border: 0;
-  box-shadow: 0 16px 36px color-mix(in srgb, var(--primary) 28%, transparent);
 }
-html[data-palette] button.primary:hover:not(:disabled),
-html[data-palette] .primary:hover:not(:disabled) {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
-  box-shadow: 0 20px 42px color-mix(in srgb, var(--primary) 38%, transparent);
+
+button.secondary {
+  background: rgba(240, 255, 251, 0.08);
+  color: var(--text-primary);
+  border-color: rgba(240, 255, 251, 0.18);
 }
-html[data-palette] button.secondary {
-  background: color-mix(in srgb, var(--text) 8%, transparent);
-  color: var(--text);
-  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
-  border-radius: 999px;
-  font-weight: 700;
+
+button.ghost {
+  color: var(--text-muted);
 }
-html[data-palette] button.secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--text) 14%, transparent);
+
+.admin-main .error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
 }
-html[data-palette] button.ghost {
+
+.setup-pct,
+.setup-list__item,
+.setup-list__label {
+  color: var(--text-primary);
+}
+
+.setup-list__hint,
+.admin-sidebar__trigger-meta,
+.admin-sidebar__chevron {
+  color: var(--text-muted);
+}
+
+.setup-list__check {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+.setup-list__check.is-pending {
   background: transparent;
-  color: var(--text-soft);
-  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
-}
-html[data-palette] button.ghost:hover {
-  color: var(--text);
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
 }
 
-/* Generic muted text + body text inside admin so prose
- * reads against the new content surface. */
-html[data-palette] .admin-main .muted {
-  color: var(--text-soft);
-}
-html[data-palette] .admin-main .error {
-  background: color-mix(in srgb, var(--danger) 16%, transparent);
-  color: var(--danger);
+.admin-sidebar__trigger,
+.admin-sidebar__signout,
+.user-menu {
+  border-color: var(--border-subtle);
 }
 
-/*
- * Setup completeness card — bigger + higher contrast on dark
- * themes. The legacy app.css uses --c-900 (near-black) for
- * the percent and --c-500 (warm grey) for the hint, both of
- * which disappear against manta-night's --content-bg. These
- * overrides remap to theme text tokens and bump the checklist
- * row size from fs-sm (~14px) up to ~1.0625rem so the items
- * read at a glance.
- */
-html[data-palette] .setup-pct {
-  color: var(--text);
-  font-size: 3rem;
-  font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 1;
-}
-html[data-palette] .setup-list__item {
-  font-size: 1.0625rem;
-  line-height: 1.4;
-  color: var(--text);
-  font-weight: 600;
-}
-html[data-palette] .setup-list__label {
-  color: var(--text);
-}
-html[data-palette] .setup-list__hint {
-  color: var(--text-soft);
-  font-size: 0.875rem;
-  margin-top: 2px;
-  /* Align every hint on the right edge of column 3 — without
-   * this the auto column sizes to "0 boats" (the longest) and
-   * shorter hints like "IDR" sit flush LEFT inside the cell,
-   * which reads as misaligned. With justify-self: end every
-   * hint hugs the right edge; .admin-card's --sp-lg (24px)
-   * right padding gives the buffer between text and box edge.
-   * padding-left keeps a comfortable gap from the label
-   * column when a long label flows close to the hint. */
-  justify-self: end;
-  text-align: right;
-  padding-left: var(--sp-md);
-}
-html[data-palette] .setup-list__check {
-  font-size: 1.125rem;
-  font-weight: 800;
-  color: var(--success);
-}
-html[data-palette] .setup-list__check.is-pending {
-  color: var(--accent);
+.admin-sidebar__trigger,
+.admin-sidebar__signout {
+  color: var(--text-primary);
 }
 
-/*
- * UserMenu trigger in the sidebar footer — legacy app.css
- * uses --c-900 / --c-500 (warm slate) which disappears
- * against manta-night's dark --sidebar-bg. Map every piece
- * to the sidebar token set so the name, chevron, email, and
- * role read at full contrast on dark themes (and stay
- * legible on the light ones too — sidebar tokens are theme-
- * appropriate for the sidebar surface regardless of palette).
- */
-html[data-palette] .admin-sidebar__trigger {
-  color: var(--sidebar-text);
-}
-html[data-palette] .admin-sidebar__trigger:hover {
-  background: color-mix(in srgb, var(--sidebar-text) 10%, transparent);
-}
-html[data-palette] .admin-sidebar__trigger-name {
-  color: var(--sidebar-text);
-  font-weight: 700;
-}
-html[data-palette] .admin-sidebar__chevron {
-  color: var(--sidebar-muted);
-}
-html[data-palette] .admin-sidebar__trigger-meta {
-  color: var(--sidebar-muted);
-}
-html[data-palette] .admin-sidebar__signout {
-  color: var(--sidebar-muted);
-}
-html[data-palette] .admin-sidebar__signout:hover:not(:disabled) {
-  color: var(--sidebar-text);
-}
-
-/* The user-menu popover that floats above the trigger — keep
- * it on a content surface so the email/sign-out items read
- * well against a light backdrop regardless of which theme
- * surrounds it. */
-html[data-palette] .user-menu {
-  background: var(--surface);
-  border-color: var(--border);
-  box-shadow: var(--shadow);
-  color: var(--text);
-}
-html[data-palette] .user-menu__item {
-  color: var(--text);
-}
-html[data-palette] .user-menu__item:hover {
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
-  color: var(--text-bright);
+.admin-sidebar__trigger:hover,
+.admin-sidebar__signout:hover:not(:disabled),
+.user-menu__item:hover {
+  background: var(--accent-primary-subtle);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import type { NavItem } from "../nav";
@@ -21,9 +21,16 @@ export type CommandBarProps = {
 export function CommandBar({ items, open, onClose }: CommandBarProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!open) setQuery("");
+    if (open) {
+      returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      return;
+    }
+    setQuery("");
+    returnFocusRef.current?.focus();
+    returnFocusRef.current = null;
   }, [open]);
 
   useEffect(() => {
@@ -79,7 +86,6 @@ export function CommandBar({ items, open, onClose }: CommandBarProps) {
                   }}
                 >
                   <span className={styles.label}>{it.label}</span>
-                  <span className={styles.path}>{it.to}</span>
                 </button>
               </li>
             ))

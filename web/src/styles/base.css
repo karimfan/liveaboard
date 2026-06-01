@@ -17,7 +17,7 @@
  * accents) remain in effect and float on the original photo.
  *
  * base.css loads LAST in main.tsx so these rules win over
- * both the legacy app.css body and any [data-palette]
+ * both the legacy app.css body and any earlier theme rule
  * background-overlay rule from themes.css.
  */
 

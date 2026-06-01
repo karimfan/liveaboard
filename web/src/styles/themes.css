@@ -1,231 +1,49 @@
 /*
- * Sprint 025 Triptych — palette rebinds (round 3, user-supplied).
+ * Sprint 027 — production token collapse.
  *
- * Round 1 (abyss / glass / sunlit) and round 2 (reef / harbor /
- * midnight) were both rejected. The user shipped a hand-crafted
- * bundle of five themes via ~/Downloads/liveaboard-themes.zip
- * with paired sidebar-and-content-area surfaces (so the sidebar
- * and main body read as belonging to the same theme), gradient
- * active states, and a per-theme background overlay that goes
- * over a derived underwater photo (/background-derived.jpg).
- *
- * This file:
- *   1. Drops in the user's five [data-palette] blocks verbatim —
- *      same hex codes, gradients, and shadow values, with one
- *      mechanical change: `.theme-NAME { ... }` selectors become
- *      `[data-palette="NAME"] { ... }` so the runtime switcher's
- *      <html data-palette="NAME"> reflects the right theme.
- *   2. Adds ONE shared translation block at the bottom mapping
- *      the bundle's tokens (--primary, --sidebar-bg, --content-bg,
- *      …) onto my existing semantic tokens (--accent-primary,
- *      --surface-panel, …) so every component module that reads
- *      semantic tokens picks up the theme without any per-
- *      component edit.
- *
- * The body sea-gradient composite from Sprint 011 is no longer
- * "verbatim" — the user's bundle replaces it with a per-theme
- * `--background-overlay` over `/background-derived.jpg`. The
- * underwater-photo aesthetic the user originally liked is
- * preserved (now via the new image asset shipped with the
- * bundle). Sprint 011's `--gradient-sea` token survives in
- * tokens.css but is no longer applied to <body>; any consumer
- * referencing it (auth wordmark color) keeps working.
+ * Triptych is closed. The cockpit runs one chosen semantic token
+ * set in :root, with no production runtime palette switching.
  */
 
-/* === Coral Surge — flame primary + teal counter on cream content === */
-
-[data-palette="coral-surge"] {
-  --page-bg: #021b2d;
-  --background-overlay: linear-gradient(90deg, rgba(2, 27, 45, 0.88), rgba(3, 78, 105, 0.38), rgba(255, 111, 97, 0.18));
-  --sidebar-bg: #08102f;
-  --sidebar-border: #ff7a5c;
-  --sidebar-text: #b8f3ee;
-  --sidebar-muted: #62c9c3;
-  --sidebar-active-bg: linear-gradient(90deg, #ff5f6d, #ffb347);
-  --sidebar-active-text: #07152f;
-  --content-bg: rgba(255, 246, 228, 0.92);
-  --surface: #fff3df;
-  --surface-strong: #ffe2bd;
-  --surface-glass: rgba(255, 243, 223, 0.78);
-  --text: #07152f;
-  --text-soft: #225266;
-  --text-bright: #004e64;
-  --primary: #ff5f6d;
-  --primary-hover: #ff3f55;
-  --secondary: #00c2c7;
-  --accent: #ffb347;
-  --success: #00d68f;
-  --danger: #ff3f55;
-  --border: rgba(0, 78, 100, 0.22);
-  --shadow: 0 24px 70px rgba(255, 95, 109, 0.22);
-  --focus-ring-color: 0 0 0 4px rgba(0, 194, 199, 0.28);
-}
-
-/* === Manta Night — bioluminescent on near-black + violet === */
-
-[data-palette="manta-night"] {
+:root {
   --page-bg: #020617;
-  --background-overlay: radial-gradient(circle at 20% 10%, rgba(0, 255, 209, 0.22), transparent 34%), radial-gradient(circle at 82% 30%, rgba(124, 58, 237, 0.32), transparent 36%), linear-gradient(90deg, rgba(2, 6, 23, 0.92), rgba(8, 47, 73, 0.48));
   --sidebar-bg: #07051f;
   --sidebar-border: #00ffd1;
   --sidebar-text: #d8fff8;
   --sidebar-muted: #78e7dc;
   --sidebar-active-bg: linear-gradient(90deg, #00ffd1, #7c3aed);
   --sidebar-active-text: #020617;
+
   --content-bg: rgba(3, 18, 34, 0.84);
-  --surface: rgba(6, 32, 55, 0.86);
-  --surface-strong: rgba(10, 52, 83, 0.94);
-  --surface-glass: rgba(6, 32, 55, 0.68);
-  --text: #f0fffb;
-  --text-soft: #a8efe7;
-  --text-bright: #00ffd1;
-  --primary: #00ffd1;
-  --primary-hover: #3bffe0;
-  --secondary: #7c3aed;
-  --accent: #ff4fd8;
-  --success: #53ff9a;
-  --danger: #ff4f6d;
-  --border: rgba(0, 255, 209, 0.24);
-  --shadow: 0 28px 90px rgba(0, 255, 209, 0.18);
-  --focus-ring-color: 0 0 0 4px rgba(255, 79, 216, 0.28);
-}
+  --surface-app: rgba(3, 18, 34, 0.84);
+  --surface-panel: rgba(6, 32, 55, 0.86);
+  --surface-panel-strong: rgba(10, 52, 83, 0.94);
+  --surface-raised: rgba(6, 32, 55, 0.68);
 
-/* === Reef Carnival — saturated coral-and-teal on cream === */
+  --text-primary: #f0fffb;
+  --text-muted: #a8efe7;
+  --text-inverse: #020617;
 
-[data-palette="reef-carnival"] {
-  --page-bg: #003b46;
-  --background-overlay: linear-gradient(120deg, rgba(0, 59, 70, 0.82), rgba(7, 168, 173, 0.42), rgba(255, 196, 61, 0.24));
-  --sidebar-bg: #05223a;
-  --sidebar-border: #ffc43d;
-  --sidebar-text: #edfff9;
-  --sidebar-muted: #90f1d6;
-  --sidebar-active-bg: linear-gradient(90deg, #ff6b35, #ffc43d);
-  --sidebar-active-text: #05223a;
-  --content-bg: rgba(255, 251, 232, 0.93);
-  --surface: #fff8d6;
-  --surface-strong: #e4fff4;
-  --surface-glass: rgba(255, 248, 214, 0.74);
-  --text: #05223a;
-  --text-soft: #116466;
-  --text-bright: #007f7f;
-  --primary: #ff6b35;
-  --primary-hover: #ff4d1f;
-  --secondary: #07a8ad;
-  --accent: #ffc43d;
-  --success: #23ce6b;
-  --danger: #ff3366;
-  --border: rgba(7, 168, 173, 0.3);
-  --shadow: 0 24px 70px rgba(255, 107, 53, 0.24);
-  --focus-ring-color: 0 0 0 4px rgba(255, 196, 61, 0.38);
-}
+  --border-subtle: rgba(0, 255, 209, 0.24);
+  --border-strong: #00ffd1;
 
-/* === Abyss & Flame — flame primary, cyan counter on cool cream === */
+  --accent-primary: #00ffd1;
+  --accent-primary-hover: #3bffe0;
+  --accent-primary-subtle: rgba(0, 255, 209, 0.14);
+  --accent-secondary: #7c3aed;
+  --accent-selection: #ff4fd8;
 
-[data-palette="abyss-flame"] {
-  --page-bg: #00111c;
-  --background-overlay: linear-gradient(90deg, rgba(0, 17, 28, 0.92), rgba(0, 68, 89, 0.48), rgba(255, 94, 20, 0.2));
-  --sidebar-bg: #050b18;
-  --sidebar-border: #ff5e14;
-  --sidebar-text: #e6fbff;
-  --sidebar-muted: #78dce8;
-  --sidebar-active-bg: linear-gradient(90deg, #ff5e14, #00d9ff);
-  --sidebar-active-text: #050b18;
-  --content-bg: rgba(241, 255, 252, 0.91);
-  --surface: #ecfffb;
-  --surface-strong: #d4fbff;
-  --surface-glass: rgba(236, 255, 251, 0.72);
-  --text: #04111f;
-  --text-soft: #14546a;
-  --text-bright: #006c89;
-  --primary: #ff5e14;
-  --primary-hover: #ff3d00;
-  --secondary: #00d9ff;
-  --accent: #ffd166;
-  --success: #00c896;
-  --danger: #ff2d55;
-  --border: rgba(0, 108, 137, 0.24);
-  --shadow: 0 24px 80px rgba(255, 94, 20, 0.22);
-  --focus-ring-color: 0 0 0 4px rgba(0, 217, 255, 0.3);
-}
+  --status-success: #53ff9a;
+  --status-success-bg: rgba(83, 255, 154, 0.14);
+  --status-warning: #ffd166;
+  --status-warning-bg: rgba(255, 209, 102, 0.15);
+  --status-error: #ff4f6d;
+  --status-error-bg: rgba(255, 79, 109, 0.15);
+  --status-info: #7c3aed;
+  --status-info-bg: rgba(124, 58, 237, 0.16);
 
-/* === Sea Glass Electric — mint primary, hot pink counter === */
-
-[data-palette="seaglass-electric"] {
-  --page-bg: #003f5c;
-  --background-overlay: radial-gradient(circle at 15% 12%, rgba(77, 255, 219, 0.28), transparent 32%), radial-gradient(circle at 78% 24%, rgba(255, 92, 205, 0.24), transparent 34%), linear-gradient(90deg, rgba(0, 63, 92, 0.78), rgba(0, 191, 166, 0.28));
-  --sidebar-bg: #041c32;
-  --sidebar-border: #4dffdb;
-  --sidebar-text: #effffb;
-  --sidebar-muted: #9df7e7;
-  --sidebar-active-bg: linear-gradient(90deg, #4dffdb, #ff5ccd);
-  --sidebar-active-text: #041c32;
-  --content-bg: rgba(244, 255, 248, 0.92);
-  --surface: #f4fff8;
-  --surface-strong: #dcfff4;
-  --surface-glass: rgba(244, 255, 248, 0.72);
-  --text: #041c32;
-  --text-soft: #006c67;
-  --text-bright: #008c84;
-  --primary: #00bfa6;
-  --primary-hover: #009e8a;
-  --secondary: #ff5ccd;
-  --accent: #c6ff3d;
-  --success: #00d084;
-  --danger: #ff3864;
-  --border: rgba(0, 191, 166, 0.26);
-  --shadow: 0 24px 72px rgba(0, 191, 166, 0.2);
-  --focus-ring-color: 0 0 0 4px rgba(255, 92, 205, 0.26);
-}
-
-/*
- * === Shared translation: bundle tokens → my semantic tokens ===
- *
- * This block applies to EVERY palette ([data-palette] matches
- * the attribute regardless of value) and is loaded after the
- * five blocks above, so its declarations win. Each line maps
- * a bundle-token-VALUE into a semantic-token-NAME the component
- * library consumes. The bundle tokens are the source of truth;
- * the semantic tokens are downstream aliases.
- */
-
-[data-palette] {
-  /* Surfaces */
-  --surface-app: var(--content-bg);
-  --surface-panel: var(--surface);
-  --surface-panel-strong: var(--surface-strong);
-  --surface-raised: var(--surface-glass);
-
-  /* Text */
-  --text-primary: var(--text);
-  --text-muted: var(--text-soft);
-  --text-inverse: var(--sidebar-active-text);
-
-  /* Borders */
-  --border-subtle: var(--border);
-  --border-strong: var(--primary);
-
-  /* Accents */
-  --accent-primary: var(--primary);
-  --accent-primary-hover: var(--primary-hover);
-  --accent-primary-subtle: color-mix(in srgb, var(--primary) 16%, transparent);
-  --accent-secondary: var(--secondary);
-  --accent-selection: var(--accent);
-
-  /* Status */
-  --status-success: var(--success);
-  --status-success-bg: color-mix(in srgb, var(--success) 18%, transparent);
-  --status-warning: var(--accent);
-  --status-warning-bg: color-mix(in srgb, var(--accent) 18%, transparent);
-  --status-error: var(--danger);
-  --status-error-bg: color-mix(in srgb, var(--danger) 16%, transparent);
-  --status-info: var(--secondary);
-  --status-info-bg: color-mix(in srgb, var(--secondary) 16%, transparent);
-
-  /* Focus + shadows */
-  --focus-ring: var(--primary);
-  --shadow-panel: var(--shadow);
-  --shadow-elevated: var(--shadow);
-
-  /* Backdrop blur — every bundled theme uses a blur on cards */
+  --focus-ring: #ff4fd8;
+  --shadow-panel: 0 24px 70px rgba(0, 255, 209, 0.14);
+  --shadow-elevated: 0 28px 90px rgba(0, 255, 209, 0.18);
   --backdrop-blur: 14px;
 }

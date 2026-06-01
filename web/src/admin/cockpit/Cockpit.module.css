@@ -1,0 +1,490 @@
+.cockpit {
+  position: relative;
+  min-height: 100%;
+  padding: 24px;
+  color: var(--text-primary);
+  overflow: hidden;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2, 6, 23, 0.54),
+      rgba(2, 6, 23, 0.86) 58%,
+      rgba(2, 6, 23, 0.96)
+    ),
+    radial-gradient(circle at 18% 0%, rgba(0, 255, 209, 0.22), transparent 28%),
+    radial-gradient(
+      circle at 88% 8%,
+      rgba(255, 79, 216, 0.16),
+      transparent 24%
+    ),
+    url("/cockpit-background.png") center top / cover no-repeat,
+    linear-gradient(140deg, rgba(2, 6, 23, 0.74), rgba(3, 18, 34, 0.94));
+}
+
+.cockpit::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.34;
+  background:
+    radial-gradient(
+      circle at 20% 12%,
+      rgba(0, 255, 209, 0.18),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 82% 24%,
+      rgba(124, 58, 237, 0.22),
+      transparent 28%
+    );
+  animation: cockpit-drift 18s ease-in-out infinite alternate;
+}
+
+.cockpit > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes cockpit-drift {
+  from {
+    transform: translate3d(-1%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(1%, 1%, 0) scale(1.04);
+  }
+}
+
+.header {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow,
+.panelHeader span,
+.moneyMetric span,
+.readinessCell span,
+.signal span,
+.action span {
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.header h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(32px, 6vw, 64px);
+  line-height: 0.95;
+  color: var(--text-primary);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerActions button {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-primary);
+  font-weight: 700;
+}
+
+.fixtureBadge,
+.errorBadge {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fixtureBadge {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+}
+
+.errorBadge,
+.errorLine {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+}
+
+.errorLine,
+.warningLine {
+  border: 1px solid color-mix(in srgb, var(--status-error) 30%, transparent);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.warningLine {
+  border-color: color-mix(in srgb, var(--status-warning) 34%, transparent);
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+.fixtureTools {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  width: fit-content;
+  background: rgba(3, 18, 34, 0.76);
+}
+
+.fixtureTools button {
+  min-height: 28px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.missionControl {
+  min-height: 96px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.missionMetric {
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 52, 83, 0.72),
+    rgba(3, 18, 34, 0.86)
+  );
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.missionMetric strong {
+  font-size: 28px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.voyageMap {
+  min-height: 360px;
+  max-height: 480px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(160px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+  padding: 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  background:
+    linear-gradient(90deg, rgba(0, 255, 209, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(0, 255, 209, 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(6, 32, 55, 0.64), rgba(3, 18, 34, 0.88));
+  background-size: 48px 48px;
+  box-shadow: var(--shadow-elevated);
+  overflow: hidden;
+}
+
+.voyageTile {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(0, 255, 209, 0.1),
+      transparent 42%
+    ),
+    color-mix(in srgb, var(--surface-panel) 82%, transparent);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.voyageTile:hover,
+.voyageTile:focus-visible,
+.action:hover,
+.action:focus-visible,
+.signal:hover,
+.signal:focus-visible,
+.missionMetric:hover,
+.missionMetric:focus-visible,
+.readinessCell:hover,
+.readinessCell:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 32px rgba(0, 255, 209, 0.18);
+}
+
+.activeVoyage {
+  border-color: var(--accent-primary);
+}
+
+.voyageStatus {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--accent-primary-subtle);
+  color: var(--accent-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.voyageTile strong {
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.voyageTile span {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.voyageTile b {
+  color: var(--status-error);
+}
+
+.voyageMeta {
+  display: grid;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.moneyStrip {
+  min-height: 96px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.moneyMetric,
+.panel,
+.activityStream {
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-panel) 84%, transparent);
+}
+
+.moneyMetric,
+.panel,
+.activityStream,
+.voyageTile,
+.missionMetric {
+  backdrop-filter: blur(12px) saturate(135%);
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
+}
+
+.moneyMetric {
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px;
+}
+
+.moneyMetric strong {
+  font-size: 24px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.signalRow {
+  display: grid;
+  grid-template-columns: 320px 320px 1fr;
+  gap: 16px;
+}
+
+.panel,
+.activityStream {
+  padding: 14px;
+}
+
+.panelHeader {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.panelHeader strong {
+  color: var(--accent-primary);
+}
+
+.signalList,
+.actionGrid,
+.readinessGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.signal,
+.action,
+.readinessCell {
+  min-height: 96px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.signal {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+
+.signal small,
+.quiet {
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.blocker {
+  border-color: color-mix(in srgb, var(--status-error) 50%, transparent);
+}
+
+.warning {
+  border-color: color-mix(in srgb, var(--status-warning) 42%, transparent);
+}
+
+.actionGrid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.action {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.readinessGrid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.readinessCell {
+  min-height: 96px;
+}
+
+.readinessCell strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.activityStream {
+  height: 240px;
+  margin-top: 16px;
+  overflow: auto;
+}
+
+.activityStream ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.activityStream li {
+  display: grid;
+  grid-template-columns: 1fr 180px 180px;
+  gap: 12px;
+  align-items: center;
+  min-height: 36px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+}
+
+.activityStream span,
+.activityStream time {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.emptyPlane {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  min-height: 320px;
+  color: var(--text-muted);
+}
+
+.emptyPlane a {
+  color: var(--accent-primary);
+}
+
+@media (max-width: 1100px) {
+  .voyageMap,
+  .moneyStrip,
+  .signalRow,
+  .missionControl {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .cockpit {
+    padding: 14px;
+  }
+
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .voyageTile,
+  .moneyMetric,
+  .signal,
+  .action,
+  .readinessCell {
+    width: 100%;
+  }
+
+  .readinessGrid,
+  .activityStream li {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cockpit::before {
+    animation: none;
+  }
+}

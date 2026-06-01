@@ -2,27 +2,19 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-// CSS load order, per the Sprint 025 migration plan:
+// CSS load order:
 //   tokens.css   — semantic token contract + sea palette tokens
-//   themes.css   — five [data-palette] rebinds + the
-//                  bundle→semantic translation block
-//   motion.css   — three [data-motion] rules + reduced-motion
-//   app.css      — legacy chrome (still needed until Phase 5
-//                  migrates all 25 pages off it)
-//   admin.css    — [data-layout] grid overrides and content
-//                  area theme alignment, wins over app.css
-//   base.css     — theme-driven <body> composite + focus
-//                  defaults. Loads LAST so its `html, body`
-//                  rule overrides app.css's legacy Sprint 011
-//                  white-wash composite during the migration.
+//   themes.css   — production cockpit token bindings
+//   motion.css   — reduced-motion-safe ambient rules
+//   app.css      — temporary legacy chrome for unmigrated pages
+//   admin.css    — production admin shell overrides
+//   base.css     — body composite + focus defaults
 import "./styles/tokens.css";
 import "./styles/themes.css";
 import "./styles/motion.css";
 import "./styles/app.css";
 import "./styles/admin.css";
 import "./styles/base.css";
-
-import { DesignModeProvider } from "./admin/design";
 
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
@@ -64,7 +56,6 @@ import { ImportSpreadsheet } from "./admin/pages/ImportSpreadsheet";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <DesignModeProvider>
     <BrowserRouter>
       <Routes>
         {/* Public auth surface — no session required. */}
@@ -161,6 +152,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
-    </DesignModeProvider>
   </React.StrictMode>,
 );

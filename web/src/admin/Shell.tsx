@@ -2,13 +2,7 @@ import { useEffect } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { adminApi } from "./api";
-import { useDesignMode } from "./design";
-import {
-  CanvasNav,
-  RailNav,
-  SpacesNav,
-  TriptychSwitcher,
-} from "./components";
+import { SpacesNav } from "./components";
 import { filterNavForRole, NAV } from "./nav";
 import { useMe } from "./useMe";
 import { UserMenu, useSignOut } from "./UserMenu";
@@ -45,17 +39,12 @@ function useOnboardingAutoShow(isAdmin: boolean) {
 
 /**
  * AdminShell is the persistent chrome for the admin / Cruise
- * Director surface. Sprint 025 refactor: shell now hosts
- * design-mode dispatch — useMe + role filter + onboarding
- * auto-show + sign-out + UserMenu all live HERE (one
- * behavioral owner). The visual presentation is delegated to
- * one of three nav renderers based on data-layout. Role
- * filtering happens ONCE on the canonical NAV; whichever
- * renderer is active receives the already-filtered list.
+ * Director surface. Sprint 027 collapses Triptych to one
+ * production shell. Role filtering happens once on the canonical
+ * NAV; the cockpit and remaining pages share the same chrome.
  */
 export function AdminShell() {
   const me = useMe();
-  const { mode } = useDesignMode();
   const { submitting, error, signOut } = useSignOut();
 
   // Hooks must run on every render in the same order — call
@@ -91,21 +80,12 @@ export function AdminShell() {
     </>
   );
 
-  const shellClass = `admin admin--${mode.layout}`;
-
   return (
-    <div className={shellClass} data-layout={mode.layout}>
-      {mode.layout === "rail" ? (
-        <RailNav nav={filteredNav} brand="Liveaboard" footer={footer} />
-      ) : mode.layout === "canvas" ? (
-        <CanvasNav nav={filteredNav} brand="Liveaboard" footer={footer} />
-      ) : (
-        <SpacesNav nav={filteredNav} brand="Liveaboard" footer={footer} />
-      )}
+    <div className="admin admin--cockpit">
+      <SpacesNav nav={filteredNav} brand="Liveaboard" footer={footer} />
       <main className="admin-main">
         <Outlet />
       </main>
-      <TriptychSwitcher />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-// Sprint 025 Triptych — component library barrel.
+// Admin component library barrel.
 // Pages should import primitives from here, not reach into
 // individual files. Internal modules (DataTable types, etc.)
 // re-export their types too so consumers don't import deep.
@@ -45,15 +45,5 @@ export type { Column, DataTableProps } from "./DataTable";
 export { SpacesNav } from "./SpacesNav";
 export type { SpacesNavProps } from "./SpacesNav";
 
-export { RailNav } from "./RailNav";
-export type { RailNavProps } from "./RailNav";
-
-export { CanvasNav } from "./CanvasNav";
-export type { CanvasNavProps } from "./CanvasNav";
-
 export { CommandBar, useGlobalCommandShortcut } from "./CommandBar";
 export type { CommandBarProps } from "./CommandBar";
-
-export { TodayCanvas } from "./TodayCanvas";
-
-export { TriptychSwitcher } from "./TriptychSwitcher";
