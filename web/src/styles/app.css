@@ -195,8 +195,8 @@ h3 {
 }
 
 .callout {
-  background: var(--c-primary-subtle);
-  color: var(--c-700);
+  background: var(--status-info-bg);
+  color: var(--status-info);
   padding: var(--sp-md);
   border-radius: var(--r-md);
   font-size: var(--fs-sm);
@@ -658,17 +658,17 @@ h3 {
   padding: 0;
 }
 .stepper__item {
-  background: white;
-  border: 1px solid var(--c-100);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--r-md);
   padding: 0;
 }
 .stepper__item.is-current {
-  border-color: var(--c-primary);
-  box-shadow: 0 0 0 2px rgba(229, 133, 59, 0.15);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-primary-subtle);
 }
 .stepper__item.is-done {
-  border-color: var(--c-200);
+  border-color: var(--border-strong);
 }
 .stepper__btn {
   display: grid;
@@ -689,8 +689,8 @@ h3 {
   width: 24px;
   height: 24px;
   border-radius: 12px;
-  background: var(--c-100);
-  color: var(--c-700);
+  background: var(--accent-primary-subtle);
+  color: var(--text-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -698,29 +698,32 @@ h3 {
   font-size: 13px;
 }
 .stepper__item.is-done .stepper__num {
-  background: var(--c-primary);
-  color: white;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
 }
 .stepper__label {
   font-weight: 600;
   font-size: var(--fs-sm);
+  color: var(--text-primary);
 }
 .stepper__hint {
-  color: var(--c-500);
+  color: var(--text-muted);
   font-size: 12px;
   grid-column: 2;
 }
 .onboarding__step {
-  background: white;
-  border: 1px solid var(--c-100);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--r-md);
   padding: var(--sp-lg);
   margin-bottom: var(--sp-md);
+  color: var(--text-primary);
 }
 .onboarding__step h2 {
   margin: 0 0 var(--sp-xs);
   font-family: var(--font-display);
   font-weight: 700;
+  color: var(--text-primary);
 }
 .onboarding__form .field {
   max-width: 380px;
@@ -737,14 +740,15 @@ h3 {
   flex-direction: column;
   gap: 4px;
   padding: var(--sp-md);
-  background: var(--c-50);
-  border: 1px solid var(--c-100);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--r-md);
   text-decoration: none;
-  color: inherit;
+  color: var(--text-primary);
 }
 .onboarding__choice:hover {
-  border-color: var(--c-primary);
+  border-color: var(--accent-primary);
+  background: var(--surface-panel-strong);
   text-decoration: none;
 }
 .onboarding__rows {
@@ -757,14 +761,15 @@ h3 {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border: 1px solid var(--c-100);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--r-md);
-  background: var(--c-50);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   margin-bottom: 6px;
 }
 .onboarding__row.is-highlight {
-  border-color: var(--c-primary);
-  box-shadow: 0 0 0 2px rgba(229, 133, 59, 0.18);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-primary-subtle);
 }
 .onboarding__footer {
   display: flex;
