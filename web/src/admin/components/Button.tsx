@@ -4,7 +4,10 @@ import styles from "./Button.module.css";
 
 export type ButtonVariant = "primary" | "secondary" | "quiet";
 
-export type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
+export type ButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "className"
+> & {
   variant?: ButtonVariant;
   loading?: boolean;
   children: ReactNode;
@@ -19,7 +22,9 @@ export function Button({
   className,
   ...rest
 }: ButtonProps) {
-  const cls = [styles.btn, styles[variant], className].filter(Boolean).join(" ");
+  const cls = [styles.btn, styles[variant], className]
+    .filter(Boolean)
+    .join(" ");
   return (
     <button
       type="button"

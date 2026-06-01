@@ -36,26 +36,43 @@
   cursor: not-allowed;
 }
 
-/* Primary — gradient pill matching the active sidebar item via
- * --sidebar-active-bg. Falls back to primary→accent when no
- * theme is active. For manta-night this means cyan→violet, not
- * cyan→magenta — the "blue" the user asked for. */
+/* Primary — sea family (Sprint 028). Three selectable treatments,
+ * all with a deep-navy label. Default `primary` is solid aquamarine;
+ * `primaryGradient` and `primaryElectric` are the bolder sea pills.
+ * Replaces the old cyan→violet sidebar-active gradient. */
 .primary {
-  background: var(
-    --sidebar-active-bg,
-    linear-gradient(
-      90deg,
-      var(--primary, var(--accent-primary)),
-      var(--accent, var(--accent-selection))
-    )
-  );
-  color: var(--sidebar-active-text, var(--text-inverse));
-  box-shadow: 0 16px 36px color-mix(in srgb, var(--primary, var(--accent-primary)) 28%, transparent);
+  background: var(--btn-sea-solid);
+  color: var(--btn-sea-text);
+  box-shadow: 0 16px 36px
+    color-mix(in srgb, var(--btn-sea-solid) 30%, transparent);
 }
 .primary:hover:not(:disabled) {
+  background: var(--btn-sea-solid-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 20px 42px
+    color-mix(in srgb, var(--btn-sea-solid) 40%, transparent);
+}
+
+/* Sea gradient — lagoon → drop-off. */
+.primaryGradient {
+  background: var(--btn-sea-gradient);
+  color: var(--btn-sea-text);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--c-sea-500) 32%, transparent);
+}
+.primaryGradient:hover:not(:disabled) {
   filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: 0 20px 42px color-mix(in srgb, var(--primary, var(--accent-primary)) 38%, transparent);
+}
+
+/* Electric — turquoise → mint, matches the cockpit cyan glow. */
+.primaryElectric {
+  background: var(--btn-sea-electric);
+  color: var(--btn-sea-text);
+  box-shadow: 0 16px 38px color-mix(in srgb, var(--c-sea-mint) 30%, transparent);
+}
+.primaryElectric:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
 }
 
 /* Secondary — translucent surface pill that reads as a
@@ -95,5 +112,7 @@
   animation: spin 700ms linear infinite;
 }
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

@@ -55,10 +55,28 @@
   --c-sea-500: #0e95cb;
   --c-sea-600: #0a76a6;
   --c-sea-700: #085680;
+  --c-sea-mint: #00ffd1;
+
+  /* Sea button family (Sprint 028) — three selectable primary
+   * treatments, all with a deep-navy label. Used by the Button
+   * primitive and by legacy app.css buttons until pages migrate. */
+  --btn-sea-solid: var(--c-sea-400);
+  --btn-sea-solid-hover: var(--c-sea-500);
+  --btn-sea-gradient: linear-gradient(
+    90deg,
+    var(--c-sea-300),
+    var(--c-sea-600)
+  );
+  --btn-sea-electric: linear-gradient(
+    90deg,
+    var(--c-sea-400),
+    var(--c-sea-mint)
+  );
+  --btn-sea-text: #020617;
 
   --gradient-sea: linear-gradient(
     180deg,
-    var(--c-sea-50)  0%,
+    var(--c-sea-50) 0%,
     var(--c-sea-200) 22%,
     var(--c-sea-400) 60%,
     var(--c-sea-600) 100%

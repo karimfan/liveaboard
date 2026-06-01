@@ -48,20 +48,20 @@ button {
   padding: var(--sp-sm) var(--sp-md);
   border-radius: var(--r-md);
   border: 1px solid transparent;
-  background: var(--c-900);
-  color: var(--c-50);
+  background: var(--btn-sea-solid);
+  color: var(--btn-sea-text);
   cursor: pointer;
   transition: background var(--dur-short) var(--ease-out);
 }
 button:hover {
-  background: var(--c-700);
+  background: var(--btn-sea-solid-hover);
 }
 button.primary {
-  background: var(--c-primary);
-  color: white;
+  background: var(--btn-sea-solid);
+  color: var(--btn-sea-text);
 }
 button.primary:hover {
-  background: var(--c-primary-hover);
+  background: var(--btn-sea-solid-hover);
 }
 button.ghost {
   background: transparent;
@@ -114,15 +114,23 @@ label {
   margin-bottom: var(--sp-xs);
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0 0 var(--sp-md);
 }
-h1 { font-size: var(--fs-3xl); }
-h2 { font-size: var(--fs-2xl); }
-h3 { font-size: var(--fs-xl); }
+h1 {
+  font-size: var(--fs-3xl);
+}
+h2 {
+  font-size: var(--fs-2xl);
+}
+h3 {
+  font-size: var(--fs-xl);
+}
 
 .auth-shell {
   min-height: 100vh;
@@ -309,8 +317,9 @@ h3 { font-size: var(--fs-xl); }
   font-size: var(--fs-sm);
   font-weight: 500;
   text-decoration: none;
-  transition: background var(--dur-short) var(--ease-out),
-              color var(--dur-short) var(--ease-out);
+  transition:
+    background var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out);
 }
 .admin-nav__link:hover {
   background: var(--c-100);
@@ -614,9 +623,18 @@ h3 { font-size: var(--fs-xl); }
   border-radius: var(--r-full);
   letter-spacing: 0.02em;
 }
-.rate-chip--fresh   { background: var(--c-success-bg); color: var(--c-success); }
-.rate-chip--stale   { background: var(--c-warning-bg); color: var(--c-warning); }
-.rate-chip--missing { background: var(--c-error-bg);   color: var(--c-error);   }
+.rate-chip--fresh {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+.rate-chip--stale {
+  background: var(--c-warning-bg);
+  color: var(--c-warning);
+}
+.rate-chip--missing {
+  background: var(--c-error-bg);
+  color: var(--c-error);
+}
 
 /* --- Sprint 023 onboarding wizard --- */
 
@@ -773,14 +791,38 @@ h3 { font-size: var(--fs-xl); }
   border-radius: var(--r-full);
   letter-spacing: 0.02em;
 }
-.chip--full      { background: var(--c-error-bg);   color: var(--c-error);   }
-.chip--available { background: var(--c-success-bg); color: var(--c-success); }
-.chip--planned   { background: var(--c-100);        color: var(--c-700);     }
-.chip--active    { background: var(--c-success-bg); color: var(--c-success); }
-.chip--low       { background: var(--c-error-bg);   color: var(--c-error);   }
-.chip--warn      { background: var(--c-warning-bg); color: var(--c-warning); }
-.chip--ok        { background: var(--c-success-bg); color: var(--c-success); }
-.chip--archived  { background: var(--c-100);        color: var(--c-500);     }
+.chip--full {
+  background: var(--c-error-bg);
+  color: var(--c-error);
+}
+.chip--available {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+.chip--planned {
+  background: var(--c-100);
+  color: var(--c-700);
+}
+.chip--active {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+.chip--low {
+  background: var(--c-error-bg);
+  color: var(--c-error);
+}
+.chip--warn {
+  background: var(--c-warning-bg);
+  color: var(--c-warning);
+}
+.chip--ok {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+.chip--archived {
+  background: var(--c-100);
+  color: var(--c-500);
+}
 
 .boat-detail-header {
   display: grid;
@@ -999,8 +1041,14 @@ h3 { font-size: var(--fs-xl); }
 
 /* Sprint 010 — Cruise Director landing extras */
 
-.chip--upcoming { background: var(--c-100);        color: var(--c-700);     }
-.chip--past     { background: var(--c-100);        color: var(--c-500);     }
+.chip--upcoming {
+  background: var(--c-100);
+  color: var(--c-700);
+}
+.chip--past {
+  background: var(--c-100);
+  color: var(--c-500);
+}
 
 .contact-card {
   list-style: none;
@@ -1041,7 +1089,6 @@ h3 { font-size: var(--fs-xl); }
   letter-spacing: 0.04em;
 }
 
-
 /* ============================================================
  * Sprint 011 — sidebar user menu + sign-out
  * ============================================================ */
@@ -1060,8 +1107,9 @@ h3 { font-size: var(--fs-xl); }
   border-radius: var(--r-md);
   padding: var(--sp-sm) var(--sp-sm);
   cursor: pointer;
-  transition: background var(--dur-short) var(--ease-out),
-              border-color var(--dur-short) var(--ease-out);
+  transition:
+    background var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out);
   font-family: inherit;
   color: inherit;
 }
@@ -1124,8 +1172,9 @@ h3 { font-size: var(--fs-xl); }
   font-size: var(--fs-sm);
   color: var(--c-700);
   cursor: pointer;
-  transition: background var(--dur-short) var(--ease-out),
-              color var(--dur-short) var(--ease-out);
+  transition:
+    background var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out);
 }
 .user-menu__item:hover {
   background: var(--c-primary-subtle);
@@ -1160,9 +1209,10 @@ h3 { font-size: var(--fs-xl); }
   font: inherit;
   font-size: var(--fs-sm);
   cursor: pointer;
-  transition: background var(--dur-short) var(--ease-out),
-              color var(--dur-short) var(--ease-out),
-              border-color var(--dur-short) var(--ease-out);
+  transition:
+    background var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out);
 }
 .admin-sidebar__signout:hover {
   background: var(--c-100);
@@ -1184,8 +1234,9 @@ h3 { font-size: var(--fs-xl); }
   display: block;
   text-decoration: none;
   color: inherit;
-  transition: transform var(--dur-short) var(--ease-out),
-              box-shadow var(--dur-short) var(--ease-out);
+  transition:
+    transform var(--dur-short) var(--ease-out),
+    box-shadow var(--dur-short) var(--ease-out);
 }
 .import-card:hover {
   text-decoration: none;
