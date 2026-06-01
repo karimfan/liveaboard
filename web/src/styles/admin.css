@@ -41,9 +41,13 @@
 
 button.primary,
 .primary {
-  background: var(--sidebar-active-bg);
-  color: var(--sidebar-active-text);
+  background: var(--btn-sea-solid);
+  color: var(--btn-sea-text);
   border: 0;
+}
+button.primary:hover,
+.primary:hover:not(:disabled) {
+  background: var(--btn-sea-solid-hover);
 }
 
 button.secondary {
