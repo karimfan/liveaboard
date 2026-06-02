@@ -47,12 +47,29 @@ switching, no layout switching, and no floating design dock.
 - **Reference sites:** Competitors (DiveHQ, DiversDesk, Bloowatch, Liveaboard Manager) all converge on saturated ocean-blue tourism aesthetics. This design uses a sea gradient at the page level so the product feels at home in the dive industry, but holds the line on slate working surfaces so the operator-facing tool still looks like Linear, not Booking.com.
 
 ## Typography
-- **Display/Hero:** General Sans 700 — geometric, confident, modern without being trendy
-- **Body:** DM Sans 400/500/600 — highly readable, warm character, excellent for UI text
-- **UI/Labels:** DM Sans (same as body)
-- **Data/Tables:** Geist (tabular-nums) — precise, aligned columns for the ledger
-- **Code:** JetBrains Mono
-- **Loading:** Google Fonts (DM Sans, JetBrains Mono), Font Share (General Sans), CDN (Geist)
+
+> **Sprint 028 truth-up.** The earlier General Sans / DM Sans / Geist
+> contract never matched what shipped. The implemented token stack
+> (`web/src/styles/tokens.css`) is **Inter** for display + body and
+> **JetBrains Mono** for data, and that is now the contract. DM Sans /
+> General Sans remain only as fallback names in the stack for any
+> legacy chrome that still references them; do not introduce new uses.
+
+- **Display/Hero:** Inter 700–900 — geometric, confident; supplies the
+  heavy weights the cockpit metrics and pill buttons rely on. Token:
+  `--font-display`.
+- **Body:** Inter 400/500/600 — highly readable UI text. Token:
+  `--font-body`.
+- **UI/Labels:** Inter (same as body).
+- **Data/Tables:** JetBrains Mono with `tabular-nums` — aligned columns
+  for the ledger, folio amounts, timestamps, and IDs. Token:
+  `--font-mono`.
+- **Code:** JetBrains Mono (`--font-mono`).
+- **Loading:** Google Fonts (Inter, JetBrains Mono) via `<link>` in
+  `web/index.html`. Fonts already load; self-hosting via `@fontsource`
+  is an optional future change, not a requirement.
+- **Usage rule:** components and pages reference `var(--font-display)`,
+  `var(--font-body)`, or `var(--font-mono)` — never a raw family name.
 - **Scale:**
   - xs: 0.75rem (12px)
   - sm: 0.875rem (14px)
@@ -64,6 +81,24 @@ switching, no layout switching, and no floating design dock.
   - 4xl: 2.5rem (40px)
 
 ## Color
+
+> **Sprint 028 truth-up — the production palette is dark sea (manta-night).**
+> The authenticated admin app renders one palette: the dark cockpit
+> surfaces with a sea/cyan accent, bound in `web/src/styles/themes.css`
+> and consumed through the semantic tokens (`--surface-*`, `--text-*`,
+> `--accent-*`, `--border-*`, `--status-*`). The warm-slate + amber
+> `--c-*` scale below is **legacy**: it still styles the light auth /
+> guest / public pages, but admin pages must not consume it directly —
+> they read semantic tokens, which `admin.css` repaints onto the dark
+> palette. Sprint 028 unified the whole admin surface onto this.
+>
+> **Buttons are sea.** All primary buttons use the sea family
+> (`--btn-sea-*`): solid aquamarine (`#2EB6E5` → hover `#0E95CB`,
+> default), sea gradient (`#6DCEF0 → #0A76A6`), and turquoise→mint
+> (`#2EB6E5 → #00FFD1`), all with a deep-navy label. The `Button`
+> primitive exposes them as `primary` / `primaryGradient` /
+> `primaryElectric`. No amber or cyan→violet buttons remain.
+
 - **Approach:** Two-layer palette. **Working surfaces** (sidebar, cards, tables, forms) use the warm slate scale + amber accent — the original "operations tool" tone, optimized for density and contrast. **Page-level mood** uses a turquoise sea gradient applied to `<body>` so the SPA feels at home for a scuba liveaboard product without compromising surface legibility.
 - **Primary:** #E5853B (Amber/Warm Orange) — warm, urgent, operational. Used for CTAs, active states, accent highlights.
 - **Primary hover:** #D0752F
@@ -131,3 +166,24 @@ switching, no layout switching, and no floating design dock.
 | 2026-05-31 | **Body composite is now per-theme**, no longer Sprint 011 verbatim | Round 3 — each theme drives `--background-overlay` on `<body>` over the new derived underwater photo with a `--page-bg` fallback color, all `background-attachment: fixed`. Sprint 011's white-wash + sea-gradient composite is no longer applied; `--gradient-sea` survives in tokens.css for any direct consumer (e.g. the auth wordmark color). |
 | 2026-05-31 | **Round 4: pick `manta-night`, restore the Sprint 011 body composite verbatim** | User decision after seeing the five themes in the running app: "manta night BUT with the original background theme. Do not change the background at all." `base.css` reverts to the Sprint 011 composite character-for-character — white-wash gradient over `/background.jpg` over `--gradient-sea`, three layers `background-attachment: fixed`. The original photo (still in `web/public/background.jpg`) is what the user actually liked. The bundle's `--background-overlay` tokens stay defined per theme but are no longer applied to `<body>`. Other manta-night tokens (sidebar, surfaces, accents) remain in effect, so the dark navy chrome with cyan/violet/magenta accents floats on the original photo. DEFAULT_MODE = `manta-night`; the other four palettes stay switchable. |
 | 2026-05-30 | **Semantic-token contract** — components read only `--surface-*` / `--text-*` / `--accent-*` / `--border-*` / `--status-*` | Sprint 025 — each palette rebinds the semantic layer in `themes.css`. Components never reference raw hex. Adding/removing a palette is one CSS block, not a 25-page rewrite. Body sea gradient stays in `:root` and is NOT part of the semantic rebind set — preserved verbatim across every palette. |
+| 2026-06-02 | **Sprint 028: one UI — dark-sea palette everywhere, sea buttons, typography truth-up, enforced** | The cockpit was dark-sea but legacy admin pages still rendered the light `--c-*` palette via `app.css`, producing the "some pages differ" / low-contrast problem. Sprint 028 unifies the admin surface onto the semantic dark-sea tokens via a `.admin-main`-scoped bridge in `admin.css` (auth/guest pages stay light), recolors all buttons to the sea family (`--btn-sea-*`: solid aquamarine default + gradient + turquoise→mint variants), and truths-up this doc's Typography (Inter, not General Sans/DM Sans/Geist) and Color (dark sea is production) sections. A Stylelint guardrail (`no-raw-hex` + font allowlist) enforces it going forward. Unification direction (legacy → cockpit dark sea) confirmed by the user. |
+
+## Enforcement
+
+Sprint 028 added a Stylelint gate so the consistency above can't silently
+regress:
+
+- **No raw hex in components/pages.** `web/src/**/*.css` and
+  `*.module.css` may not contain raw hex colors. Raw hex lives only in
+  the token source files — `web/src/styles/tokens.css` and
+  `web/src/styles/themes.css` — which are exempt.
+- **Font allowlist.** `font-family` declarations must use
+  `var(--font-display)`, `var(--font-body)`, `var(--font-mono)`, or
+  `inherit` — never a raw family name (outside the token files).
+- **Where it runs:** `cd web && npm run lint:styles`, wired into
+  `make lint` and the CI workflow (`.github/workflows/ci.yml`).
+
+`web/src/styles/app.css` is the remaining legacy sheet. It still serves
+the light auth/guest pages and is exempt from the no-raw-hex rule for
+now; it is slated for deletion once those pages migrate (tracked as
+Sprint 028 remaining work / Sprint 029).
