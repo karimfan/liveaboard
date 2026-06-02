@@ -9,11 +9,45 @@ import {
   type FXRate,
   type InventoryBoatSummary,
 } from "../api";
+import {
+  Button,
+  Chip,
+  type Column,
+  DataTable,
+  Field,
+  PageHeader,
+  Tabs,
+} from "../components";
+
+import styles from "./Inventory.module.css";
 
 type Tab = "items" | "categories" | "boats" | "fx";
 
-const chargeTypes = ["sale", "rental", "service", "fee", "gratuity", "deposit", "damage", "included"];
-const units = ["each", "can", "bottle", "glass", "fill", "day", "week", "trip", "session", "item", "bag", "night", "person"];
+const chargeTypes = [
+  "sale",
+  "rental",
+  "service",
+  "fee",
+  "gratuity",
+  "deposit",
+  "damage",
+  "included",
+];
+const units = [
+  "each",
+  "can",
+  "bottle",
+  "glass",
+  "fill",
+  "day",
+  "week",
+  "trip",
+  "session",
+  "item",
+  "bag",
+  "night",
+  "person",
+];
 
 export function Inventory() {
   const [tab, setTab] = useState<Tab>("items");
@@ -43,7 +77,9 @@ export function Inventory() {
       setSummary(inv.boats ?? []);
       setRates(fx.rates ?? []);
     } catch (e) {
-      setError((e as { message?: string })?.message ?? "Failed to load inventory.");
+      setError(
+        (e as { message?: string })?.message ?? "Failed to load inventory.",
+      );
     } finally {
       setLoading(false);
     }
@@ -57,40 +93,41 @@ export function Inventory() {
     const q = search.trim().toLowerCase();
     if (!q) return items;
     return items.filter((i) =>
-      `${i.name} ${i.category_name} ${i.unit} ${i.charge_type}`.toLowerCase().includes(q),
+      `${i.name} ${i.category_name} ${i.unit} ${i.charge_type}`
+        .toLowerCase()
+        .includes(q),
     );
   }, [items, search]);
 
   return (
     <>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Inventory</h1>
-          <div className="admin-page-subtitle">
-            Catalog items, USD prices, per-boat stock, and checkout rates.
-          </div>
-        </div>
-        <button className="secondary" type="button" onClick={() => void applyDefaults(load, setError)}>
-          Apply missing defaults
-        </button>
-      </div>
-
-      <div className="tabs">
-        {(["items", "categories", "boats", "fx"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={"tab" + (tab === t ? " is-active" : "")}
-            onClick={() => setTab(t)}
+      <PageHeader
+        title="Inventory"
+        subtitle="Catalog items, USD prices, per-boat stock, and checkout rates."
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() => void applyDefaults(load, setError)}
           >
-            {t === "fx" ? "FX Rates" : title(t)}
-          </button>
-        ))}
+            Apply missing defaults
+          </Button>
+        }
+      />
+
+      <div className={styles.tabs}>
+        <Tabs
+          items={(["items", "categories", "boats", "fx"] as Tab[]).map((t) => ({
+            key: t,
+            label: t === "fx" ? "FX Rates" : title(t),
+          }))}
+          active={tab}
+          onSelect={(k) => setTab(k as Tab)}
+        />
       </div>
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
       {loading ? (
-        <div className="muted">Loading…</div>
+        <div className={styles.loading}>Loading…</div>
       ) : (
         <>
           {tab === "items" && (
@@ -104,11 +141,13 @@ export function Inventory() {
             />
           )}
           {tab === "categories" && (
-            <CategoriesTab categories={categories} reload={load} setError={setError} />
+            <CategoriesTab
+              categories={categories}
+              reload={load}
+              setError={setError}
+            />
           )}
-          {tab === "boats" && (
-            <BoatStockTab boats={boats} summary={summary} />
-          )}
+          {tab === "boats" && <BoatStockTab boats={boats} summary={summary} />}
           {tab === "fx" && (
             <FXTab rates={rates} reload={load} setError={setError} />
           )}
@@ -136,14 +175,22 @@ function ItemsTab({
   const [editing, setEditing] = useState<CatalogItem | null>(null);
   return (
     <>
-      <div className="filter-bar">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} type="search" placeholder="Search items..." />
-        <div className="filter-bar__spacer" />
-        <button type="button" className="primary" onClick={() => setEditing(blankItem(categories))}>
+      <div className={styles.toolbar}>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          type="search"
+          placeholder="Search items..."
+        />
+        <div className={styles.spacer} />
+        <Button
+          variant="primary"
+          onClick={() => setEditing(blankItem(categories))}
+        >
           + Add item
-        </button>
+        </Button>
       </div>
-      <table className="admin-table">
+      <table className={styles.table}>
         <thead>
           <tr>
             <th>Category</th>
@@ -151,20 +198,34 @@ function ItemsTab({
             <th>Unit</th>
             <th>Type</th>
             <th>Stock</th>
-            <th className="num">USD</th>
+            <th className={styles.num}>USD</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody>
           {items.map((i) => (
-            <tr key={i.id} onClick={() => setEditing(i)} className="click-row">
+            <tr
+              key={i.id}
+              onClick={() => setEditing(i)}
+              className={styles.clickRow}
+            >
               <td>{i.category_name}</td>
               <td>{i.name}</td>
               <td>{i.unit}</td>
               <td>{i.charge_type}</td>
               <td>{i.stock_mode}</td>
-              <td className="num">{usd(i.price_usd_cents)}</td>
-              <td><span className={"chip " + (i.is_active && !i.archived_at ? "chip--active" : "chip--full")}>{i.archived_at ? "Archived" : i.is_active ? "Active" : "Inactive"}</span></td>
+              <td className={styles.num}>{usd(i.price_usd_cents)}</td>
+              <td>
+                <Chip
+                  variant={i.is_active && !i.archived_at ? "success" : "error"}
+                >
+                  {i.archived_at
+                    ? "Archived"
+                    : i.is_active
+                      ? "Active"
+                      : "Inactive"}
+                </Chip>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -185,69 +246,112 @@ function ItemsTab({
   );
 }
 
-function CategoriesTab({ categories, reload, setError }: { categories: CatalogCategory[]; reload: () => Promise<void>; setError: (s: string | null) => void }) {
+function CategoriesTab({
+  categories,
+  reload,
+  setError,
+}: {
+  categories: CatalogCategory[];
+  reload: () => Promise<void>;
+  setError: (s: string | null) => void;
+}) {
   const [name, setName] = useState("");
   async function add(e: FormEvent) {
     e.preventDefault();
     setError(null);
     try {
-      await adminApi.createCatalogCategory({ name, sort_order: categories.length * 10 + 10 });
+      await adminApi.createCatalogCategory({
+        name,
+        sort_order: categories.length * 10 + 10,
+      });
       setName("");
       await reload();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to create category.");
+      setError(
+        (err as { message?: string })?.message ?? "Failed to create category.",
+      );
     }
   }
+  const columns: Column<CatalogCategory>[] = [
+    { key: "name", header: "Name", cell: (c) => c.name },
+    { key: "items", header: "Items", cell: (c) => c.item_count },
+    { key: "sort", header: "Sort", cell: (c) => c.sort_order },
+    {
+      key: "status",
+      header: "Status",
+      cell: (c) => (
+        <Chip variant={c.archived_at ? "neutral" : "success"}>
+          {c.archived_at ? "Archived" : "Active"}
+        </Chip>
+      ),
+    },
+  ];
   return (
-    <div className="admin-grid">
-      <form className="admin-card" onSubmit={add}>
-        <h2 className="admin-card__title">New category</h2>
-        <div className="field">
-          <label>Name</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+    <div className={styles.grid}>
+      <form className={styles.formGrid} onSubmit={add}>
+        <h2 className={styles.modalTitle}>New category</h2>
+        <Field label="Name">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </Field>
+        <div>
+          <Button variant="primary" type="submit">
+            Add category
+          </Button>
         </div>
-        <button className="primary" type="submit">Add category</button>
       </form>
-      <table className="admin-table">
-        <thead><tr><th>Name</th><th>Items</th><th>Sort</th><th>Status</th></tr></thead>
-        <tbody>
-          {categories.map((c) => (
-            <tr key={c.id}>
-              <td>{c.name}</td>
-              <td>{c.item_count}</td>
-              <td>{c.sort_order}</td>
-              <td>{c.archived_at ? "Archived" : "Active"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable columns={columns} rows={categories} rowKey={(c) => c.id} />
     </div>
   );
 }
 
-function BoatStockTab({ boats, summary }: { boats: Boat[]; summary: InventoryBoatSummary[] }) {
+function BoatStockTab({
+  boats,
+  summary,
+}: {
+  boats: Boat[];
+  summary: InventoryBoatSummary[];
+}) {
   const byBoat = new Map(summary.map((s) => [s.boat_id, s]));
-  return (
-    <table className="admin-table">
-      <thead><tr><th>Boat</th><th className="num">Low stock</th><th className="num">Out</th><th></th></tr></thead>
-      <tbody>
-        {boats.map((b) => {
-          const s = byBoat.get(b.id);
-          return (
-            <tr key={b.id}>
-              <td>{b.name}</td>
-              <td className="num">{s?.low_stock_count ?? 0}</td>
-              <td className="num">{s?.out_stock_count ?? 0}</td>
-              <td><Link to={`/admin/fleet/${b.id}/inventory`}>Open stock</Link></td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
+  const columns: Column<Boat>[] = [
+    { key: "boat", header: "Boat", cell: (b) => b.name },
+    {
+      key: "low",
+      header: "Low stock",
+      align: "right",
+      tabular: true,
+      cell: (b) => byBoat.get(b.id)?.low_stock_count ?? 0,
+    },
+    {
+      key: "out",
+      header: "Out",
+      align: "right",
+      tabular: true,
+      cell: (b) => byBoat.get(b.id)?.out_stock_count ?? 0,
+    },
+    {
+      key: "actions",
+      header: "",
+      cell: (b) => (
+        <Link to={`/admin/fleet/${b.id}/inventory`}>Open stock</Link>
+      ),
+    },
+  ];
+  return <DataTable columns={columns} rows={boats} rowKey={(b) => b.id} />;
 }
 
-function FXTab({ rates, reload, setError }: { rates: FXRate[]; reload: () => Promise<void>; setError: (s: string | null) => void }) {
+function FXTab({
+  rates,
+  reload,
+  setError,
+}: {
+  rates: FXRate[];
+  reload: () => Promise<void>;
+  setError: (s: string | null) => void;
+}) {
   const [quoteCurrency, setQuoteCurrency] = useState("EUR");
   const [num, setNum] = useState("92");
   const [den, setDen] = useState("100");
@@ -271,35 +375,77 @@ function FXTab({ rates, reload, setError }: { rates: FXRate[]; reload: () => Pro
       setError((err as { message?: string })?.message ?? "Failed to add rate.");
     }
   }
+  const columns: Column<FXRate>[] = [
+    {
+      key: "pair",
+      header: "Pair",
+      cell: (r) => `${r.base_currency}/${r.quote_currency}`,
+    },
+    {
+      key: "rate",
+      header: "Rate",
+      cell: (r) => `${r.rate_numerator}/${r.rate_denominator}`,
+    },
+    { key: "provider", header: "Provider", cell: (r) => r.provider },
+    {
+      key: "expires",
+      header: "Expires",
+      cell: (r) => new Date(r.expires_at).toLocaleString(),
+    },
+  ];
   return (
-    <div className="admin-grid">
-      <form className="admin-card" onSubmit={add}>
-        <h2 className="admin-card__title">Manual USD rate</h2>
-        <div className="field"><label>Target currency</label><input value={quoteCurrency} onChange={(e) => setQuoteCurrency(e.target.value.toUpperCase())} maxLength={3} /></div>
-        <div className="form-row">
-          <div className="field"><label>Numerator</label><input type="number" min="1" value={num} onChange={(e) => setNum(e.target.value)} /></div>
-          <div className="field"><label>Denominator</label><input type="number" min="1" value={den} onChange={(e) => setDen(e.target.value)} /></div>
+    <div className={styles.grid}>
+      <form className={styles.formGrid} onSubmit={add}>
+        <h2 className={styles.modalTitle}>Manual USD rate</h2>
+        <Field label="Target currency">
+          <input
+            value={quoteCurrency}
+            onChange={(e) => setQuoteCurrency(e.target.value.toUpperCase())}
+            maxLength={3}
+          />
+        </Field>
+        <div className={styles.formRow}>
+          <Field label="Numerator">
+            <input
+              type="number"
+              min="1"
+              value={num}
+              onChange={(e) => setNum(e.target.value)}
+            />
+          </Field>
+          <Field label="Denominator">
+            <input
+              type="number"
+              min="1"
+              value={den}
+              onChange={(e) => setDen(e.target.value)}
+            />
+          </Field>
         </div>
-        <button className="primary" type="submit">Add rate</button>
+        <div>
+          <Button variant="primary" type="submit">
+            Add rate
+          </Button>
+        </div>
       </form>
-      <table className="admin-table">
-        <thead><tr><th>Pair</th><th>Rate</th><th>Provider</th><th>Expires</th></tr></thead>
-        <tbody>
-          {rates.map((r) => (
-            <tr key={r.id}>
-              <td>{r.base_currency}/{r.quote_currency}</td>
-              <td>{r.rate_numerator}/{r.rate_denominator}</td>
-              <td>{r.provider}</td>
-              <td>{new Date(r.expires_at).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable columns={columns} rows={rates} rowKey={(r) => r.id} />
     </div>
   );
 }
 
-function ItemEditor({ item, categories, close, saved, setError }: { item: CatalogItem; categories: CatalogCategory[]; close: () => void; saved: () => void; setError: (s: string | null) => void }) {
+function ItemEditor({
+  item,
+  categories,
+  close,
+  saved,
+  setError,
+}: {
+  item: CatalogItem;
+  categories: CatalogCategory[];
+  close: () => void;
+  saved: () => void;
+  setError: (s: string | null) => void;
+}) {
   const isNew = item.id === "";
   const [form, setForm] = useState(item);
   async function submit(e: FormEvent) {
@@ -327,23 +473,99 @@ function ItemEditor({ item, categories, close, saved, setError }: { item: Catalo
     }
   }
   return (
-    <div className="modal-backdrop">
-      <form className="modal" onSubmit={submit}>
-        <h2>{isNew ? "Add item" : "Edit item"}</h2>
-        <div className="field"><label>Name</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-        <div className="field"><label>Category</label><select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })}>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-        <div className="form-row">
-          <div className="field"><label>Unit</label><select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>{units.map((u) => <option key={u} value={u}>{u}</option>)}</select></div>
-          <div className="field"><label>USD cents</label><input type="number" min="0" value={form.price_usd_cents} onChange={(e) => setForm({ ...form, price_usd_cents: Number(e.target.value) })} /></div>
+    <div className={styles.backdrop}>
+      <form className={styles.modal} onSubmit={submit}>
+        <h2 className={styles.modalTitle}>
+          {isNew ? "Add item" : "Edit item"}
+        </h2>
+        <Field label="Name">
+          <input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+          />
+        </Field>
+        <Field label="Category">
+          <select
+            value={form.category_id}
+            onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+          >
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <div className={styles.formRow}>
+          <Field label="Unit">
+            <select
+              value={form.unit}
+              onChange={(e) => setForm({ ...form, unit: e.target.value })}
+            >
+              {units.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="USD cents">
+            <input
+              type="number"
+              min="0"
+              value={form.price_usd_cents}
+              onChange={(e) =>
+                setForm({ ...form, price_usd_cents: Number(e.target.value) })
+              }
+            />
+          </Field>
         </div>
-        <div className="form-row">
-          <div className="field"><label>Charge type</label><select value={form.charge_type} onChange={(e) => setForm({ ...form, charge_type: e.target.value })}>{chargeTypes.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
-          <div className="field"><label>Stock</label><select value={form.stock_mode} onChange={(e) => setForm({ ...form, stock_mode: e.target.value as "none" | "counted" })}><option value="none">none</option><option value="counted">counted</option></select></div>
+        <div className={styles.formRow}>
+          <Field label="Charge type">
+            <select
+              value={form.charge_type}
+              onChange={(e) =>
+                setForm({ ...form, charge_type: e.target.value })
+              }
+            >
+              {chargeTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Stock">
+            <select
+              value={form.stock_mode}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  stock_mode: e.target.value as "none" | "counted",
+                })
+              }
+            >
+              <option value="none">none</option>
+              <option value="counted">counted</option>
+            </select>
+          </Field>
         </div>
-        <label className="checkline"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Active</label>
-        <div className="modal-actions">
-          <button type="button" className="secondary" onClick={close}>Cancel</button>
-          <button type="submit" className="primary">Save</button>
+        <label className={styles.checkline}>
+          <input
+            type="checkbox"
+            checked={form.is_active}
+            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+          />{" "}
+          Active
+        </label>
+        <div className={styles.modalActions}>
+          <Button type="button" variant="secondary" onClick={close}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary">
+            Save
+          </Button>
         </div>
       </form>
     </div>
@@ -369,13 +591,18 @@ function blankItem(categories: CatalogCategory[]): CatalogItem {
   };
 }
 
-async function applyDefaults(reload: () => Promise<void>, setError: (s: string | null) => void) {
+async function applyDefaults(
+  reload: () => Promise<void>,
+  setError: (s: string | null) => void,
+) {
   setError(null);
   try {
     await adminApi.applyCatalogDefaults();
     await reload();
   } catch (err) {
-    setError((err as { message?: string })?.message ?? "Failed to apply defaults.");
+    setError(
+      (err as { message?: string })?.message ?? "Failed to apply defaults.",
+    );
   }
 }
 

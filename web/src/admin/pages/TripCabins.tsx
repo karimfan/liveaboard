@@ -2,6 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { adminApi, type TripCabinBoard, type TripManifest } from "../api";
+import {
+  Button,
+  Card,
+  type Column,
+  DataTable,
+  Empty,
+  PageHeader,
+} from "../components";
+
+import styles from "./TripCabins.module.css";
 
 export function TripCabins() {
   const { id = "" } = useParams<{ id: string }>();
@@ -13,11 +23,16 @@ export function TripCabins() {
   async function load() {
     setError(null);
     try {
-      const [b, m] = await Promise.all([adminApi.tripCabinBoard(id), adminApi.tripManifest(id)]);
+      const [b, m] = await Promise.all([
+        adminApi.tripCabinBoard(id),
+        adminApi.tripManifest(id),
+      ]);
       setBoard(b);
       setManifest(m);
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to load cabin board.");
+      setError(
+        (err as { message?: string })?.message ?? "Failed to load cabin board.",
+      );
     }
   }
 
@@ -36,7 +51,9 @@ export function TripCabins() {
       setMessage("Cabin assignment updated.");
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not assign berth.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not assign berth.",
+      );
     }
   }
 
@@ -48,67 +65,89 @@ export function TripCabins() {
       setMessage("Guest unassigned.");
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not unassign guest.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not unassign guest.",
+      );
     }
   }
 
   if (!board || !manifest) {
     return (
       <>
-        <div className="admin-breadcrumb"><Link to={`/admin/trips/${id}/manifest`}>Manifest</Link></div>
-        {error ? <div className="error">{error}</div> : <div className="muted">Loading...</div>}
+        <div className={styles.breadcrumb}>
+          <Link to={`/admin/trips/${id}/manifest`}>Manifest</Link>
+        </div>
+        {error ? (
+          <div className={styles.error}>{error}</div>
+        ) : (
+          <div className={styles.muted}>Loading...</div>
+        )}
       </>
     );
   }
 
+  const unassignedColumns: Column<(typeof unassigned)[number]>[] = [
+    { key: "name", header: "Guest", cell: (g) => g.full_name },
+    { key: "email", header: "Email", cell: (g) => g.email },
+  ];
+
   return (
     <>
-      <div className="admin-breadcrumb"><Link to={`/admin/trips/${id}/manifest`}>Manifest</Link></div>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Cabin board</h1>
-          <div className="admin-page-subtitle">
-            {manifest.trip.boat_name} - {manifest.trip.start_date} to {manifest.trip.end_date}
-          </div>
-        </div>
+      <div className={styles.breadcrumb}>
+        <Link to={`/admin/trips/${id}/manifest`}>Manifest</Link>
       </div>
-      {error && <div className="error">{error}</div>}
-      {message && <div className="callout">{message}</div>}
+      <PageHeader
+        title="Cabin board"
+        subtitle={`${manifest.trip.boat_name} - ${manifest.trip.start_date} to ${manifest.trip.end_date}`}
+      />
+      {error && <div className={styles.error}>{error}</div>}
+      {message && <div className={styles.callout}>{message}</div>}
 
       {board.cabins.length === 0 ? (
-        <div className="empty-state">
-          <h3>No cabin layout</h3>
-          <p>This boat needs a cabin layout before guests can be assigned.</p>
-        </div>
+        <Empty
+          title="No cabin layout"
+          hint="This boat needs a cabin layout before guests can be assigned."
+        />
       ) : (
-        <div className="cabin-board">
+        <div className={styles.board}>
           {board.cabins.map((c) => (
-            <section className="admin-card cabin-card" key={c.id}>
-              <div className="admin-card__header">
-                <div>
-                  <h2 className="admin-card__title">Cabin {c.label}</h2>
-                  {c.deck && <p className="muted">{c.deck}</p>}
-                </div>
-              </div>
-              <div className="cabin-card__berths">
+            <Card key={c.id} title={`Cabin ${c.label}`}>
+              {c.deck && <p className={styles.deck}>{c.deck}</p>}
+              <div className={styles.berths}>
                 {c.berths.map((b) => (
-                  <div className="berth-row" key={b.id}>
+                  <div className={styles.berthRow} key={b.id}>
                     <div>
                       <strong>{b.display_label}</strong>
                       {b.guest ? (
-                        <div>{b.guest.full_name}<br /><span className="muted">{b.guest.email}</span></div>
+                        <div>
+                          {b.guest.full_name}
+                          <br />
+                          <span className={styles.guestEmail}>
+                            {b.guest.email}
+                          </span>
+                        </div>
                       ) : (
-                        <span className="muted">Available</span>
+                        <span className={styles.muted}>Available</span>
                       )}
                     </div>
-                    <div className="berth-row__actions">
+                    <div className={styles.berthActions}>
                       {b.guest ? (
-                        <button type="button" className="ghost" onClick={() => unassign(b.guest!.id)}>Unassign</button>
+                        <Button
+                          variant="quiet"
+                          onClick={() => unassign(b.guest!.id)}
+                        >
+                          Unassign
+                        </Button>
                       ) : (
-                        <select defaultValue="" onChange={(e) => assign(e.target.value, b.id)}>
+                        <select
+                          defaultValue=""
+                          onChange={(e) => assign(e.target.value, b.id)}
+                        >
                           <option value="">Assign guest...</option>
                           {unassigned.map((g) => (
-                            <option key={g.id} value={g.id}>{g.full_name}</option>
+                            <option key={g.id} value={g.id}>
+                              {g.full_name}
+                            </option>
                           ))}
                         </select>
                       )}
@@ -116,25 +155,19 @@ export function TripCabins() {
                   </div>
                 ))}
               </div>
-            </section>
+            </Card>
           ))}
         </div>
       )}
 
       {unassigned.length > 0 && (
-        <div className="admin-card">
-          <h2 className="admin-card__title">Needs cabin</h2>
-          <table className="admin-table">
-            <tbody>
-              {unassigned.map((g) => (
-                <tr key={g.id}>
-                  <td>{g.full_name}</td>
-                  <td>{g.email}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Card title="Needs cabin">
+          <DataTable
+            columns={unassignedColumns}
+            rows={unassigned}
+            rowKey={(g) => g.id}
+          />
+        </Card>
       )}
     </>
   );

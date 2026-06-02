@@ -1,6 +1,23 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
-import { adminApi, type Boat, type CatalogItem, type PriceOverride, type Trip } from "../api";
+import {
+  adminApi,
+  type Boat,
+  type CatalogItem,
+  type PriceOverride,
+  type Trip,
+} from "../api";
+import {
+  Button,
+  Card,
+  Chip,
+  type Column,
+  DataTable,
+  Field,
+  PageHeader,
+} from "../components";
+
+import styles from "./OrganizationPricing.module.css";
 
 type Scope = "boat" | "trip";
 
@@ -27,9 +44,13 @@ export function OrganizationPricing() {
       adminApi.listTrips(),
       adminApi.listPriceOverrides(),
     ]);
-    const activeItems = (catalog.items ?? []).filter((item) => !item.archived_at);
+    const activeItems = (catalog.items ?? []).filter(
+      (item) => !item.archived_at,
+    );
     const boatRows = fleet.boats ?? [];
-    const tripRows = (tripList.trips ?? []).filter((trip) => trip.status !== "cancelled");
+    const tripRows = (tripList.trips ?? []).filter(
+      (trip) => trip.status !== "cancelled",
+    );
     setItems(activeItems);
     setBoats(boatRows);
     setTrips(tripRows);
@@ -40,10 +61,17 @@ export function OrganizationPricing() {
   }
 
   useEffect(() => {
-    void load().catch((err) => setError((err as { message?: string })?.message ?? "Failed to load pricing."));
+    void load().catch((err) =>
+      setError(
+        (err as { message?: string })?.message ?? "Failed to load pricing.",
+      ),
+    );
   }, []);
 
-  const selectedItem = useMemo(() => items.find((item) => item.id === itemId) ?? null, [items, itemId]);
+  const selectedItem = useMemo(
+    () => items.find((item) => item.id === itemId) ?? null,
+    [items, itemId],
+  );
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -58,16 +86,28 @@ export function OrganizationPricing() {
     setError(null);
     try {
       if (scope === "boat") {
-        await adminApi.upsertBoatPriceOverride({ catalog_item_id: itemId, boat_id: boatId, price_usd_cents: cents, notes });
+        await adminApi.upsertBoatPriceOverride({
+          catalog_item_id: itemId,
+          boat_id: boatId,
+          price_usd_cents: cents,
+          notes,
+        });
       } else {
-        await adminApi.upsertTripPriceOverride({ catalog_item_id: itemId, trip_id: tripId, price_usd_cents: cents, notes });
+        await adminApi.upsertTripPriceOverride({
+          catalog_item_id: itemId,
+          trip_id: tripId,
+          price_usd_cents: cents,
+          notes,
+        });
       }
       setPrice("");
       setNotes("");
       setSaved(true);
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to save override.");
+      setError(
+        (err as { message?: string })?.message ?? "Failed to save override.",
+      );
     } finally {
       setBusy(false);
     }
@@ -80,110 +120,179 @@ export function OrganizationPricing() {
       await adminApi.archivePriceOverride(id);
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to archive override.");
+      setError(
+        (err as { message?: string })?.message ?? "Failed to archive override.",
+      );
     } finally {
       setBusy(false);
     }
   }
 
+  const columns: Column<PriceOverride>[] = [
+    {
+      key: "item",
+      header: "Item",
+      cell: (override) => (
+        <>
+          <div className={styles.itemName}>{override.item_name}</div>
+          {override.notes && (
+            <div className={styles.notes}>{override.notes}</div>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "scope",
+      header: "Scope",
+      cell: (override) => <Chip variant="neutral">{override.scope}</Chip>,
+    },
+    {
+      key: "target",
+      header: "Target",
+      cell: (override) =>
+        override.boat_name ?? override.trip_label ?? "Unknown",
+    },
+    {
+      key: "price",
+      header: "Price",
+      align: "right",
+      tabular: true,
+      cell: (override) => money(override.price_usd_cents),
+    },
+    {
+      key: "actions",
+      header: "",
+      align: "right",
+      cell: (override) => (
+        <Button
+          variant="secondary"
+          type="button"
+          onClick={() => void archive(override.id)}
+          disabled={busy}
+        >
+          Archive
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Pricing</h1>
-          <div className="admin-page-subtitle">Per-item boat and trip price overrides. Base prices stay in the catalog.</div>
-        </div>
-      </div>
+      <PageHeader
+        title="Pricing"
+        subtitle="Per-item boat and trip price overrides. Base prices stay in the catalog."
+      />
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
 
-      <div className="pricing-layout">
-        <form className="admin-card pricing-form" onSubmit={save}>
-          <h2 className="admin-card__title">Override price</h2>
-          <div className="form-grid">
-            <div className="field">
-              <label htmlFor="pricing-scope">Scope</label>
-              <select id="pricing-scope" value={scope} onChange={(e) => setScope(e.target.value as Scope)}>
-                <option value="boat">Boat</option>
-                <option value="trip">Trip</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="pricing-item">Item</label>
-              <select id="pricing-item" value={itemId} onChange={(e) => setItemId(e.target.value)}>
-                {items.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="form-grid">
-            {scope === "boat" ? (
-              <div className="field">
-                <label htmlFor="pricing-boat">Boat</label>
-                <select id="pricing-boat" value={boatId} onChange={(e) => setBoatId(e.target.value)}>
-                  {boats.map((boat) => <option key={boat.id} value={boat.id}>{boat.name}</option>)}
+      <div className={styles.layout}>
+        <Card title="Override price" className={styles.form}>
+          <form onSubmit={save}>
+            <div className={styles.formGrid}>
+              <Field label="Scope" htmlFor="pricing-scope">
+                <select
+                  id="pricing-scope"
+                  value={scope}
+                  onChange={(e) => setScope(e.target.value as Scope)}
+                >
+                  <option value="boat">Boat</option>
+                  <option value="trip">Trip</option>
                 </select>
-              </div>
-            ) : (
-              <div className="field">
-                <label htmlFor="pricing-trip">Trip</label>
-                <select id="pricing-trip" value={tripId} onChange={(e) => setTripId(e.target.value)}>
-                  {trips.map((trip) => <option key={trip.id} value={trip.id}>{trip.itinerary} - {trip.start_date}</option>)}
+              </Field>
+              <Field label="Item" htmlFor="pricing-item">
+                <select
+                  id="pricing-item"
+                  value={itemId}
+                  onChange={(e) => setItemId(e.target.value)}
+                >
+                  {items.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
                 </select>
-              </div>
-            )}
-            <div className="field">
-              <label htmlFor="pricing-price">Override USD price</label>
-              <input
-                id="pricing-price"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder={selectedItem ? (selectedItem.price_usd_cents / 100).toFixed(2) : "0.00"}
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
+              </Field>
+            </div>
+            <div className={styles.formGrid}>
+              {scope === "boat" ? (
+                <Field label="Boat" htmlFor="pricing-boat">
+                  <select
+                    id="pricing-boat"
+                    value={boatId}
+                    onChange={(e) => setBoatId(e.target.value)}
+                  >
+                    {boats.map((boat) => (
+                      <option key={boat.id} value={boat.id}>
+                        {boat.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              ) : (
+                <Field label="Trip" htmlFor="pricing-trip">
+                  <select
+                    id="pricing-trip"
+                    value={tripId}
+                    onChange={(e) => setTripId(e.target.value)}
+                  >
+                    {trips.map((trip) => (
+                      <option key={trip.id} value={trip.id}>
+                        {trip.itinerary} - {trip.start_date}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
+              <Field label="Override USD price" htmlFor="pricing-price">
+                <input
+                  id="pricing-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder={
+                    selectedItem
+                      ? (selectedItem.price_usd_cents / 100).toFixed(2)
+                      : "0.00"
+                  }
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  required
+                />
+              </Field>
+            </div>
+            <Field label="Notes" htmlFor="pricing-notes">
+              <textarea
+                id="pricing-notes"
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
               />
+            </Field>
+            <div className={styles.actions}>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={
+                  busy || !itemId || (scope === "boat" ? !boatId : !tripId)
+                }
+              >
+                {busy ? "Saving..." : "Save override"}
+              </Button>
+              {saved && <span className={styles.saved}>Saved</span>}
             </div>
-          </div>
-          <div className="field">
-            <label htmlFor="pricing-notes">Notes</label>
-            <textarea id="pricing-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </div>
-          <button className="primary" disabled={busy || !itemId || (scope === "boat" ? !boatId : !tripId)}>
-            {busy ? "Saving..." : "Save override"}
-          </button>
-          {saved && <span className="muted saved-inline">Saved</span>}
-        </form>
+          </form>
+        </Card>
 
-        <section className="admin-card">
-          <h2 className="admin-card__title">Active overrides</h2>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Scope</th>
-                <th>Target</th>
-                <th className="num">Price</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {overrides.map((override) => (
-                <tr key={override.id}>
-                  <td>
-                    <strong>{override.item_name}</strong>
-                    {override.notes && <div className="muted">{override.notes}</div>}
-                  </td>
-                  <td><span className="chip chip--planned">{override.scope}</span></td>
-                  <td>{override.boat_name ?? override.trip_label ?? "Unknown"}</td>
-                  <td className="num">{money(override.price_usd_cents)}</td>
-                  <td><button className="secondary" type="button" onClick={() => void archive(override.id)} disabled={busy}>Archive</button></td>
-                </tr>
-              ))}
-              {overrides.length === 0 && <tr><td colSpan={5} className="muted">No overrides configured.</td></tr>}
-            </tbody>
-          </table>
-        </section>
+        <Card title="Active overrides">
+          <DataTable
+            columns={columns}
+            rows={overrides}
+            rowKey={(override) => override.id}
+            empty={
+              <span className={styles.notes}>No overrides configured.</span>
+            }
+          />
+        </Card>
       </div>
     </>
   );

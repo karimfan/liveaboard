@@ -2,6 +2,19 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { adminApi, type TripDashboardResponse } from "../api";
+import {
+  Button,
+  Card,
+  Chip,
+  type ChipVariant,
+  type Column,
+  DataTable,
+  Empty,
+  PageHeader,
+  Stat,
+} from "../components";
+
+import styles from "./TripDashboard.module.css";
 
 export function TripDashboard() {
   const { id = "" } = useParams<{ id: string }>();
@@ -20,242 +33,218 @@ export function TripDashboard() {
     };
   }, [id]);
 
-  if (error) return <div className="error">{error}</div>;
-  if (!data) return <div className="muted">Loading…</div>;
+  if (error) return <div className={styles.error}>{error}</div>;
+  if (!data) return <div className={styles.muted}>Loading…</div>;
 
   const t = data.trip;
 
   return (
     <>
-      <div className="admin-breadcrumb">
+      <div className={styles.breadcrumb}>
         <Link to="/admin/trips">Trips</Link>
         {" / "}
         <Link to={`/admin/trips/${id}/manifest`}>{t.boat_name}</Link>
       </div>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Dashboard</h1>
-          <div className="admin-page-subtitle">
-            {t.boat_name} — {t.start_date} to {t.end_date} — {t.itinerary}
-          </div>
-        </div>
-        <div className="header-actions">
-          <span className={`chip chip--${t.status}`}>{t.status}</span>
-          <Link className="secondary" to={`/admin/trips/${id}/manifest`}>
-            Manifest
-          </Link>
-          {t.status === "active" && (
-            <Link className="primary" to={`/admin/trips/${id}/ledger`}>
-              Ledger
+      <PageHeader
+        title="Dashboard"
+        subtitle={`${t.boat_name} — ${t.start_date} to ${t.end_date} — ${t.itinerary}`}
+        actions={
+          <>
+            <Chip variant={statusVariant(t.status)}>{t.status}</Chip>
+            <Link to={`/admin/trips/${id}/manifest`}>
+              <Button variant="secondary">Manifest</Button>
             </Link>
-          )}
-        </div>
-      </div>
+            {t.status === "active" && (
+              <Link to={`/admin/trips/${id}/ledger`}>
+                <Button variant="primary">Ledger</Button>
+              </Link>
+            )}
+          </>
+        }
+      />
 
-      <div className="admin-grid">
+      <div className={styles.grid}>
         <OccupancyCard data={data} />
         <RegistrationCard data={data} />
         <DocumentsCard data={data} />
         <FolioCard data={data} />
       </div>
 
-      <h2 style={{ marginTop: "var(--sp-xl)" }}>Top consumed items</h2>
+      <h2 className={styles.sectionHeading}>Top consumed items</h2>
       <TopItemsTable data={data} />
 
-      <h2 style={{ marginTop: "var(--sp-xl)" }}>Low stock on this boat</h2>
-      <p className="muted">
-        Items at or below the configured reorder level, plus any item with
-        zero or negative stock on hand.
+      <h2 className={styles.sectionHeading}>Low stock on this boat</h2>
+      <p className={styles.muted}>
+        Items at or below the configured reorder level, plus any item with zero
+        or negative stock on hand.
       </p>
       <LowStockTable data={data} />
     </>
   );
 }
 
+function statusVariant(status: string): ChipVariant {
+  switch (status) {
+    case "active":
+      return "success";
+    case "completed":
+      return "info";
+    case "cancelled":
+      return "error";
+    default:
+      return "neutral";
+  }
+}
+
 function OccupancyCard({ data }: { data: TripDashboardResponse }) {
   const o = data.occupancy;
-  const pct = o.berths_total > 0 ? Math.round((o.cabin_assignments / o.berths_total) * 100) : null;
+  const pct =
+    o.berths_total > 0
+      ? Math.round((o.cabin_assignments / o.berths_total) * 100)
+      : null;
   return (
-    <div className="admin-card">
-      <h2 className="admin-card__title">Occupancy</h2>
-      <ul className="counts">
-        <li>
-          <span className="counts__value">{o.guest_count}</span>
-          <span className="counts__label">Guests</span>
-        </li>
-        <li>
-          <span className="counts__value">{o.cabin_assignments}</span>
-          <span className="counts__label">Cabin assigned</span>
-        </li>
-        <li>
-          <span className="counts__value">{o.berths_total}</span>
-          <span className="counts__label">Berths total</span>
-        </li>
-      </ul>
+    <Card title="Occupancy">
+      <div className={styles.counts}>
+        <Stat label="Guests" value={o.guest_count} />
+        <Stat label="Cabin assigned" value={o.cabin_assignments} />
+        <Stat label="Berths total" value={o.berths_total} />
+      </div>
       {pct !== null && (
-        <div className="muted" style={{ marginTop: "var(--sp-sm)" }}>
-          {pct}% of berths assigned
-        </div>
+        <div className={styles.cardNote}>{pct}% of berths assigned</div>
       )}
       {o.num_guests != null && (
-        <div className="muted">Expected count: {o.num_guests}</div>
+        <div className={styles.muted}>Expected count: {o.num_guests}</div>
       )}
-    </div>
+    </Card>
   );
 }
 
 function RegistrationCard({ data }: { data: TripDashboardResponse }) {
   const r = data.registration_ready;
   return (
-    <div className="admin-card">
-      <h2 className="admin-card__title">Registration readiness</h2>
-      <ul className="counts">
-        <li>
-          <span className="counts__value">{r.submitted_count}</span>
-          <span className="counts__label">Submitted</span>
-        </li>
-        <li>
-          <span className="counts__value">{r.pending_count}</span>
-          <span className="counts__label">Pending</span>
-        </li>
-        <li>
-          <span className="counts__value">{r.guest_count}</span>
-          <span className="counts__label">Guests</span>
-        </li>
-      </ul>
-    </div>
+    <Card title="Registration readiness">
+      <div className={styles.counts}>
+        <Stat label="Submitted" value={r.submitted_count} />
+        <Stat label="Pending" value={r.pending_count} />
+        <Stat label="Guests" value={r.guest_count} />
+      </div>
+    </Card>
   );
 }
 
 function DocumentsCard({ data }: { data: TripDashboardResponse }) {
   const d = data.document_ready;
   return (
-    <div className="admin-card">
-      <h2 className="admin-card__title">Document readiness</h2>
-      <ul className="counts">
-        <li>
-          <span className="counts__value">{d.uploaded_count}</span>
-          <span className="counts__label">Uploaded</span>
-        </li>
-        <li>
-          <span className="counts__value">{d.guests_with_docs_count}</span>
-          <span className="counts__label">Guests w/ docs</span>
-        </li>
-        <li>
-          <span className="counts__value">{d.guest_count}</span>
-          <span className="counts__label">Guests</span>
-        </li>
-      </ul>
-    </div>
+    <Card title="Document readiness">
+      <div className={styles.counts}>
+        <Stat label="Uploaded" value={d.uploaded_count} />
+        <Stat label="Guests w/ docs" value={d.guests_with_docs_count} />
+        <Stat label="Guests" value={d.guest_count} />
+      </div>
+    </Card>
   );
 }
 
 function FolioCard({ data }: { data: TripDashboardResponse }) {
   const f = data.folio_totals;
+  const rows: { label: string; value: string }[] = [
+    { label: "Charges", value: usd(f.charges_usd_cents) },
+    { label: "Settled", value: usd(f.settled_usd_cents) },
+    { label: "Outstanding", value: usd(f.outstanding_usd_cents) },
+    { label: "Crew tips", value: usd(f.crew_tip_usd_cents) },
+    { label: "Card fees", value: usd(f.card_fee_usd_cents) },
+  ];
+  if (f.voided_line_count > 0) {
+    rows.push({
+      label: "Voided",
+      value: `${f.voided_line_count} · ${usd(f.voided_usd_cents)}`,
+    });
+  }
   return (
-    <div className="admin-card">
-      <h2 className="admin-card__title">Folios</h2>
-      <ul className="counts">
-        <li>
-          <span className="counts__value">{f.open_count}</span>
-          <span className="counts__label">Open</span>
-        </li>
-        <li>
-          <span className="counts__value">{f.closed_count}</span>
-          <span className="counts__label">Closed</span>
-        </li>
-      </ul>
-      <table className="admin-table" style={{ marginTop: "var(--sp-sm)" }}>
+    <Card title="Folios">
+      <div className={styles.counts}>
+        <Stat label="Open" value={f.open_count} />
+        <Stat label="Closed" value={f.closed_count} />
+      </div>
+      <table className={styles.miniTable}>
         <tbody>
-          <tr>
-            <td>Charges</td>
-            <td className="num">{usd(f.charges_usd_cents)}</td>
-          </tr>
-          <tr>
-            <td>Settled</td>
-            <td className="num">{usd(f.settled_usd_cents)}</td>
-          </tr>
-          <tr>
-            <td>Outstanding</td>
-            <td className="num">{usd(f.outstanding_usd_cents)}</td>
-          </tr>
-          <tr>
-            <td>Crew tips</td>
-            <td className="num">{usd(f.crew_tip_usd_cents)}</td>
-          </tr>
-          <tr>
-            <td>Card fees</td>
-            <td className="num">{usd(f.card_fee_usd_cents)}</td>
-          </tr>
-          {f.voided_line_count > 0 && (
-            <tr>
-              <td>Voided</td>
-              <td className="num">
-                {f.voided_line_count} · {usd(f.voided_usd_cents)}
-              </td>
+          {rows.map((r) => (
+            <tr key={r.label}>
+              <td>{r.label}</td>
+              <td className={styles.num}>{r.value}</td>
             </tr>
-          )}
+          ))}
         </tbody>
       </table>
-    </div>
+    </Card>
   );
 }
 
 function TopItemsTable({ data }: { data: TripDashboardResponse }) {
-  if (data.top_items.length === 0) {
-    return <div className="muted">No catalog lines on this trip yet.</div>;
-  }
+  const columns: Column<(typeof data.top_items)[number]>[] = [
+    { key: "item", header: "Item", cell: (t) => t.item_name },
+    {
+      key: "quantity",
+      header: "Quantity",
+      align: "right",
+      tabular: true,
+      cell: (t) => t.quantity,
+    },
+    {
+      key: "usd",
+      header: "USD",
+      align: "right",
+      tabular: true,
+      cell: (t) => usd(t.usd_cents),
+    },
+  ];
   return (
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th className="num">Quantity</th>
-          <th className="num">USD</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.top_items.map((t) => (
-          <tr key={t.catalog_item_id}>
-            <td>{t.item_name}</td>
-            <td className="num">{t.quantity}</td>
-            <td className="num">{usd(t.usd_cents)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable
+      columns={columns}
+      rows={data.top_items}
+      rowKey={(t) => t.catalog_item_id}
+      empty={<Empty title="No catalog lines on this trip yet." />}
+    />
   );
 }
 
 function LowStockTable({ data }: { data: TripDashboardResponse }) {
-  if (data.low_stock.length === 0) {
-    return <div className="muted">No low-stock alerts for this boat.</div>;
-  }
+  const columns: Column<(typeof data.low_stock)[number]>[] = [
+    { key: "category", header: "Category", cell: (r) => r.category_name },
+    { key: "item", header: "Item", cell: (r) => r.item_name },
+    {
+      key: "onhand",
+      header: "On hand",
+      align: "right",
+      tabular: true,
+      cell: (r) => (
+        <span className={r.quantity_on_hand <= 0 ? styles.low : undefined}>
+          {r.quantity_on_hand}
+        </span>
+      ),
+    },
+    {
+      key: "reorder",
+      header: "Reorder",
+      align: "right",
+      tabular: true,
+      cell: (r) => r.reorder_level ?? "—",
+    },
+    {
+      key: "par",
+      header: "Par",
+      align: "right",
+      tabular: true,
+      cell: (r) => r.par_level ?? "—",
+    },
+  ];
   return (
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Item</th>
-          <th className="num">On hand</th>
-          <th className="num">Reorder</th>
-          <th className="num">Par</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.low_stock.map((r) => (
-          <tr key={r.catalog_item_id}>
-            <td>{r.category_name}</td>
-            <td>{r.item_name}</td>
-            <td className={"num" + (r.quantity_on_hand <= 0 ? " low" : "")}>
-              {r.quantity_on_hand}
-            </td>
-            <td className="num">{r.reorder_level ?? "—"}</td>
-            <td className="num">{r.par_level ?? "—"}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable
+      columns={columns}
+      rows={data.low_stock}
+      rowKey={(r) => r.catalog_item_id}
+      empty={<Empty title="No low-stock alerts for this boat." />}
+    />
   );
 }
 

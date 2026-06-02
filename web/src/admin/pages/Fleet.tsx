@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { adminApi, type Boat } from "../api";
+import {
+  Button,
+  Chip,
+  type Column,
+  DataTable,
+  Empty,
+  PageHeader,
+} from "../components";
+
+import styles from "./Fleet.module.css";
 
 export function Fleet() {
   const [boats, setBoats] = useState<Boat[] | null>(null);
@@ -12,81 +22,82 @@ export function Fleet() {
     adminApi
       .listBoats()
       .then((res) => !cancelled && setBoats(res.boats ?? []))
-      .catch((e) => !cancelled && setError(e?.message ?? "Failed to load fleet."));
+      .catch(
+        (e) => !cancelled && setError(e?.message ?? "Failed to load fleet."),
+      );
     return () => {
       cancelled = true;
     };
   }, []);
 
+  const columns: Column<Boat>[] = [
+    {
+      key: "name",
+      header: "Name",
+      cell: (b) => <Link to={`/admin/fleet/${b.id}`}>{b.name}</Link>,
+    },
+    {
+      key: "source",
+      header: "Source",
+      cell: (b) =>
+        b.source_url ? (
+          <a href={b.source_url} target="_blank" rel="noreferrer">
+            {b.source_url.replace(/^https?:\/\//, "")}
+          </a>
+        ) : (
+          <span className={styles.muted}>—</span>
+        ),
+    },
+    {
+      key: "synced",
+      header: "Last synced",
+      cell: (b) => relativeTime(b.last_synced),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: () => <Chip variant="success">Active</Chip>,
+    },
+  ];
+
   return (
     <>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Fleet</h1>
-          <div className="admin-page-subtitle">
-            All boats in your organization.
-          </div>
-        </div>
-        <Link to="/admin/import" className="primary" style={{ display: "inline-block" }}>
-          + Import boat
-        </Link>
-      </div>
+      <PageHeader
+        title="Fleet"
+        subtitle="All boats in your organization."
+        actions={
+          <Link to="/admin/import">
+            <Button variant="primary">+ Import boat</Button>
+          </Link>
+        }
+      />
 
-      <div className="filter-bar">
+      <div className={styles.filterBar}>
         <select defaultValue="active">
           <option value="active">Active</option>
           <option value="archived">Archived</option>
           <option value="all">All</option>
         </select>
         <input type="search" placeholder="Search boats..." />
-        <div className="filter-bar__spacer" />
+        <div className={styles.spacer} />
       </div>
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
 
       {!boats ? (
-        <div className="muted">Loading…</div>
+        <div className={styles.loading}>Loading…</div>
       ) : boats.length === 0 ? (
-        <div className="empty-state">
-          <h3>No boats yet</h3>
-          <p>
-            <Link to="/admin/import">Import a boat</Link> from liveaboard.com
-            or upload a spreadsheet to seed your fleet.
-          </p>
-        </div>
+        <Empty
+          title="No boats yet"
+          hint={
+            <>
+              <Link to="/admin/import">Import a boat</Link> from liveaboard.com
+              or upload a spreadsheet to seed your fleet.
+            </>
+          }
+        />
       ) : (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Source</th>
-              <th>Last synced</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {boats.map((b) => (
-              <tr key={b.id}>
-                <td>
-                  <Link to={`/admin/fleet/${b.id}`}>{b.name}</Link>
-                </td>
-                <td>
-                  {b.source_url ? (
-                    <a href={b.source_url} target="_blank" rel="noreferrer">
-                      {b.source_url.replace(/^https?:\/\//, "")}
-                    </a>
-                  ) : (
-                    <span className="muted">—</span>
-                  )}
-                </td>
-                <td>{relativeTime(b.last_synced)}</td>
-                <td>
-                  <span className="chip chip--active">Active</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable columns={columns} rows={boats} rowKey={(b) => b.id} />
       )}
     </>
   );

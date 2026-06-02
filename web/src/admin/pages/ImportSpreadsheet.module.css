@@ -1,0 +1,94 @@
+/* ImportSpreadsheet — multi-step upload wizard layout. */
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.pickCard {
+  max-width: 640px;
+}
+
+.intro {
+  margin: 0 0 var(--sp-sm);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  margin: 0 0 var(--sp-sm);
+}
+
+.fileField {
+  margin-top: var(--sp-md);
+}
+
+.calloutCard {
+  margin-bottom: var(--sp-md);
+}
+
+.callout {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: var(--sp-lg) 0 var(--sp-sm);
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+/* Rows table keeps a bespoke <table> because DataTable has no
+ * per-row class hook and these rows toggle a skipped treatment. */
+.rowsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.rowsTable th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: var(--sp-sm) var(--sp-md);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.rowsTable td {
+  padding: var(--sp-sm) var(--sp-md);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.skipped {
+  opacity: 0.55;
+}
+
+.resultList {
+  list-style: none;
+  padding: 0;
+  margin-bottom: var(--sp-md);
+  color: var(--text-primary);
+}

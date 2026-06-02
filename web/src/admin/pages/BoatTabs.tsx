@@ -1,9 +1,25 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 
-import { adminApi, type Boat, type BoatInventoryItem, type CatalogItem, type Trip } from "../api";
+import {
+  adminApi,
+  type Boat,
+  type BoatInventoryItem,
+  type CatalogItem,
+  type Trip,
+} from "../api";
 import { useMe } from "../useMe";
 import { AssignDirector, useCruiseDirectors } from "../AssignDirector";
+import {
+  Button,
+  Chip,
+  type ChipVariant,
+  type Column,
+  DataTable,
+  Empty,
+} from "../components";
+
+import styles from "./BoatTabs.module.css";
 
 type Ctx = { boat: Boat; trips: Trip[]; refreshBoat: () => Promise<void> };
 
@@ -33,7 +49,11 @@ export function BoatTrips() {
     setTrips((prev) =>
       prev.map((t) =>
         t.id === tripId
-          ? { ...t, cruise_director_user_ids: ids, cruise_director_names: names }
+          ? {
+              ...t,
+              cruise_director_user_ids: ids,
+              cruise_director_names: names,
+            }
           : t,
       ),
     );
@@ -62,90 +82,104 @@ export function BoatTrips() {
         }
       }
     } catch (err) {
-      setRefreshError((err as { message?: string })?.message ?? "Liveaboard refresh failed.");
+      setRefreshError(
+        (err as { message?: string })?.message ?? "Liveaboard refresh failed.",
+      );
       setRefreshMessage(null);
     } finally {
       setRefreshing(false);
     }
   }
 
+  const columns: Column<Trip>[] = [
+    {
+      key: "dates",
+      header: "Dates",
+      cell: (t) => (
+        <span className={styles.dates}>
+          {t.start_date} → {t.end_date}
+        </span>
+      ),
+    },
+    { key: "itinerary", header: "Itinerary", cell: (t) => t.itinerary },
+    {
+      key: "director",
+      header: "Director",
+      cell: (t) => (
+        <AssignDirector
+          trip={t}
+          directors={directors}
+          canEdit={isAdmin}
+          onChanged={onChanged}
+        />
+      ),
+    },
+    {
+      key: "guests",
+      header: "Guests",
+      cell: (t) =>
+        t.manifest_summary ? (
+          <span>{t.manifest_summary.guest_count} guests</span>
+        ) : (
+          <span className={styles.muted}>0 guests</span>
+        ),
+    },
+    {
+      key: "price",
+      header: "Price",
+      align: "right",
+      tabular: true,
+      cell: (t) => t.price_text ?? "—",
+    },
+    {
+      key: "availability",
+      header: "Availability",
+      cell: (t) =>
+        t.availability_text ? (
+          <Chip
+            variant={
+              t.availability_text.toUpperCase().includes("FULL")
+                ? "error"
+                : "success"
+            }
+          >
+            {t.availability_text}
+          </Chip>
+        ) : (
+          <span className={styles.muted}>—</span>
+        ),
+    },
+    {
+      key: "actions",
+      header: "",
+      align: "right",
+      cell: (t) => <Link to={`/admin/trips/${t.id}/manifest`}>Manifest</Link>,
+    },
+  ];
+
   return (
     <>
-      <div className="trips-toolbar">
+      <div className={styles.toolbar}>
         <div>
-          {refreshError && <div className="error">{refreshError}</div>}
-          {refreshMessage && !refreshError && <div className="muted">{refreshMessage}</div>}
+          {refreshError && <div className={styles.error}>{refreshError}</div>}
+          {refreshMessage && !refreshError && (
+            <div className={styles.muted}>{refreshMessage}</div>
+          )}
         </div>
         {isAdmin && ctx.boat.source_url && (
-          <button className="secondary" onClick={refreshFromLiveaboard} disabled={refreshing}>
+          <Button
+            variant="secondary"
+            onClick={refreshFromLiveaboard}
+            disabled={refreshing}
+          >
             {refreshing ? "Refreshing..." : "Refresh from liveaboard.com"}
-          </button>
+          </Button>
         )}
       </div>
       {trips.length === 0 ? (
-        <div className="empty-state">
-          <h3>No trips yet</h3>
-          <p>This boat has no scheduled trips.</p>
-        </div>
+        <Empty title="No trips yet" hint="This boat has no scheduled trips." />
       ) : (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th className="col-dates">Dates</th>
-              <th>Itinerary</th>
-              <th>Director</th>
-              <th>Guests</th>
-              <th>Price</th>
-              <th>Availability</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {trips.map((t) => (
-              <tr key={t.id}>
-                <td className="col-dates">
-                  {t.start_date} → {t.end_date}
-                </td>
-                <td>{t.itinerary}</td>
-                <td>
-                  <AssignDirector
-                    trip={t}
-                    directors={directors}
-                    canEdit={isAdmin}
-                    onChanged={onChanged}
-                  />
-                </td>
-                <td>
-                  {t.manifest_summary ? (
-                    <span>{t.manifest_summary.guest_count} guests</span>
-                  ) : (
-                    <span className="muted">0 guests</span>
-                  )}
-                </td>
-                <td className="num">{t.price_text ?? "—"}</td>
-                <td>
-                  {t.availability_text ? (
-                    <span
-                      className={
-                        "chip " +
-                        (t.availability_text.toUpperCase().includes("FULL")
-                          ? "chip--full"
-                          : "chip--available")
-                      }
-                    >
-                      {t.availability_text}
-                    </span>
-                  ) : (
-                    <span className="muted">—</span>
-                  )}
-                </td>
-                <td className="actions-cell">
-                  <Link to={`/admin/trips/${t.id}/manifest`}>Manifest</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable columns={columns} rows={trips} rowKey={(t) => t.id} />
       )}
     </>
   );
@@ -155,7 +189,9 @@ export function BoatInventory() {
   const { boat } = useBoatCtx();
   const [inventory, setInventory] = useState<BoatInventoryItem[]>([]);
   const [items, setItems] = useState<CatalogItem[]>([]);
-  const [editing, setEditing] = useState<CatalogItem | BoatInventoryItem | null>(null);
+  const [editing, setEditing] = useState<
+    CatalogItem | BoatInventoryItem | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -168,9 +204,15 @@ export function BoatInventory() {
         adminApi.listCatalogItems(),
       ]);
       setInventory(inv.items ?? []);
-      setItems((catalog.items ?? []).filter((i) => i.stock_mode === "counted" && !i.archived_at));
+      setItems(
+        (catalog.items ?? []).filter(
+          (i) => i.stock_mode === "counted" && !i.archived_at,
+        ),
+      );
     } catch (e) {
-      setError((e as { message?: string })?.message ?? "Failed to load inventory.");
+      setError(
+        (e as { message?: string })?.message ?? "Failed to load inventory.",
+      );
     } finally {
       setLoading(false);
     }
@@ -185,24 +227,24 @@ export function BoatInventory() {
     [inventory],
   );
 
-  if (loading) return <div className="muted">Loading…</div>;
+  if (loading) return <div className={styles.loading}>Loading…</div>;
   return (
     <>
-      {error && <div className="error">{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
       {items.length === 0 ? (
-        <div className="empty-state">
-          <h3>No counted catalog items</h3>
-          <p>Add stock-tracked catalog items from Inventory before setting boat quantities.</p>
-        </div>
+        <Empty
+          title="No counted catalog items"
+          hint="Add stock-tracked catalog items from Inventory before setting boat quantities."
+        />
       ) : (
-        <table className="admin-table">
+        <table className={styles.table}>
           <thead>
             <tr>
               <th>Item</th>
               <th>Category</th>
-              <th className="num">On hand</th>
-              <th className="num">Reorder</th>
-              <th className="num">Par</th>
+              <th className={styles.num}>On hand</th>
+              <th className={styles.num}>Reorder</th>
+              <th className={styles.num}>Par</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -210,13 +252,21 @@ export function BoatInventory() {
             {items.map((item) => {
               const row = inventoryByItem.get(item.id);
               return (
-                <tr key={item.id} className="click-row" onClick={() => setEditing(row ?? item)}>
+                <tr
+                  key={item.id}
+                  className={styles.clickRow}
+                  onClick={() => setEditing(row ?? item)}
+                >
                   <td>{item.name}</td>
                   <td>{item.category_name}</td>
-                  <td className="num">{row?.quantity_on_hand ?? 0}</td>
-                  <td className="num">{row?.reorder_level ?? "—"}</td>
-                  <td className="num">{row?.par_level ?? "—"}</td>
-                  <td><span className={"chip " + (row?.status === "out" ? "chip--full" : row?.status === "low" ? "chip--available" : "chip--active")}>{row?.status ?? "unset"}</span></td>
+                  <td className={styles.num}>{row?.quantity_on_hand ?? 0}</td>
+                  <td className={styles.num}>{row?.reorder_level ?? "—"}</td>
+                  <td className={styles.num}>{row?.par_level ?? "—"}</td>
+                  <td>
+                    <Chip variant={stockStatusVariant(row?.status)}>
+                      {row?.status ?? "unset"}
+                    </Chip>
+                  </td>
                 </tr>
               );
             })}
@@ -239,6 +289,19 @@ export function BoatInventory() {
   );
 }
 
+// Map a boat-inventory status label to a shared Chip variant.
+function stockStatusVariant(status: string | undefined): ChipVariant {
+  switch (status) {
+    case "out":
+    case "low":
+      return "error";
+    case undefined:
+      return "neutral";
+    default:
+      return "success";
+  }
+}
+
 function StockEditor({
   boatId,
   entry,
@@ -252,11 +315,22 @@ function StockEditor({
   saved: () => void;
   setError: (s: string | null) => void;
 }) {
-  const catalogItemId = "catalog_item_id" in entry ? entry.catalog_item_id : entry.id;
+  const catalogItemId =
+    "catalog_item_id" in entry ? entry.catalog_item_id : entry.id;
   const name = "item_name" in entry ? entry.item_name : entry.name;
-  const [qty, setQty] = useState("quantity_on_hand" in entry ? String(entry.quantity_on_hand) : "0");
-  const [reorder, setReorder] = useState("reorder_level" in entry && entry.reorder_level != null ? String(entry.reorder_level) : "");
-  const [par, setPar] = useState("par_level" in entry && entry.par_level != null ? String(entry.par_level) : "");
+  const [qty, setQty] = useState(
+    "quantity_on_hand" in entry ? String(entry.quantity_on_hand) : "0",
+  );
+  const [reorder, setReorder] = useState(
+    "reorder_level" in entry && entry.reorder_level != null
+      ? String(entry.reorder_level)
+      : "",
+  );
+  const [par, setPar] = useState(
+    "par_level" in entry && entry.par_level != null
+      ? String(entry.par_level)
+      : "",
+  );
   const [delta, setDelta] = useState("");
   const [movement, setMovement] = useState("restock");
   const [note, setNote] = useState("");
@@ -285,22 +359,74 @@ function StockEditor({
   }
 
   return (
-    <div className="modal-backdrop">
-      <form className="modal" onSubmit={save}>
+    <div className={styles.modalBackdrop}>
+      <form className={styles.modal} onSubmit={save}>
         <h2>{name}</h2>
-        <div className="form-row">
-          <div className="field"><label>On hand</label><input type="number" min="0" value={qty} onChange={(e) => setQty(e.target.value)} /></div>
-          <div className="field"><label>Reorder</label><input type="number" min="0" value={reorder} onChange={(e) => setReorder(e.target.value)} /></div>
-          <div className="field"><label>Par</label><input type="number" min="0" value={par} onChange={(e) => setPar(e.target.value)} /></div>
+        <div className={styles.formRow}>
+          <div className={styles.field}>
+            <label>On hand</label>
+            <input
+              type="number"
+              min="0"
+              value={qty}
+              onChange={(e) => setQty(e.target.value)}
+            />
+          </div>
+          <div className={styles.field}>
+            <label>Reorder</label>
+            <input
+              type="number"
+              min="0"
+              value={reorder}
+              onChange={(e) => setReorder(e.target.value)}
+            />
+          </div>
+          <div className={styles.field}>
+            <label>Par</label>
+            <input
+              type="number"
+              min="0"
+              value={par}
+              onChange={(e) => setPar(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="form-row">
-          <div className="field"><label>Adjustment</label><input type="number" value={delta} onChange={(e) => setDelta(e.target.value)} placeholder="+48 or -2" /></div>
-          <div className="field"><label>Movement</label><select value={movement} onChange={(e) => setMovement(e.target.value)}><option value="restock">restock</option><option value="correction">correction</option><option value="breakage">breakage</option><option value="spoilage">spoilage</option><option value="internal_use">internal use</option><option value="initial_count">initial count</option></select></div>
+        <div className={styles.formRow}>
+          <div className={styles.field}>
+            <label>Adjustment</label>
+            <input
+              type="number"
+              value={delta}
+              onChange={(e) => setDelta(e.target.value)}
+              placeholder="+48 or -2"
+            />
+          </div>
+          <div className={styles.field}>
+            <label>Movement</label>
+            <select
+              value={movement}
+              onChange={(e) => setMovement(e.target.value)}
+            >
+              <option value="restock">restock</option>
+              <option value="correction">correction</option>
+              <option value="breakage">breakage</option>
+              <option value="spoilage">spoilage</option>
+              <option value="internal_use">internal use</option>
+              <option value="initial_count">initial count</option>
+            </select>
+          </div>
         </div>
-        <div className="field"><label>Note</label><input value={note} onChange={(e) => setNote(e.target.value)} /></div>
-        <div className="modal-actions">
-          <button type="button" className="secondary" onClick={close}>Cancel</button>
-          <button type="submit" className="primary">Save</button>
+        <div className={styles.field}>
+          <label>Note</label>
+          <input value={note} onChange={(e) => setNote(e.target.value)} />
+        </div>
+        <div className={styles.modalActions}>
+          <Button variant="secondary" onClick={close}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary">
+            Save
+          </Button>
         </div>
       </form>
     </div>
@@ -309,9 +435,9 @@ function StockEditor({
 
 export function BoatNotes() {
   return (
-    <div className="empty-state">
-      <h3>Notes (placeholder)</h3>
-      <p>Free-form notes about this boat will live here.</p>
-    </div>
+    <Empty
+      title="Notes (placeholder)"
+      hint="Free-form notes about this boat will live here."
+    />
   );
 }

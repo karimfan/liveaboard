@@ -1,0 +1,85 @@
+/* Users — page-local layout. Color/typography come from semantic
+ * tokens via the shared primitives; this module owns only layout the
+ * primitives don't provide. */
+
+.section {
+  margin-bottom: var(--sp-lg);
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--sp-md);
+}
+
+.rowActions {
+  display: flex;
+  gap: var(--sp-sm);
+}
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.loading {
+  color: var(--text-muted);
+}
+
+.readonly {
+  padding: var(--sp-xs) 0;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+/* Modal */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 16, 28, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: var(--sp-lg);
+}
+
+.modal {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: var(--sp-lg);
+  box-shadow: var(--shadow-elevated);
+}
+
+.modalTitle {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--sp-md);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
+.modalActions {
+  display: flex;
+  gap: var(--sp-sm);
+  justify-content: flex-end;
+  margin-top: var(--sp-sm);
+}

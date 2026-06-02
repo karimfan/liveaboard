@@ -3,7 +3,10 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { adminApi } from "../api";
 import type { ApiError } from "../../lib/api";
+import { Button, Card, Field, PageHeader } from "../components";
 import { ImportJobView } from "./ImportJob";
+
+import styles from "./ImportLiveaboard.module.css";
 
 export function ImportLiveaboard() {
   const navigate = useNavigate();
@@ -24,7 +27,10 @@ export function ImportLiveaboard() {
       // back to it so the operator can watch progress + auto-advance
       // to layouts in one place.
       if (returnTo === "onboarding/boats") {
-        navigate(`/admin/onboarding?step=boats&job=${encodeURIComponent(job.id)}`, { replace: true });
+        navigate(
+          `/admin/onboarding?step=boats&job=${encodeURIComponent(job.id)}`,
+          { replace: true },
+        );
         return;
       }
       setJobId(job.id);
@@ -38,40 +44,41 @@ export function ImportLiveaboard() {
 
   return (
     <>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Import from liveaboard.com</h1>
-          <div className="admin-page-subtitle">
-            Paste the boat's listing URL on liveaboard.com.
-          </div>
-        </div>
-        <Link to="/admin/import" className="ghost">← Back</Link>
-      </div>
+      <PageHeader
+        title="Import from liveaboard.com"
+        subtitle="Paste the boat's listing URL on liveaboard.com."
+        actions={
+          <Link to="/admin/import">
+            <Button variant="quiet">← Back</Button>
+          </Link>
+        }
+      />
 
       {!jobId ? (
-        <form onSubmit={onSubmit} className="admin-card" style={{ maxWidth: 640 }}>
-          {error && <div className="error">{error}</div>}
-          <div className="field">
-            <label htmlFor="url">Boat URL</label>
-            <input
-              id="url"
-              type="url"
-              placeholder="https://www.liveaboard.com/diving/indonesia/gaia-love"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              required
-              autoFocus
-            />
-            <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-              We honor liveaboard.com's robots.txt and rate-limit at 1
-              request per second. We'll fetch every published trip on
-              the boat's listing.
-            </p>
-          </div>
-          <button className="primary" type="submit" disabled={submitting}>
-            {submitting ? "Starting…" : "Start import"}
-          </button>
-        </form>
+        <Card>
+          <form onSubmit={onSubmit} className={styles.form}>
+            {error && <div className={styles.error}>{error}</div>}
+            <Field label="Boat URL" htmlFor="url">
+              <input
+                id="url"
+                type="url"
+                placeholder="https://www.liveaboard.com/diving/indonesia/gaia-love"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+                autoFocus
+              />
+              <p className={styles.fieldHint}>
+                We honor liveaboard.com's robots.txt and rate-limit at 1 request
+                per second. We'll fetch every published trip on the boat's
+                listing.
+              </p>
+            </Field>
+            <Button variant="primary" type="submit" disabled={submitting}>
+              {submitting ? "Starting…" : "Start import"}
+            </Button>
+          </form>
+        </Card>
       ) : (
         <ImportJobView jobId={jobId} />
       )}

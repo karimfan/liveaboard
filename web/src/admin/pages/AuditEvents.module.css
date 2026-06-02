@@ -1,0 +1,62 @@
+/* AuditEvents — page-local layout. Color/typography come from semantic
+ * tokens via the shared primitives; this module only owns layout that
+ * the primitives don't provide. */
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.loading {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-sm);
+  align-items: end;
+}
+
+.table {
+  display: grid;
+  gap: 0;
+  font-size: var(--fs-sm);
+}
+
+.head,
+.row {
+  display: grid;
+  grid-template-columns: 170px 90px 1.2fr 1fr 1.5fr;
+  gap: var(--sp-sm);
+  align-items: center;
+  padding: var(--sp-sm) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.head {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 880px) {
+  .head {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -8,6 +8,18 @@ import {
   type VesselMappingChoice,
 } from "../api";
 import type { ApiError } from "../../lib/api";
+import {
+  ActionBar,
+  Button,
+  Card,
+  Chip,
+  type Column,
+  DataTable,
+  Field,
+  PageHeader,
+} from "../components";
+
+import styles from "./ImportSpreadsheet.module.css";
 
 // ImportSpreadsheet drives the multi-step wizard:
 //   1. pick a file (.csv or .xlsx)
@@ -25,9 +37,13 @@ export function ImportSpreadsheet() {
   const [step, setStep] = useState<Step>("pick");
   const [error, setError] = useState<string | null>(null);
 
-  const [preview, setPreview] = useState<SpreadsheetPreviewResponse | null>(null);
+  const [preview, setPreview] = useState<SpreadsheetPreviewResponse | null>(
+    null,
+  );
   const [boats, setBoats] = useState<Boat[]>([]);
-  const [mapping, setMapping] = useState<Record<string, VesselMappingChoice>>({});
+  const [mapping, setMapping] = useState<Record<string, VesselMappingChoice>>(
+    {},
+  );
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
 
   const [submitting, setSubmitting] = useState(false);
@@ -39,7 +55,10 @@ export function ImportSpreadsheet() {
 
   useEffect(() => {
     // Pre-load org boats so the mapping dropdowns have options.
-    adminApi.listBoats().then((r) => setBoats(r.boats ?? [])).catch(() => undefined);
+    adminApi
+      .listBoats()
+      .then((r) => setBoats(r.boats ?? []))
+      .catch(() => undefined);
   }, []);
 
   async function onFileChosen(e: ChangeEvent<HTMLInputElement>) {
@@ -90,47 +109,47 @@ export function ImportSpreadsheet() {
   }
 
   const allMapped =
-    preview?.payload.vessel_names.every((v) => mapping[v] !== undefined) ?? false;
+    preview?.payload.vessel_names.every((v) => mapping[v] !== undefined) ??
+    false;
 
   return (
     <>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Upload spreadsheet</h1>
-          <div className="admin-page-subtitle">
-            CSV or XLSX with vessel name, dates, and itinerary.
-          </div>
-        </div>
-        <Link to="/admin/import" className="ghost">← Back</Link>
-      </div>
+      <PageHeader
+        title="Upload spreadsheet"
+        subtitle="CSV or XLSX with vessel name, dates, and itinerary."
+        actions={
+          <Link to="/admin/import">
+            <Button variant="quiet">← Back</Button>
+          </Link>
+        }
+      />
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
 
       {step === "pick" && (
-        <div className="admin-card" style={{ maxWidth: 640 }}>
-          <p>
+        <Card className={styles.pickCard}>
+          <p className={styles.intro}>
             Required columns: <strong>vessel name</strong>,{" "}
             <strong>trip start date</strong>, <strong>trip end date</strong>,{" "}
             <strong>itinerary</strong>. Optional:{" "}
             <strong>number of guests</strong>.
           </p>
-          <p className="muted" style={{ fontSize: 12 }}>
-            Dates must be ISO (YYYY-MM-DD), "Jan 2, 2026", or
-            "2 Jan 2026". Other formats are skipped with a warning.
+          <p className={styles.hint}>
+            Dates must be ISO (YYYY-MM-DD), "Jan 2, 2026", or "2 Jan 2026".
+            Other formats are skipped with a warning.
           </p>
-          <p className="muted" style={{ fontSize: 12 }}>
-            File size limit: 2&nbsp;MB.
-          </p>
-          <div className="field" style={{ marginTop: "var(--sp-md)" }}>
-            <label htmlFor="file">Choose a .csv or .xlsx file</label>
-            <input
-              id="file"
-              type="file"
-              accept=".csv,.xlsx"
-              onChange={onFileChosen}
-            />
+          <p className={styles.hint}>File size limit: 2&nbsp;MB.</p>
+          <div className={styles.fileField}>
+            <Field label="Choose a .csv or .xlsx file" htmlFor="file">
+              <input
+                id="file"
+                type="file"
+                accept=".csv,.xlsx"
+                onChange={onFileChosen}
+              />
+            </Field>
           </div>
-        </div>
+        </Card>
       )}
 
       {step === "review" && preview && (
@@ -154,21 +173,22 @@ export function ImportSpreadsheet() {
       )}
 
       {step === "done" && result && (
-        <div className="admin-card">
-          <h2 className="admin-card__title">Import complete</h2>
-          <ul style={{ listStyle: "none", padding: 0, marginBottom: "var(--sp-md)" }}>
+        <Card title="Import complete">
+          <ul className={styles.resultList}>
             <li>Trips inserted: {result.inserted}</li>
             <li>Trips updated: {result.updated}</li>
             <li>Trips removed: {result.deleted}</li>
           </ul>
-          <Link to="/admin/trips" className="primary" style={{ display: "inline-block" }}>
-            View trips →
+          <Link to="/admin/trips">
+            <Button variant="primary">View trips →</Button>
           </Link>
-        </div>
+        </Card>
       )}
     </>
   );
 }
+
+type VesselRow = { vessel: string };
 
 function ReviewStep(props: {
   preview: SpreadsheetPreviewResponse;
@@ -182,7 +202,18 @@ function ReviewStep(props: {
   onCommit: () => void;
   onCancel: () => void;
 }) {
-  const { preview, boats, mapping, onMappingChange, skipped, onSkippedChange, allMapped, submitting, onCommit, onCancel } = props;
+  const {
+    preview,
+    boats,
+    mapping,
+    onMappingChange,
+    skipped,
+    onSkippedChange,
+    allMapped,
+    submitting,
+    onCommit,
+    onCancel,
+  } = props;
   const p = preview.payload;
 
   function setVessel(vessel: string, choice: VesselMappingChoice | null) {
@@ -197,7 +228,8 @@ function ReviewStep(props: {
 
   function toggleSkip(line: number) {
     const next = new Set(skipped);
-    if (next.has(line)) next.delete(line); else next.add(line);
+    if (next.has(line)) next.delete(line);
+    else next.add(line);
     onSkippedChange(next);
   }
 
@@ -209,63 +241,67 @@ function ReviewStep(props: {
     warningsByLine.set(w.line_number, arr);
   }
 
+  const vesselColumns: Column<VesselRow>[] = [
+    {
+      key: "vessel",
+      header: "Vessel name in file",
+      cell: (r) => r.vessel,
+    },
+    {
+      key: "mapto",
+      header: "Map to",
+      cell: (r) => (
+        <select
+          value={vesselSelectValue(mapping[r.vessel])}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "") {
+              setVessel(r.vessel, null);
+            } else if (val === "__create__") {
+              setVessel(r.vessel, { mode: "create_new" });
+            } else {
+              setVessel(r.vessel, { mode: "existing", boat_id: val });
+            }
+          }}
+        >
+          <option value="">— choose —</option>
+          {boats.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name} (existing)
+            </option>
+          ))}
+          <option value="__create__">
+            + Create new boat &laquo;{r.vessel}&raquo;
+          </option>
+        </select>
+      ),
+    },
+  ];
+
   return (
     <>
-      <div className="admin-card" style={{ marginBottom: "var(--sp-md)" }}>
-        <p className="muted" style={{ marginBottom: 0 }}>
+      <Card className={styles.calloutCard}>
+        <p className={styles.callout}>
           <strong>Heads up:</strong> committing this upload reconciles
-          spreadsheet trips per boat. Future trips for the boats in
-          this file that aren't in the upload will be removed.
-          Liveaboard.com-sourced trips are not touched.
+          spreadsheet trips per boat. Future trips for the boats in this file
+          that aren't in the upload will be removed. Liveaboard.com-sourced
+          trips are not touched.
         </p>
-      </div>
+      </Card>
 
-      <h2>Vessel mapping</h2>
+      <h2 className={styles.sectionTitle}>Vessel mapping</h2>
       {p.vessel_names.length === 0 ? (
-        <p className="muted">No vessels found in the file.</p>
+        <p className={styles.empty}>No vessels found in the file.</p>
       ) : (
-        <table className="admin-table" style={{ marginBottom: "var(--sp-lg)" }}>
-          <thead>
-            <tr>
-              <th>Vessel name in file</th>
-              <th>Map to</th>
-            </tr>
-          </thead>
-          <tbody>
-            {p.vessel_names.map((v) => (
-              <tr key={v}>
-                <td>{v}</td>
-                <td>
-                  <select
-                    value={vesselSelectValue(mapping[v])}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "") {
-                        setVessel(v, null);
-                      } else if (val === "__create__") {
-                        setVessel(v, { mode: "create_new" });
-                      } else {
-                        setVessel(v, { mode: "existing", boat_id: val });
-                      }
-                    }}
-                  >
-                    <option value="">— choose —</option>
-                    {boats.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name} (existing)
-                      </option>
-                    ))}
-                    <option value="__create__">+ Create new boat &laquo;{v}&raquo;</option>
-                  </select>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable
+          columns={vesselColumns}
+          rows={p.vessel_names.map((v) => ({ vessel: v }))}
+          rowKey={(r) => r.vessel}
+        />
       )}
 
-      <h2>Rows ({p.rows.length})</h2>
-      <table className="admin-table">
+      <h2 className={styles.sectionTitle}>Rows ({p.rows.length})</h2>
+      <table className={styles.rowsTable}>
         <thead>
           <tr>
             <th>Line</th>
@@ -286,23 +322,38 @@ function ReviewStep(props: {
               !row.end_date ||
               ws.some((m) => m.toLowerCase().includes("date"));
             return (
-              <tr key={row.line_number} className={skipped.has(row.line_number) ? "is-skipped" : ""}>
+              <tr
+                key={row.line_number}
+                className={
+                  skipped.has(row.line_number) ? styles.skipped : undefined
+                }
+              >
                 <td>{row.line_number}</td>
-                <td>{row.vessel_name || <span className="muted">—</span>}</td>
-                <td>{row.itinerary || <span className="muted">—</span>}</td>
                 <td>
-                  {row.start_date && row.end_date
-                    ? `${row.start_date.slice(0, 10)} → ${row.end_date.slice(0, 10)}`
-                    : <span className="muted">—</span>}
+                  {row.vessel_name || <span className={styles.muted}>—</span>}
                 </td>
-                <td>{row.num_guests ?? <span className="muted">—</span>}</td>
+                <td>
+                  {row.itinerary || <span className={styles.muted}>—</span>}
+                </td>
+                <td>
+                  {row.start_date && row.end_date ? (
+                    `${row.start_date.slice(0, 10)} → ${row.end_date.slice(0, 10)}`
+                  ) : (
+                    <span className={styles.muted}>—</span>
+                  )}
+                </td>
+                <td>
+                  {row.num_guests ?? <span className={styles.muted}>—</span>}
+                </td>
                 <td>
                   {ws.length === 0 ? (
-                    <span className="chip chip--ok">ok</span>
-                  ) : hasError ? (
-                    <span className="chip chip--low" title={ws.join("\n")}>{ws.length} warn</span>
+                    <Chip variant="success">ok</Chip>
                   ) : (
-                    <span className="chip chip--warn" title={ws.join("\n")}>{ws.length} warn</span>
+                    <span title={ws.join("\n")}>
+                      <Chip variant={hasError ? "error" : "warning"}>
+                        {ws.length} warn
+                      </Chip>
+                    </span>
                   )}
                 </td>
                 <td>
@@ -319,20 +370,26 @@ function ReviewStep(props: {
         </tbody>
       </table>
 
-      <div style={{ display: "flex", gap: "var(--sp-sm)", justifyContent: "flex-end", marginTop: "var(--sp-md)" }}>
-        <button type="button" className="ghost" onClick={onCancel}>
-          Cancel
-        </button>
-        <button
-          className="primary"
-          type="button"
-          disabled={submitting || !allMapped}
-          onClick={onCommit}
-          title={!allMapped ? "Map every vessel before committing" : undefined}
-        >
-          {submitting ? "Importing…" : "Import trips"}
-        </button>
-      </div>
+      <ActionBar
+        secondary={
+          <Button type="button" variant="quiet" onClick={onCancel}>
+            Cancel
+          </Button>
+        }
+        primary={
+          <Button
+            variant="primary"
+            type="button"
+            disabled={submitting || !allMapped}
+            onClick={onCommit}
+            title={
+              !allMapped ? "Map every vessel before committing" : undefined
+            }
+          >
+            {submitting ? "Importing…" : "Import trips"}
+          </Button>
+        }
+      />
     </>
   );
 }

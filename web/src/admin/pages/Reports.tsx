@@ -6,6 +6,34 @@ import {
   type AdminReportsResponse,
   type SettlementCurrencyRow,
 } from "../api";
+import {
+  Button,
+  Card,
+  Chip,
+  type ChipVariant,
+  type Column,
+  DataTable,
+  PageHeader,
+  Section,
+} from "../components";
+
+import styles from "./Reports.module.css";
+
+type OperationalRow = AdminReportsResponse["trip_operational"][number];
+type RevenueRow = AdminReportsResponse["trip_revenue"][number];
+
+function statusVariant(status: string): ChipVariant {
+  switch (status) {
+    case "active":
+      return "success";
+    case "cancelled":
+      return "error";
+    case "completed":
+      return "info";
+    default:
+      return "neutral";
+  }
+}
 
 export function Reports() {
   const [data, setData] = useState<AdminReportsResponse | null>(null);
@@ -28,63 +56,64 @@ export function Reports() {
 
   return (
     <>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Reports</h1>
-          <div className="admin-page-subtitle">
-            Setup completeness, operational status, and revenue.
+      <PageHeader
+        title="Reports"
+        subtitle="Setup completeness, operational status, and revenue."
+        actions={
+          <div className={styles.headerActions}>
+            <label>
+              From{" "}
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+              />
+            </label>
+            <label>
+              To{" "}
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </label>
+            <Button
+              variant="secondary"
+              onClick={() => setRefreshKey((k) => k + 1)}
+            >
+              Refresh
+            </Button>
           </div>
-        </div>
-        <div className="header-actions">
-          <label className="muted">
-            From{" "}
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-          </label>
-          <label className="muted">
-            To{" "}
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-          </label>
-          <button onClick={() => setRefreshKey((k) => k + 1)}>Refresh</button>
-        </div>
-      </div>
+        }
+      />
 
-      {error && <div className="error">{error}</div>}
-      {!data && !error && <div className="muted">Loading…</div>}
+      {error && <div className={styles.error}>{error}</div>}
+      {!data && !error && <div className={styles.loading}>Loading…</div>}
 
       {data && (
         <>
-          <div className="admin-grid">
+          <div className={styles.grid}>
             <SetupCard data={data} />
             <StatusCard data={data} />
           </div>
 
-          <h2 style={{ marginTop: "var(--sp-xl)" }}>Operational status</h2>
-          <OperationalTable data={data} />
+          <Section title="Operational status">
+            <OperationalTable data={data} />
+          </Section>
 
-          <h2 style={{ marginTop: "var(--sp-xl)" }}>Revenue per trip</h2>
-          <p className="muted">
-            Headline numbers in USD (canonical price snapshots). Settlement
-            currency totals appear per-currency, never summed across mixed
-            currencies. Voided lines are excluded from revenue and reported
-            as correction metadata.
-          </p>
-          <RevenueTable data={data} />
+          <Section
+            title="Revenue per trip"
+            hint="Headline numbers in USD (canonical price snapshots). Settlement currency totals appear per-currency, never summed across mixed currencies. Voided lines are excluded from revenue and reported as correction metadata."
+          >
+            <RevenueTable data={data} />
+          </Section>
 
-          <div className="admin-card" style={{ marginTop: "var(--sp-xl)" }}>
-            <h2 className="admin-card__title">Cross-trip analytics</h2>
-            <p className="muted">
+          <Card title="Cross-trip analytics">
+            <p className={styles.muted}>
               Trends across boats and seasons remain deferred (post-MVP). See
               ADR-0003 for the escalation path.
             </p>
-          </div>
+          </Card>
         </>
       )}
     </>
@@ -93,175 +122,195 @@ export function Reports() {
 
 function SetupCard({ data }: { data: AdminReportsResponse }) {
   return (
-    <div className="admin-card">
-      <h2 className="admin-card__title">Setup completeness</h2>
-      <div className="setup-pct">{data.setup.pct}%</div>
-      <ul className="setup-list">
+    <Card title="Setup completeness">
+      <div className={styles.setupPct}>{data.setup.pct}%</div>
+      <ul className={styles.setupList}>
         {data.setup.steps.map((s) => (
-          <li
-            key={s.key}
-            className={"setup-list__item" + (s.done ? "" : " is-pending")}
-          >
+          <li key={s.key} className={styles.setupItem}>
             <span
-              className={"setup-list__check" + (s.done ? "" : " is-pending")}
+              className={
+                s.done
+                  ? styles.setupCheck
+                  : `${styles.setupCheck} ${styles.setupCheckPending}`
+              }
               aria-hidden
             >
               {s.done ? "✓" : "·"}
             </span>
-            <span className="setup-list__label">
-              {s.href ? <Link to={s.href}>{s.label}</Link> : s.label}
-            </span>
-            <span className="setup-list__hint">{s.hint}</span>
+            <span>{s.href ? <Link to={s.href}>{s.label}</Link> : s.label}</span>
+            <span className={styles.setupHint}>{s.hint}</span>
           </li>
         ))}
       </ul>
-    </div>
+    </Card>
   );
 }
 
 function StatusCard({ data }: { data: AdminReportsResponse }) {
   const c = data.trip_status_counts;
   return (
-    <div className="admin-card">
-      <h2 className="admin-card__title">Trips by status</h2>
-      <ul className="counts">
+    <Card title="Trips by status">
+      <ul className={styles.counts}>
         <li>
-          <span className="counts__value">{c.planned}</span>
-          <span className="counts__label">Planned</span>
+          <span className={styles.countValue}>{c.planned}</span>
+          <span className={styles.countLabel}>Planned</span>
         </li>
         <li>
-          <span className="counts__value">{c.active}</span>
-          <span className="counts__label">Active</span>
+          <span className={styles.countValue}>{c.active}</span>
+          <span className={styles.countLabel}>Active</span>
         </li>
         <li>
-          <span className="counts__value">{c.completed}</span>
-          <span className="counts__label">Completed</span>
+          <span className={styles.countValue}>{c.completed}</span>
+          <span className={styles.countLabel}>Completed</span>
         </li>
         <li>
-          <span className="counts__value">{c.cancelled}</span>
-          <span className="counts__label">Cancelled</span>
+          <span className={styles.countValue}>{c.cancelled}</span>
+          <span className={styles.countLabel}>Cancelled</span>
         </li>
       </ul>
-      <div className="muted" style={{ marginTop: "var(--sp-sm)" }}>
+      <div className={styles.window}>
         Window: {data.window.from} → {data.window.to}
       </div>
-    </div>
+    </Card>
   );
 }
 
 function OperationalTable({ data }: { data: AdminReportsResponse }) {
-  const rows = data.trip_operational;
-  if (rows.length === 0) {
-    return <div className="muted">No trips in this window.</div>;
-  }
+  const columns: Column<OperationalRow>[] = [
+    {
+      key: "status",
+      header: "Status",
+      cell: (r) => <Chip variant={statusVariant(r.status)}>{r.status}</Chip>,
+    },
+    { key: "boat", header: "Boat", cell: (r) => r.boat_name },
+    {
+      key: "dates",
+      header: "Dates",
+      cell: (r) => (
+        <>
+          {r.start_date} → {r.end_date}
+        </>
+      ),
+    },
+    {
+      key: "guests",
+      header: "Guests",
+      cell: (r) => (
+        <>
+          {r.guest_count}
+          {r.num_guests != null && ` / ${r.num_guests}`}
+        </>
+      ),
+    },
+    { key: "submitted", header: "Submitted", cell: (r) => r.submitted_count },
+    { key: "docs", header: "Docs", cell: (r) => r.document_count },
+    { key: "cabins", header: "Cabins", cell: (r) => r.cabin_assignments },
+    { key: "directors", header: "Directors", cell: (r) => r.director_count },
+    {
+      key: "actions",
+      header: "",
+      cell: (r) => (
+        <Link to={`/admin/trips/${r.trip_id}/dashboard`}>Dashboard</Link>
+      ),
+    },
+  ];
   return (
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>Status</th>
-          <th>Boat</th>
-          <th>Dates</th>
-          <th>Guests</th>
-          <th>Submitted</th>
-          <th>Docs</th>
-          <th>Cabins</th>
-          <th>Directors</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.trip_id}>
-            <td>
-              <span className={`chip chip--${r.status}`}>{r.status}</span>
-            </td>
-            <td>{r.boat_name}</td>
-            <td>
-              {r.start_date} → {r.end_date}
-            </td>
-            <td>
-              {r.guest_count}
-              {r.num_guests != null && ` / ${r.num_guests}`}
-            </td>
-            <td>{r.submitted_count}</td>
-            <td>{r.document_count}</td>
-            <td>{r.cabin_assignments}</td>
-            <td>{r.director_count}</td>
-            <td>
-              <Link to={`/admin/trips/${r.trip_id}/dashboard`}>Dashboard</Link>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable
+      columns={columns}
+      rows={data.trip_operational}
+      rowKey={(r) => r.trip_id}
+      empty={<span className={styles.muted}>No trips in this window.</span>}
+    />
   );
 }
 
 function RevenueTable({ data }: { data: AdminReportsResponse }) {
-  const rows = data.trip_revenue;
-  if (rows.length === 0) {
-    return <div className="muted">No revenue rows for this window.</div>;
-  }
+  const columns: Column<RevenueRow>[] = [
+    { key: "boat", header: "Boat", cell: (r) => r.boat_name },
+    {
+      key: "dates",
+      header: "Dates",
+      cell: (r) => (
+        <>
+          {r.start_date} → {r.end_date}
+        </>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (r) => <Chip variant={statusVariant(r.status)}>{r.status}</Chip>,
+    },
+    {
+      key: "charges",
+      header: "Charges",
+      tabular: true,
+      cell: (r) => usd(r.charges_usd_cents),
+    },
+    {
+      key: "settled",
+      header: "Settled",
+      tabular: true,
+      cell: (r) => usd(r.settled_usd_cents),
+    },
+    {
+      key: "outstanding",
+      header: "Outstanding",
+      tabular: true,
+      cell: (r) => usd(r.outstanding_usd_cents),
+    },
+    {
+      key: "cardFees",
+      header: "Card fees",
+      tabular: true,
+      cell: (r) => usd(r.card_fee_usd_cents),
+    },
+    {
+      key: "tips",
+      header: "Tips",
+      tabular: true,
+      cell: (r) => usd(r.crew_tip_usd_cents),
+    },
+    {
+      key: "voided",
+      header: "Voided",
+      cell: (r) =>
+        r.voided_line_count > 0 ? (
+          <span title={`${r.voided_line_count} voided line(s)`}>
+            {r.voided_line_count} · {usd(r.voided_usd_cents)}
+          </span>
+        ) : (
+          <span className={styles.muted}>—</span>
+        ),
+    },
+    {
+      key: "settlement",
+      header: "Settlement breakdown",
+      cell: (r) => <SettlementBreakdown rows={r.settlement_by_currency} />,
+    },
+  ];
   return (
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>Boat</th>
-          <th>Dates</th>
-          <th>Status</th>
-          <th>Charges</th>
-          <th>Settled</th>
-          <th>Outstanding</th>
-          <th>Card fees</th>
-          <th>Tips</th>
-          <th>Voided</th>
-          <th>Settlement breakdown</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.trip_id}>
-            <td>{r.boat_name}</td>
-            <td>
-              {r.start_date} → {r.end_date}
-            </td>
-            <td>
-              <span className={`chip chip--${r.status}`}>{r.status}</span>
-            </td>
-            <td>{usd(r.charges_usd_cents)}</td>
-            <td>{usd(r.settled_usd_cents)}</td>
-            <td>{usd(r.outstanding_usd_cents)}</td>
-            <td>{usd(r.card_fee_usd_cents)}</td>
-            <td>{usd(r.crew_tip_usd_cents)}</td>
-            <td>
-              {r.voided_line_count > 0 ? (
-                <span title={`${r.voided_line_count} voided line(s)`}>
-                  {r.voided_line_count} · {usd(r.voided_usd_cents)}
-                </span>
-              ) : (
-                <span className="muted">—</span>
-              )}
-            </td>
-            <td>
-              <SettlementBreakdown rows={r.settlement_by_currency} />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable
+      columns={columns}
+      rows={data.trip_revenue}
+      rowKey={(r) => r.trip_id}
+      empty={
+        <span className={styles.muted}>No revenue rows for this window.</span>
+      }
+    />
   );
 }
 
 function SettlementBreakdown({ rows }: { rows: SettlementCurrencyRow[] }) {
   if (rows.length === 0) {
-    return <span className="muted">—</span>;
+    return <span className={styles.muted}>—</span>;
   }
   return (
-    <ul className="settlement-list">
+    <ul className={styles.settlementList}>
       {rows.map((s) => (
         <li key={s.currency}>
           {s.currency}: {formatMinor(s.total_minor, s.currency)}{" "}
-          <span className="muted">({s.folio_count})</span>
+          <span className={styles.muted}>({s.folio_count})</span>
         </li>
       ))}
     </ul>

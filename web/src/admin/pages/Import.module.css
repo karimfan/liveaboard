@@ -1,0 +1,46 @@
+/* Import hub — two clickable choice cards. Card primitive is a
+ * <section>, so the link-cards stay bespoke but draw only from
+ * semantic tokens. */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-md);
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  display: block;
+  text-decoration: none;
+  color: var(--text-primary);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: var(--sp-lg);
+}
+
+.card:hover {
+  text-decoration: none;
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-elevated);
+}
+
+.cardTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--text-primary);
+  margin: 0 0 var(--sp-md);
+}
+
+.card p {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  margin: 0;
+}

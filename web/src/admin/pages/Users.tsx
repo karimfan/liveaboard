@@ -2,6 +2,17 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { adminApi, type AdminUser } from "../api";
 import { api, type ApiError, type Invitation } from "../../lib/api";
+import {
+  Button,
+  Chip,
+  type Column,
+  DataTable,
+  Empty,
+  Field,
+  PageHeader,
+} from "../components";
+
+import styles from "./Users.module.css";
 
 export function Users() {
   const [users, setUsers] = useState<AdminUser[] | null>(null);
@@ -11,7 +22,10 @@ export function Users() {
 
   async function refresh() {
     try {
-      const [u, inv] = await Promise.all([adminApi.listUsers(), api.listInvitations()]);
+      const [u, inv] = await Promise.all([
+        adminApi.listUsers(),
+        api.listInvitations(),
+      ]);
       setUsers(u.users ?? []);
       setInvites(inv.invitations ?? []);
     } catch (e) {
@@ -45,94 +59,79 @@ export function Users() {
     }
   }
 
+  const inviteColumns: Column<Invitation>[] = [
+    { key: "name", header: "Name", cell: (inv) => inv.full_name },
+    { key: "email", header: "Email", cell: (inv) => inv.email },
+    { key: "phone", header: "Phone", cell: (inv) => inv.phone ?? "—" },
+    { key: "role", header: "Role", cell: (inv) => inv.role.replace("_", " ") },
+    {
+      key: "expires",
+      header: "Expires",
+      cell: (inv) => new Date(inv.expires_at).toLocaleString(),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (inv) => (
+        <div className={styles.rowActions}>
+          <Button variant="quiet" onClick={() => onResend(inv.id)}>
+            Resend
+          </Button>
+          <Button variant="quiet" onClick={() => onRevoke(inv.id)}>
+            Revoke
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  const userColumns: Column<AdminUser>[] = [
+    { key: "name", header: "Name", cell: (u) => u.full_name },
+    { key: "email", header: "Email", cell: (u) => u.email },
+    { key: "phone", header: "Phone", cell: (u) => u.phone ?? "—" },
+    { key: "role", header: "Role", cell: (u) => u.role.replace("_", " ") },
+    {
+      key: "status",
+      header: "Status",
+      cell: (u) => (
+        <Chip variant={u.is_active ? "success" : "neutral"}>
+          {u.is_active ? "Active" : "Deactivated"}
+        </Chip>
+      ),
+    },
+  ];
+
   return (
     <>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Users</h1>
-          <div className="admin-page-subtitle">
-            Org Admins and Cruise Directors in your organization.
-          </div>
-        </div>
-        <button className="primary" onClick={() => setShowInvite(true)}>
-          + Invite Cruise Director
-        </button>
-      </div>
+      <PageHeader
+        title="Users"
+        subtitle="Org Admins and Cruise Directors in your organization."
+        actions={
+          <Button variant="primary" onClick={() => setShowInvite(true)}>
+            + Invite Cruise Director
+          </Button>
+        }
+      />
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
 
       {invites.length > 0 && (
-        <section style={{ marginBottom: "var(--sp-lg)" }}>
-          <h2>Pending invitations</h2>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Role</th>
-                <th>Expires</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invites.map((inv) => (
-                <tr key={inv.id}>
-                  <td>{inv.full_name}</td>
-                  <td>{inv.email}</td>
-                  <td>{inv.phone ?? "—"}</td>
-                  <td>{inv.role.replace("_", " ")}</td>
-                  <td>{new Date(inv.expires_at).toLocaleString()}</td>
-                  <td>
-                    <button className="ghost" onClick={() => onResend(inv.id)}>
-                      Resend
-                    </button>
-                    <button className="ghost" onClick={() => onRevoke(inv.id)}>
-                      Revoke
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Pending invitations</h2>
+          <DataTable
+            columns={inviteColumns}
+            rows={invites}
+            rowKey={(inv) => inv.id}
+          />
         </section>
       )}
 
       {!users ? (
-        <div className="muted">Loading…</div>
+        <div className={styles.loading}>Loading…</div>
       ) : users.length === 0 ? (
-        <div className="empty-state">
-          <h3>No users yet</h3>
-        </div>
+        <Empty title="No users yet" />
       ) : (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Role</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td>{u.full_name}</td>
-                <td>{u.email}</td>
-                <td>{u.phone ?? "—"}</td>
-                <td>{u.role.replace("_", " ")}</td>
-                <td>
-                  {u.is_active ? (
-                    <span className="chip chip--active">Active</span>
-                  ) : (
-                    <span className="chip chip--archived">Deactivated</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable columns={userColumns} rows={users} rowKey={(u) => u.id} />
       )}
 
       {showInvite && (
@@ -181,13 +180,12 @@ function InviteModal({
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Invite a Cruise Director</h2>
-        <form onSubmit={onSubmit}>
-          {error && <div className="error">{error}</div>}
-          <div className="field">
-            <label htmlFor="invname">Full name</label>
+    <div className={styles.backdrop} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <h2 className={styles.modalTitle}>Invite a Cruise Director</h2>
+        <form className={styles.form} onSubmit={onSubmit}>
+          {error && <div className={styles.error}>{error}</div>}
+          <Field label="Full name" htmlFor="invname">
             <input
               id="invname"
               type="text"
@@ -197,9 +195,8 @@ function InviteModal({
               onChange={(e) => setFullName(e.target.value)}
               required
             />
-          </div>
-          <div className="field">
-            <label htmlFor="invemail">Email</label>
+          </Field>
+          <Field label="Email" htmlFor="invemail">
             <input
               id="invemail"
               type="email"
@@ -208,9 +205,8 @@ function InviteModal({
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-          </div>
-          <div className="field">
-            <label htmlFor="invphone">Phone (optional)</label>
+          </Field>
+          <Field label="Phone (optional)" htmlFor="invphone">
             <input
               id="invphone"
               type="tel"
@@ -218,23 +214,17 @@ function InviteModal({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
-          </div>
-          <div className="field">
-            <label>Role</label>
-            <div
-              className="muted"
-              style={{ padding: "8px 0", fontSize: 14 }}
-            >
-              Cruise Director
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: "var(--sp-sm)", justifyContent: "flex-end" }}>
-            <button type="button" className="ghost" onClick={onClose}>
+          </Field>
+          <Field label="Role">
+            <div className={styles.readonly}>Cruise Director</div>
+          </Field>
+          <div className={styles.modalActions}>
+            <Button type="button" variant="quiet" onClick={onClose}>
               Cancel
-            </button>
-            <button className="primary" type="submit" disabled={submitting}>
+            </Button>
+            <Button variant="primary" type="submit" disabled={submitting}>
               {submitting ? "Sending…" : "Send invitation"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

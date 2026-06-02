@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useParams } from "react-router-dom";
 
 import { adminApi, type Boat, type Trip } from "../api";
+import { Empty, Stat } from "../components";
+
+import styles from "./BoatDetail.module.css";
 
 export function BoatDetail() {
   const { id } = useParams();
@@ -11,7 +14,10 @@ export function BoatDetail() {
 
   const loadBoatData = useCallback(async () => {
     if (!id) return;
-    const [b, t] = await Promise.all([adminApi.getBoat(id), adminApi.listBoatTrips(id)]);
+    const [b, t] = await Promise.all([
+      adminApi.getBoat(id),
+      adminApi.listBoatTrips(id),
+    ]);
     return { boat: b, trips: t.trips ?? [] };
   }, [id]);
 
@@ -32,7 +38,9 @@ export function BoatDetail() {
         setBoat(data.boat);
         setTrips(data.trips);
       })
-      .catch((e) => !cancelled && setError(e?.message ?? "Failed to load boat."));
+      .catch(
+        (e) => !cancelled && setError(e?.message ?? "Failed to load boat."),
+      );
     return () => {
       cancelled = true;
     };
@@ -40,31 +48,32 @@ export function BoatDetail() {
 
   if (error) {
     return (
-      <div className="empty-state">
-        <h3>Boat not found</h3>
-        <p>
-          <Link to="/admin/fleet">Back to fleet</Link>
-        </p>
-      </div>
+      <Empty
+        title="Boat not found"
+        hint={<Link to="/admin/fleet">Back to fleet</Link>}
+      />
     );
   }
-  if (!boat) return <div className="muted">Loading…</div>;
+  if (!boat) return <div className={styles.loading}>Loading…</div>;
+
+  const tabClass = ({ isActive }: { isActive: boolean }) =>
+    isActive ? `${styles.tab} ${styles.tabActive}` : styles.tab;
 
   return (
     <>
-      <div className="admin-breadcrumb">
+      <div className={styles.breadcrumb}>
         <Link to="/admin/fleet">Fleet</Link> · {boat.name}
       </div>
 
-      <div className="boat-detail-header">
+      <div className={styles.header}>
         {boat.image_url ? (
-          <img className="boat-detail-header__image" src={boat.image_url} alt={boat.name} />
+          <img className={styles.image} src={boat.image_url} alt={boat.name} />
         ) : (
-          <div className="boat-detail-header__image" />
+          <div className={styles.image} />
         )}
         <div>
-          <h1 className="boat-detail-header__name">{boat.name}</h1>
-          <div className="boat-detail-header__source">
+          <h1 className={styles.name}>{boat.name}</h1>
+          <div className={styles.source}>
             {boat.source_url ? (
               <a href={boat.source_url} target="_blank" rel="noreferrer">
                 {boat.source_url.replace(/^https?:\/\//, "")}
@@ -75,51 +84,33 @@ export function BoatDetail() {
             {" · last synced "}
             {new Date(boat.last_synced).toLocaleDateString()}
           </div>
-          <div className="boat-detail-header__stats">
-            <div>
-              <div className="boat-stat__label">Upcoming trips</div>
-              <div className="boat-stat__value">
-                {trips ? trips.filter((t) => new Date(t.start_date) >= new Date()).length : "—"}
-              </div>
-            </div>
-            <div>
-              <div className="boat-stat__label">Total trips</div>
-              <div className="boat-stat__value">{trips?.length ?? "—"}</div>
-            </div>
-            <div>
-              <div className="boat-stat__label">Source</div>
-              <div className="boat-stat__value" style={{ fontSize: "var(--fs-base)" }}>
-                {boat.source_name}
-              </div>
-            </div>
+          <div className={styles.stats}>
+            <Stat
+              label="Upcoming trips"
+              value={
+                trips
+                  ? trips.filter((t) => new Date(t.start_date) >= new Date())
+                      .length
+                  : "—"
+              }
+            />
+            <Stat label="Total trips" value={trips?.length ?? "—"} />
+            <Stat label="Source" value={boat.source_name} tabular={false} />
           </div>
         </div>
       </div>
 
-      <nav className="tabs">
-        <NavLink
-          end
-          to={`/admin/fleet/${boat.id}`}
-          className={({ isActive }) => "tabs__link" + (isActive ? " is-active" : "")}
-        >
+      <nav className={styles.tabs}>
+        <NavLink end to={`/admin/fleet/${boat.id}`} className={tabClass}>
           Trips
         </NavLink>
-        <NavLink
-          to={`/admin/fleet/${boat.id}/cabins`}
-          className={({ isActive }) => "tabs__link" + (isActive ? " is-active" : "")}
-        >
+        <NavLink to={`/admin/fleet/${boat.id}/cabins`} className={tabClass}>
           Cabins
         </NavLink>
-        <NavLink
-          to={`/admin/fleet/${boat.id}/inventory`}
-          className={({ isActive }) => "tabs__link" + (isActive ? " is-active" : "")}
-        >
+        <NavLink to={`/admin/fleet/${boat.id}/inventory`} className={tabClass}>
           Inventory
         </NavLink>
-        <NavLink
-          to={`/admin/fleet/${boat.id}/notes`}
-          className={({ isActive }) => "tabs__link" + (isActive ? " is-active" : "")}
-        >
+        <NavLink to={`/admin/fleet/${boat.id}/notes`} className={tabClass}>
           Notes
         </NavLink>
       </nav>

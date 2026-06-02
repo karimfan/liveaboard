@@ -1,0 +1,62 @@
+/* OrganizationPricing — page-local layout. Color/typography come from
+ * semantic tokens via the shared primitives; this module only owns
+ * layout that the primitives don't provide. */
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: var(--sp-lg);
+  align-items: start;
+}
+
+.form {
+  position: sticky;
+  top: var(--sp-lg);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-md);
+  align-items: end;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+}
+
+.saved {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.itemName {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.notes {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 880px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .form {
+    position: static;
+  }
+}

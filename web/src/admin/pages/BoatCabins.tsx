@@ -1,7 +1,22 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { useOutletContext } from "react-router-dom";
 
-import { adminApi, type Boat, type CabinLayout, type CabinLayoutInput, type Trip } from "../api";
+import {
+  adminApi,
+  type Boat,
+  type CabinLayout,
+  type CabinLayoutInput,
+  type Trip,
+} from "../api";
+import { Button, Card, Empty } from "../components";
+
+import styles from "./BoatCabins.module.css";
 
 type Ctx = { boat: Boat; trips: Trip[]; refreshBoat: () => Promise<void> };
 
@@ -14,7 +29,9 @@ export function BoatCabins() {
   const [rangeBerths, setRangeBerths] = useState("A,B");
   const [rangeDeck, setRangeDeck] = useState("");
   const [paste, setPaste] = useState("1,A,B\n2,A,B\n3,A");
-  const [csvText, setCsvText] = useState("cabin_label,berth_label,deck,sort_order,notes\n1,A,Lower,10,\n1,B,Lower,11,\n2,A,Lower,20,\n2,B,Lower,21,");
+  const [csvText, setCsvText] = useState(
+    "cabin_label,berth_label,deck,sort_order,notes\n1,A,Lower,10,\n1,B,Lower,11,\n2,A,Lower,20,\n2,B,Lower,21,",
+  );
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -24,7 +41,10 @@ export function BoatCabins() {
     try {
       setLayout(await adminApi.boatCabins(boat.id));
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to load cabin layout.");
+      setError(
+        (err as { message?: string })?.message ??
+          "Failed to load cabin layout.",
+      );
     }
   }
 
@@ -36,12 +56,17 @@ export function BoatCabins() {
     if (mode === "ranges") {
       return {
         source: "ranges",
-        ranges: [{
-          from: Number(rangeFrom),
-          to: Number(rangeTo),
-          berths: rangeBerths.split(",").map((s) => s.trim()).filter(Boolean),
-          deck: rangeDeck.trim() || null,
-        }],
+        ranges: [
+          {
+            from: Number(rangeFrom),
+            to: Number(rangeTo),
+            berths: rangeBerths
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean),
+            deck: rangeDeck.trim() || null,
+          },
+        ],
       };
     }
     if (mode === "csv") return { source: "csv", csv: csvText };
@@ -54,7 +79,10 @@ export function BoatCabins() {
     setMessage(null);
     try {
       const p = await adminApi.previewBoatCabins(boat.id, input);
-      const berths = (p.cabins ?? []).reduce((sum, c) => sum + c.berths.length, 0);
+      const berths = (p.cabins ?? []).reduce(
+        (sum, c) => sum + c.berths.length,
+        0,
+      );
       setPreviewCount(berths);
       setMessage(`Preview ready: ${p.cabins.length} cabins, ${berths} berths.`);
     } catch (err) {
@@ -72,7 +100,9 @@ export function BoatCabins() {
       setPreviewCount(null);
       setMessage("Cabin layout saved.");
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not save layout.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not save layout.",
+      );
     }
   }
 
@@ -88,7 +118,9 @@ export function BoatCabins() {
       await adminApi.deactivateBoatCabin(boat.id, id);
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not deactivate cabin.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not deactivate cabin.",
+      );
     }
   }
 
@@ -105,7 +137,9 @@ export function BoatCabins() {
       });
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not update deck.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not update deck.",
+      );
     }
   }
 
@@ -115,26 +149,35 @@ export function BoatCabins() {
       await adminApi.deactivateBoatBerth(boat.id, cabinId, berthId);
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not deactivate berth.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not deactivate berth.",
+      );
     }
   }
 
   return (
-    <div className="cabin-layout">
-      {error && <div className="error">{error}</div>}
-      {message && <div className="callout">{message}</div>}
+    <div className={styles.layout}>
+      {error && <div className={styles.error}>{error}</div>}
+      {message && <div className={styles.callout}>{message}</div>}
 
-      <div className="admin-card cabin-layout__builder">
-        <div className="admin-card__header">
+      <Card className={styles.builder}>
+        <div className={styles.builderHead}>
           <div>
-            <h2 className="admin-card__title">Cabin layout</h2>
-            <p className="muted">
-              {layout ? `${layout.active_cabin_count} active cabins, ${layout.active_berth_count} active berths` : "Loading..."}
+            <h2 className={styles.builderTitle}>Cabin layout</h2>
+            <p className={styles.muted}>
+              {layout
+                ? `${layout.active_cabin_count} active cabins, ${layout.active_berth_count} active berths`
+                : "Loading..."}
             </p>
           </div>
-          <div className="segmented">
+          <div className={styles.segmented}>
             {(["ranges", "paste", "csv"] as const).map((m) => (
-              <button key={m} type="button" className={mode === m ? "is-active" : ""} onClick={() => setMode(m)}>
+              <button
+                key={m}
+                type="button"
+                className={mode === m ? styles.segmentedActive : ""}
+                onClick={() => setMode(m)}
+              >
                 {m === "ranges" ? "Generate" : m.toUpperCase()}
               </button>
             ))}
@@ -143,13 +186,39 @@ export function BoatCabins() {
 
         <form onSubmit={preview}>
           {mode === "ranges" && (
-            <div className="form-row">
-              <div className="field"><label>From cabin</label><input type="number" min="1" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} /></div>
-              <div className="field"><label>To cabin</label><input type="number" min="1" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} /></div>
-              <div className="field"><label>Berths</label><input value={rangeBerths} onChange={(e) => setRangeBerths(e.target.value)} placeholder="A,B" /></div>
-              <div className="field">
+            <div className={styles.formRow}>
+              <div className={styles.field}>
+                <label>From cabin</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={rangeFrom}
+                  onChange={(e) => setRangeFrom(e.target.value)}
+                />
+              </div>
+              <div className={styles.field}>
+                <label>To cabin</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={rangeTo}
+                  onChange={(e) => setRangeTo(e.target.value)}
+                />
+              </div>
+              <div className={styles.field}>
+                <label>Berths</label>
+                <input
+                  value={rangeBerths}
+                  onChange={(e) => setRangeBerths(e.target.value)}
+                  placeholder="A,B"
+                />
+              </div>
+              <div className={styles.field}>
                 <label>Deck</label>
-                <select value={rangeDeck} onChange={(e) => setRangeDeck(e.target.value)}>
+                <select
+                  value={rangeDeck}
+                  onChange={(e) => setRangeDeck(e.target.value)}
+                >
                   <option value="">— none —</option>
                   <option value="Upper">Upper</option>
                   <option value="Main">Main</option>
@@ -159,44 +228,79 @@ export function BoatCabins() {
             </div>
           )}
           {mode === "paste" && (
-            <div className="field">
+            <div className={styles.field}>
               <label>Paste layout</label>
-              <textarea rows={8} value={paste} onChange={(e) => setPaste(e.target.value)} />
-              <p className="muted">Use one cabin per row: <code>1,A,B</code></p>
+              <textarea
+                rows={8}
+                value={paste}
+                onChange={(e) => setPaste(e.target.value)}
+              />
+              <p className={styles.muted}>
+                Use one cabin per row: <code>1,A,B</code>
+              </p>
             </div>
           )}
           {mode === "csv" && (
-            <div className="field">
+            <div className={styles.field}>
               <label>CSV layout</label>
               <input type="file" accept=".csv,text/csv" onChange={onCSVFile} />
-              <textarea rows={8} value={csvText} onChange={(e) => setCsvText(e.target.value)} />
-              <p className="muted">Required schema: <code>cabin_label,berth_label,deck,sort_order,notes</code>. One berth per row.</p>
+              <textarea
+                rows={8}
+                value={csvText}
+                onChange={(e) => setCsvText(e.target.value)}
+              />
+              <p className={styles.muted}>
+                Required schema:{" "}
+                <code>cabin_label,berth_label,deck,sort_order,notes</code>. One
+                berth per row.
+              </p>
             </div>
           )}
-          <div className="form-actions">
-            <button type="submit" className="secondary">Preview</button>
-            <button type="button" className="primary" disabled={previewCount == null} onClick={save}>Save layout</button>
+          <div className={styles.formActions}>
+            <Button type="submit" variant="secondary">
+              Preview
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={previewCount == null}
+              onClick={save}
+            >
+              Save layout
+            </Button>
           </div>
         </form>
-      </div>
+      </Card>
 
       {!layout || layout.cabins.length === 0 ? (
-        <div className="empty-state">
-          <h3>No cabin layout</h3>
-          <p>Generate, paste, or upload a CSV layout to create berths for assignments.</p>
-        </div>
+        <Empty
+          title="No cabin layout"
+          hint="Generate, paste, or upload a CSV layout to create berths for assignments."
+        />
       ) : (
-        <table className="admin-table">
-          <thead><tr><th>Cabin</th><th>Deck</th><th>Berths</th><th></th></tr></thead>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Cabin</th>
+              <th>Deck</th>
+              <th>Berths</th>
+              <th></th>
+            </tr>
+          </thead>
           <tbody>
             {layout.cabins.map((c) => (
-              <tr key={c.id} className={!c.is_active ? "is-muted" : ""}>
+              <tr key={c.id} className={!c.is_active ? styles.rowMuted : ""}>
                 <td>{c.label}</td>
                 <td>
                   <select
                     value={c.deck ?? ""}
                     disabled={!c.is_active}
-                    onChange={(e) => void setCabinDeck(c.id, e.target.value === "" ? null : e.target.value)}
+                    onChange={(e) =>
+                      void setCabinDeck(
+                        c.id,
+                        e.target.value === "" ? null : e.target.value,
+                      )
+                    }
                   >
                     <option value="">— none —</option>
                     <option value="Upper">Upper</option>
@@ -205,17 +309,39 @@ export function BoatCabins() {
                   </select>
                 </td>
                 <td>
-                  <div className="berth-list">
+                  <div className={styles.berthList}>
                     {c.berths.map((b) => (
-                      <span key={b.id} className={"berth-pill" + (!b.is_active ? " is-inactive" : "")}>
+                      <span
+                        key={b.id}
+                        className={
+                          b.is_active
+                            ? styles.berthPill
+                            : `${styles.berthPill} ${styles.berthPillInactive}`
+                        }
+                      >
                         {b.display_label}
-                        {b.is_active && <button type="button" onClick={() => deactivateBerth(c.id, b.id)}>×</button>}
+                        {b.is_active && (
+                          <button
+                            type="button"
+                            onClick={() => deactivateBerth(c.id, b.id)}
+                          >
+                            ×
+                          </button>
+                        )}
                       </span>
                     ))}
                   </div>
                 </td>
-                <td className="actions-cell">
-                  {c.is_active && <button type="button" className="ghost" onClick={() => deactivateCabin(c.id)}>Deactivate</button>}
+                <td className={styles.actionsCell}>
+                  {c.is_active && (
+                    <Button
+                      type="button"
+                      variant="quiet"
+                      onClick={() => deactivateCabin(c.id)}
+                    >
+                      Deactivate
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}

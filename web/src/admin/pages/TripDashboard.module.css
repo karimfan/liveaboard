@@ -1,0 +1,69 @@
+/* TripDashboard — page-local layout. Color/typography come from
+ * semantic tokens via the shared primitives; this module only owns
+ * layout the primitives don't provide. */
+
+.breadcrumb {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--sp-sm);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--sp-md);
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: var(--sp-md);
+}
+
+.cardNote {
+  margin-top: var(--sp-sm);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.sectionHeading {
+  margin-top: var(--sp-xl);
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+.miniTable {
+  margin-top: var(--sp-md);
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.miniTable td {
+  padding: var(--sp-xs) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+.low {
+  color: var(--status-error);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+}

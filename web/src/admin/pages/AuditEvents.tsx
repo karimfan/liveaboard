@@ -1,6 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { adminApi, type AuditEvent } from "../api";
+import { Button, Card, Field, PageHeader } from "../components";
+
+import styles from "./AuditEvents.module.css";
 
 export function AuditEvents() {
   const [events, setEvents] = useState<AuditEvent[]>([]);
@@ -23,7 +26,10 @@ export function AuditEvents() {
       const res = await adminApi.auditEvents(params);
       setEvents(res.events);
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to load audit events.");
+      setError(
+        (err as { message?: string })?.message ??
+          "Failed to load audit events.",
+      );
     } finally {
       setLoading(false);
     }
@@ -41,47 +47,64 @@ export function AuditEvents() {
 
   return (
     <>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Audit</h1>
-          <div className="admin-page-subtitle">Operational changes across the organization.</div>
-        </div>
-      </div>
+      <PageHeader
+        title="Audit"
+        subtitle="Operational changes across the organization."
+      />
 
-      <form className="admin-card audit-filters" onSubmit={submit}>
-        <label>
-          Action
-          <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="guest.document_uploaded" />
-        </label>
-        <label>
-          Actor
-          <select value={actorType} onChange={(e) => setActorType(e.target.value)}>
-            <option value="">Any</option>
-            <option value="staff">Staff</option>
-            <option value="guest">Guest</option>
-            <option value="system">System</option>
-          </select>
-        </label>
-        <label>
-          Entity
-          <input value={entityType} onChange={(e) => setEntityType(e.target.value)} placeholder="guest_document" />
-        </label>
-        <label>
-          Trip ID
-          <input value={tripId} onChange={(e) => setTripId(e.target.value)} placeholder="Optional UUID" />
-        </label>
-        <button type="submit" className="secondary">Search</button>
-      </form>
+      <Card>
+        <form className={styles.filters} onSubmit={submit}>
+          <Field label="Action" htmlFor="audit-action">
+            <input
+              id="audit-action"
+              value={action}
+              onChange={(e) => setAction(e.target.value)}
+              placeholder="guest.document_uploaded"
+            />
+          </Field>
+          <Field label="Actor" htmlFor="audit-actor">
+            <select
+              id="audit-actor"
+              value={actorType}
+              onChange={(e) => setActorType(e.target.value)}
+            >
+              <option value="">Any</option>
+              <option value="staff">Staff</option>
+              <option value="guest">Guest</option>
+              <option value="system">System</option>
+            </select>
+          </Field>
+          <Field label="Entity" htmlFor="audit-entity">
+            <input
+              id="audit-entity"
+              value={entityType}
+              onChange={(e) => setEntityType(e.target.value)}
+              placeholder="guest_document"
+            />
+          </Field>
+          <Field label="Trip ID" htmlFor="audit-trip">
+            <input
+              id="audit-trip"
+              value={tripId}
+              onChange={(e) => setTripId(e.target.value)}
+              placeholder="Optional UUID"
+            />
+          </Field>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </form>
+      </Card>
 
-      {error && <div className="error">{error}</div>}
-      <div className="admin-card">
+      {error && <div className={styles.error}>{error}</div>}
+      <Card>
         {loading ? (
-          <div className="muted">Loading...</div>
+          <div className={styles.loading}>Loading...</div>
         ) : events.length === 0 ? (
-          <div className="muted">No events found.</div>
+          <div className={styles.empty}>No events found.</div>
         ) : (
-          <div className="audit-table">
-            <div className="audit-table__head">
+          <div className={styles.table}>
+            <div className={styles.head}>
               <span>Time</span>
               <span>Actor</span>
               <span>Action</span>
@@ -89,7 +112,7 @@ export function AuditEvents() {
               <span>Summary</span>
             </div>
             {events.map((event) => (
-              <div key={event.id} className="audit-table__row">
+              <div key={event.id} className={styles.row}>
                 <span>{formatDateTime(event.created_at)}</span>
                 <span>{event.actor_type}</span>
                 <span>{event.action}</span>
@@ -99,16 +122,23 @@ export function AuditEvents() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </>
   );
 }
 
 function summary(event: AuditEvent): string {
   const parts: string[] = [];
-  for (const key of ["display_name", "category", "status", "payment_method", "settlement_currency"]) {
+  for (const key of [
+    "display_name",
+    "category",
+    "status",
+    "payment_method",
+    "settlement_currency",
+  ]) {
     const value = event.metadata[key];
-    if (typeof value === "string" && value.trim()) parts.push(value.replaceAll("_", " "));
+    if (typeof value === "string" && value.trim())
+      parts.push(value.replaceAll("_", " "));
   }
   const size = event.metadata.size_bytes;
   if (typeof size === "number") parts.push(formatBytes(size));

@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { adminApi } from "../api";
 import { CurrencyPicker } from "../CurrencyPicker";
+import { Button, Card, Field, PageHeader } from "../components";
+
+import styles from "./Organization.module.css";
 
 type OrgView = {
   id: string;
@@ -29,12 +32,19 @@ export function Organization() {
       .organization()
       .then((o) => {
         if (cancelled) return;
-        const view = { id: o.id, name: o.name, currency: o.currency, created_at: o.created_at };
+        const view = {
+          id: o.id,
+          name: o.name,
+          currency: o.currency,
+          created_at: o.created_at,
+        };
         setOrg(view);
         setName(view.name);
         setCurrency(view.currency ?? "");
       })
-      .catch((e) => !cancelled && setError(e?.message ?? "Failed to load org."));
+      .catch(
+        (e) => !cancelled && setError(e?.message ?? "Failed to load org."),
+      );
     return () => {
       cancelled = true;
     };
@@ -67,66 +77,57 @@ export function Organization() {
 
   return (
     <>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Organization</h1>
-          <div className="admin-page-subtitle">
-            Org profile, currency, and defaults.
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Organization"
+        subtitle="Org profile, currency, and defaults."
+      />
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
       {!org ? (
-        <div className="muted">Loading…</div>
+        <div className={styles.loading}>Loading…</div>
       ) : (
-        <form className="admin-card" onSubmit={onSave} style={{ maxWidth: 560 }}>
-          <h2 className="admin-card__title">Profile</h2>
-          <div className="field">
-            <label htmlFor="org-name">Organization name</label>
-            <input
-              id="org-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="org-currency">Country currency</label>
-            <CurrencyPicker
-              id="org-currency"
-              value={currency}
-              onChange={setCurrency}
-              allowClear
-              placeholder="Search currency…"
-            />
-            <div className="muted" style={{ marginTop: "var(--sp-xs)" }}>
-              The organization's local currency. Reports headline in
-              USD; this currency is automatically added to your accepted
-              checkout currencies on Payments.
+        <Card title="Profile" className={styles.card}>
+          <form className={styles.form} onSubmit={onSave}>
+            <Field label="Organization name" htmlFor="org-name">
+              <input
+                id="org-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </Field>
+            <Field label="Country currency" htmlFor="org-currency">
+              <CurrencyPicker
+                id="org-currency"
+                value={currency}
+                onChange={setCurrency}
+                allowClear
+                placeholder="Search currency…"
+              />
+              <div className={styles.hint}>
+                The organization's local currency. Reports headline in USD; this
+                currency is automatically added to your accepted checkout
+                currencies on Payments.
+              </div>
+            </Field>
+            <Field label="Created">
+              <div className={styles.readonly}>
+                {new Date(org.created_at).toLocaleDateString()}
+              </div>
+            </Field>
+            <div className={styles.actions}>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={submitting || name.trim() === ""}
+              >
+                {submitting ? "Saving…" : "Save"}
+              </Button>
+              {saved && <span className={styles.savedNote}>✓ Saved</span>}
             </div>
-          </div>
-          <div className="field">
-            <label>Created</label>
-            <div className="muted">
-              {new Date(org.created_at).toLocaleDateString()}
-            </div>
-          </div>
-          <button
-            className="primary"
-            type="submit"
-            disabled={submitting || name.trim() === ""}
-            style={{ marginTop: "var(--sp-sm)" }}
-          >
-            {submitting ? "Saving…" : "Save"}
-          </button>
-          {saved && (
-            <span className="muted" style={{ marginLeft: "var(--sp-md)" }}>
-              ✓ Saved
-            </span>
-          )}
-        </form>
+          </form>
+        </Card>
       )}
     </>
   );

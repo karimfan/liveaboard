@@ -1,0 +1,157 @@
+/* BoatCabins — page-local layout. Color/typography come from semantic
+ * tokens via the shared primitives; this module owns the layout builder
+ * header, segmented control, cabin table, and berth pills that the
+ * primitives don't provide. */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+}
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.callout {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+  padding: var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+  font-family: var(--font-body);
+  overflow-wrap: break-word;
+}
+
+.builder {
+  margin-bottom: var(--sp-lg);
+}
+
+.builderHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-md);
+}
+
+.builderTitle {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface-panel);
+}
+
+.segmented button {
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: var(--fs-sm);
+}
+
+.segmented button:last-child {
+  border-right: 0;
+}
+
+.segmented button.segmentedActive {
+  background: var(--accent-primary-subtle);
+  color: var(--accent-primary);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-md);
+}
+
+.field {
+  margin-bottom: var(--sp-md);
+}
+
+.formActions {
+  display: flex;
+  gap: var(--sp-sm);
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+
+.table thead th {
+  text-align: left;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--sp-sm) var(--sp-md);
+}
+
+.table tbody td {
+  padding: var(--sp-sm) var(--sp-md);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.actionsCell {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.berthList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+}
+
+.berthPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-full);
+  padding: 2px 8px;
+  background: var(--surface-panel-strong);
+  font-size: var(--fs-sm);
+}
+
+.berthPill button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0;
+}
+
+.berthPillInactive,
+.rowMuted {
+  opacity: 0.55;
+}

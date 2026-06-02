@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 
 import { adminApi, type ImportJob } from "../api";
 import type { ApiError } from "../../lib/api";
+import { Card } from "../components";
+
+import styles from "./ImportJob.module.css";
 
 // ImportJobView polls /api/admin/import/jobs/{id} every 2s until
 // the status is terminal (succeeded or failed). Used by both the
@@ -38,31 +41,34 @@ export function ImportJobView({ jobId }: { jobId: string }) {
     };
   }, [jobId]);
 
-  if (error) return <div className="error">{error}</div>;
-  if (!job) return <div className="muted">Loading…</div>;
+  if (error) return <div className={styles.error}>{error}</div>;
+  if (!job) return <div className={styles.loading}>Loading…</div>;
 
   return (
-    <div className="admin-card">
-      <h2 className="admin-card__title">
-        {sourceLabel(job.source)} import
-      </h2>
-      <p className="muted" style={{ marginBottom: "var(--sp-md)" }}>
+    <Card title={`${sourceLabel(job.source)} import`}>
+      <p className={styles.status}>
         Status: <strong>{job.status}</strong>
         {job.source === "liveaboard_com" && job.status === "running" && (
-          <span> · fetching the boat's full schedule, ~1 request per second</span>
+          <span>
+            {" "}
+            · fetching the boat's full schedule, ~1 request per second
+          </span>
         )}
       </p>
 
       {job.status === "succeeded" && (
-        <div className="success">
+        <div className={styles.success}>
           Imported successfully.
-          <ul style={{ marginTop: "var(--sp-sm)", listStyle: "none", padding: 0 }}>
+          <ul className={styles.resultList}>
             <li>Trips inserted: {job.trips_inserted ?? 0}</li>
             <li>Trips updated: {job.trips_updated ?? 0}</li>
             <li>Trips removed: {job.trips_deleted ?? 0}</li>
           </ul>
-          <p style={{ marginTop: "var(--sp-md)" }}>
-            <Link className="primary-link" to="/admin/onboarding?step=layouts">
+          <p className={styles.followup}>
+            <Link
+              className={styles.primaryLink}
+              to="/admin/onboarding?step=layouts"
+            >
               Set up cabin layouts →
             </Link>
             {" · "}
@@ -72,11 +78,11 @@ export function ImportJobView({ jobId }: { jobId: string }) {
       )}
 
       {job.status === "failed" && (
-        <div className="error">
+        <div className={styles.error}>
           Import failed: {job.error_message ?? "unknown error"}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 

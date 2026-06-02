@@ -2,6 +2,9 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { api, type ApiError, type PendingEmailChange } from "../../lib/api";
 import { useMe } from "../useMe";
+import { Button, Field, PageHeader } from "../components";
+
+import styles from "./Account.module.css";
 
 // Account is the per-user self-service page: edit profile (Sprint
 // 010), change password, change email (two-phase, with a confirmation
@@ -9,14 +12,14 @@ import { useMe } from "../useMe";
 
 export function Account() {
   return (
-    <div className="admin-page">
-      <h1>Account</h1>
+    <>
+      <PageHeader title="Account" />
       <MyProfileSection />
-      <hr style={{ margin: "var(--sp-xl) 0" }} />
+      <hr className={styles.divider} />
       <ChangePasswordSection />
-      <hr style={{ margin: "var(--sp-xl) 0" }} />
+      <hr className={styles.divider} />
       <ChangeEmailSection />
-    </div>
+    </>
   );
 }
 
@@ -59,12 +62,11 @@ function MyProfileSection() {
 
   return (
     <section>
-      <h2>My profile</h2>
-      <form onSubmit={onSubmit} style={{ maxWidth: 480 }}>
-        {msg && <div className="success">{msg}</div>}
-        {error && <div className="error">{error}</div>}
-        <div className="field">
-          <label htmlFor="profile-name">Full name</label>
+      <h2 className={styles.sectionTitle}>My profile</h2>
+      <form onSubmit={onSubmit} className={styles.form}>
+        {msg && <div className={styles.success}>{msg}</div>}
+        {error && <div className={styles.error}>{error}</div>}
+        <Field label="Full name" htmlFor="profile-name">
           <input
             id="profile-name"
             type="text"
@@ -73,9 +75,8 @@ function MyProfileSection() {
             onChange={(e) => setFullName(e.target.value)}
             required
           />
-        </div>
-        <div className="field">
-          <label htmlFor="profile-phone">Phone (optional)</label>
+        </Field>
+        <Field label="Phone (optional)" htmlFor="profile-phone">
           <input
             id="profile-phone"
             type="tel"
@@ -83,19 +84,18 @@ function MyProfileSection() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
-        </div>
-        <div className="field">
-          <label>Email</label>
-          <div className="muted" style={{ padding: "8px 0", fontSize: 14 }}>
+        </Field>
+        <Field label="Email">
+          <div className={styles.emailReadout}>
             {me.loaded && me.me ? me.me.email : "—"}
-            <span style={{ marginLeft: 8, fontSize: 12 }}>
+            <span className={styles.emailHint}>
               (change via the section below)
             </span>
           </div>
-        </div>
-        <button className="primary" type="submit" disabled={submitting}>
+        </Field>
+        <Button variant="primary" type="submit" disabled={submitting}>
           {submitting ? "Saving…" : "Save"}
-        </button>
+        </Button>
       </form>
     </section>
   );
@@ -128,12 +128,11 @@ function ChangePasswordSection() {
 
   return (
     <section>
-      <h2>Change password</h2>
-      <form onSubmit={onSubmit} style={{ maxWidth: 480 }}>
-        {msg && <div className="success">{msg}</div>}
-        {error && <div className="error">{error}</div>}
-        <div className="field">
-          <label htmlFor="current">Current password</label>
+      <h2 className={styles.sectionTitle}>Change password</h2>
+      <form onSubmit={onSubmit} className={styles.form}>
+        {msg && <div className={styles.success}>{msg}</div>}
+        {error && <div className={styles.error}>{error}</div>}
+        <Field label="Current password" htmlFor="current">
           <input
             id="current"
             type="password"
@@ -142,9 +141,8 @@ function ChangePasswordSection() {
             onChange={(e) => setCurrent(e.target.value)}
             required
           />
-        </div>
-        <div className="field">
-          <label htmlFor="next">New password</label>
+        </Field>
+        <Field label="New password" htmlFor="next">
           <input
             id="next"
             type="password"
@@ -154,10 +152,10 @@ function ChangePasswordSection() {
             onChange={(e) => setNext(e.target.value)}
             required
           />
-        </div>
-        <button className="primary" type="submit" disabled={submitting}>
+        </Field>
+        <Button variant="primary" type="submit" disabled={submitting}>
           {submitting ? "Saving…" : "Update password"}
-        </button>
+        </Button>
       </form>
     </section>
   );
@@ -216,23 +214,22 @@ function ChangeEmailSection() {
 
   return (
     <section>
-      <h2>Change email</h2>
+      <h2 className={styles.sectionTitle}>Change email</h2>
       {pending && (
-        <div className="callout" style={{ maxWidth: 480, marginBottom: "var(--sp-md)" }}>
+        <div className={styles.callout}>
           <p>
             Pending verification at <strong>{pending.new_email}</strong>. The
             previous email remains active until that link is clicked.
           </p>
-          <button className="ghost" onClick={onCancel} disabled={submitting}>
+          <Button variant="quiet" onClick={onCancel} disabled={submitting}>
             Cancel pending change
-          </button>
+          </Button>
         </div>
       )}
-      <form onSubmit={onSubmit} style={{ maxWidth: 480 }}>
-        {msg && <div className="success">{msg}</div>}
-        {error && <div className="error">{error}</div>}
-        <div className="field">
-          <label htmlFor="newEmail">New email</label>
+      <form onSubmit={onSubmit} className={styles.form}>
+        {msg && <div className={styles.success}>{msg}</div>}
+        {error && <div className={styles.error}>{error}</div>}
+        <Field label="New email" htmlFor="newEmail">
           <input
             id="newEmail"
             type="email"
@@ -240,9 +237,8 @@ function ChangeEmailSection() {
             onChange={(e) => setNewEmail(e.target.value)}
             required
           />
-        </div>
-        <div className="field">
-          <label htmlFor="emailpw">Current password</label>
+        </Field>
+        <Field label="Current password" htmlFor="emailpw">
           <input
             id="emailpw"
             type="password"
@@ -251,10 +247,10 @@ function ChangeEmailSection() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-        </div>
-        <button className="primary" type="submit" disabled={submitting}>
+        </Field>
+        <Button variant="primary" type="submit" disabled={submitting}>
           {submitting ? "Sending…" : "Send confirmation"}
-        </button>
+        </Button>
       </form>
     </section>
   );

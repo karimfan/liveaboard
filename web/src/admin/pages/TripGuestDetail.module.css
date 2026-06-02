@@ -1,0 +1,117 @@
+/* TripGuestDetail — page-local layout. Color/typography come from
+ * semantic tokens via shared primitives; this module owns only layout
+ * the primitives don't provide. */
+
+.breadcrumb {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-sm);
+}
+
+.breadcrumb a {
+  color: var(--text-muted);
+}
+
+.breadcrumb a:hover {
+  color: var(--text-primary);
+}
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.callout {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+  padding: var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+  font-family: var(--font-body);
+  overflow-wrap: break-word;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-md);
+  align-items: end;
+}
+
+.readField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.readField label {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.readout {
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  min-height: 1.4em;
+}
+
+.documentUpload {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-sm);
+  align-items: end;
+  margin-bottom: var(--sp-md);
+}
+
+.list {
+  display: grid;
+  gap: var(--sp-sm);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  align-items: center;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--sp-sm);
+}
+
+.row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.rowArchived {
+  opacity: 0.62;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-xs);
+}
+
+@media (max-width: 880px) {
+  .row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .rowActions {
+    justify-content: flex-start;
+  }
+}

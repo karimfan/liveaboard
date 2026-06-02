@@ -1,0 +1,88 @@
+/* TripCabins — page-local layout. Color/typography come from semantic
+ * tokens via shared primitives; this module only owns layout the
+ * primitives don't provide. */
+
+.breadcrumb {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-sm);
+}
+
+.breadcrumb a {
+  color: var(--text-muted);
+}
+
+.breadcrumb a:hover {
+  color: var(--text-primary);
+}
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.callout {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+  padding: var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+  font-family: var(--font-body);
+  overflow-wrap: break-word;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-lg);
+}
+
+.deck {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  margin: var(--sp-2xs) 0 0;
+}
+
+.berths {
+  display: grid;
+  gap: var(--sp-sm);
+}
+
+.berthRow {
+  display: grid;
+  grid-template-columns: 1fr minmax(120px, auto);
+  gap: var(--sp-sm);
+  align-items: center;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--sp-sm);
+}
+
+.berthRow:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.berthActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.berthActions select {
+  max-width: 180px;
+}
+
+.guestEmail {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}

@@ -1,0 +1,38 @@
+/* Fleet — page-local layout. Color/typography come from semantic
+ * tokens via the shared primitives; this module only owns layout that
+ * the primitives don't provide. */
+
+.filterBar {
+  display: flex;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-md);
+  align-items: center;
+}
+
+.filterBar select,
+.filterBar input {
+  padding: var(--sp-xs) var(--sp-sm);
+  font-size: var(--fs-sm);
+  width: auto;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.loading {
+  color: var(--text-muted);
+}
+
+.muted {
+  color: var(--text-muted);
+}

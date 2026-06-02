@@ -1,7 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { adminApi, type AuditEvent, type GuestDocument, type GuestRegistrationDetail, type Trip } from "../api";
+import {
+  adminApi,
+  type AuditEvent,
+  type GuestDocument,
+  type GuestRegistrationDetail,
+  type Trip,
+} from "../api";
 import { appConfig } from "../../lib/config";
 import {
   RegistrationSections,
@@ -9,9 +15,21 @@ import {
   mergeRegistrationPayload,
   type RegistrationPayload,
 } from "../../lib/registration";
+import {
+  Button,
+  Card,
+  Chip,
+  type ChipVariant,
+  PageHeader,
+} from "../components";
+
+import styles from "./TripGuestDetail.module.css";
 
 export function TripGuestDetail() {
-  const { id = "", guestId = "" } = useParams<{ id: string; guestId: string }>();
+  const { id = "", guestId = "" } = useParams<{
+    id: string;
+    guestId: string;
+  }>();
   const [detail, setDetail] = useState<GuestRegistrationDetail | null>(null);
   const [trip, setTrip] = useState<Trip | null>(null);
   const [documents, setDocuments] = useState<GuestDocument[]>([]);
@@ -42,7 +60,10 @@ export function TripGuestDetail() {
       })
       .catch((err) => {
         if (cancelled) return;
-        setError((err as { message?: string })?.message ?? "Failed to load guest details.");
+        setError(
+          (err as { message?: string })?.message ??
+            "Failed to load guest details.",
+        );
       });
     return () => {
       cancelled = true;
@@ -52,24 +73,24 @@ export function TripGuestDetail() {
   if (error) {
     return (
       <>
-        <div className="admin-breadcrumb">
+        <div className={styles.breadcrumb}>
           <Link to="/admin/trips">Trips</Link>
           {" / "}
           <Link to={`/admin/trips/${id}/manifest`}>Manifest</Link>
         </div>
-        <div className="error">{error}</div>
+        <div className={styles.error}>{error}</div>
       </>
     );
   }
   if (!detail || !trip) {
     return (
       <>
-        <div className="admin-breadcrumb">
+        <div className={styles.breadcrumb}>
           <Link to="/admin/trips">Trips</Link>
           {" / "}
           <Link to={`/admin/trips/${id}/manifest`}>Manifest</Link>
         </div>
-        <div className="muted">Loading...</div>
+        <div className={styles.muted}>Loading...</div>
       </>
     );
   }
@@ -102,7 +123,9 @@ export function TripGuestDetail() {
       setDocNotes("");
       setDocFile(null);
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not upload document.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not upload document.",
+      );
     } finally {
       setUploading(false);
     }
@@ -111,95 +134,126 @@ export function TripGuestDetail() {
   async function archiveDocument(documentId: string) {
     setError(null);
     try {
-      const archived = await adminApi.archiveGuestDocument(id, guestId, documentId);
+      const archived = await adminApi.archiveGuestDocument(
+        id,
+        guestId,
+        documentId,
+      );
       const events = await adminApi.guestActivity(id, guestId);
-      setDocuments((prev) => prev.map((doc) => (doc.id === documentId ? archived : doc)));
+      setDocuments((prev) =>
+        prev.map((doc) => (doc.id === documentId ? archived : doc)),
+      );
       setActivity(events.events);
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not archive document.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not archive document.",
+      );
     }
   }
 
   return (
     <>
-      <div className="admin-breadcrumb">
+      <div className={styles.breadcrumb}>
         <Link to="/admin/trips">Trips</Link>
         {" / "}
         <Link to={`/admin/trips/${id}/manifest`}>Manifest</Link>
       </div>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">{guest.full_name}</h1>
-          <div className="admin-page-subtitle">
-            {trip.boat_name} — {trip.start_date} to {trip.end_date} — {trip.itinerary}
-          </div>
-        </div>
-        <div className="admin-page-actions">
-          <Link className="secondary" to={`/admin/trips/${id}/cabins`}>
-            Change cabin
-          </Link>
-          <Link className="secondary" to={`/admin/trips/${id}/guests/${guestId}/folio`}>
-            Open checkout
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title={guest.full_name}
+        subtitle={`${trip.boat_name} — ${trip.start_date} to ${trip.end_date} — ${trip.itinerary}`}
+        actions={
+          <>
+            <Link to={`/admin/trips/${id}/cabins`}>
+              <Button variant="secondary">Change cabin</Button>
+            </Link>
+            <Link to={`/admin/trips/${id}/guests/${guestId}/folio`}>
+              <Button variant="secondary">Open checkout</Button>
+            </Link>
+          </>
+        }
+      />
 
-      <div className="admin-card guest-detail-summary">
-        <div className="form-grid">
-          <div className="field field--read">
+      <Card>
+        <div className={styles.summaryGrid}>
+          <div className={styles.readField}>
             <label>Email</label>
-            <div className="field__readout">{guest.email}</div>
+            <div className={styles.readout}>{guest.email}</div>
           </div>
-          <div className="field field--read">
+          <div className={styles.readField}>
             <label>Status</label>
-            <div className="field__readout">
-              <span className="chip chip--active">{guest.status.replaceAll("_", " ")}</span>
+            <div className={styles.readout}>
+              <Chip variant={statusVariant(guest.status)}>
+                {guest.status.replaceAll("_", " ")}
+              </Chip>
             </div>
           </div>
-          <div className="field field--read">
+          <div className={styles.readField}>
             <label>Cabin</label>
-            <div className="field__readout">
-              {guest.cabin_assignment?.display_label ?? <span className="chip chip--warning">Needs cabin</span>}
+            <div className={styles.readout}>
+              {guest.cabin_assignment?.display_label ?? (
+                <Chip variant="warning">Needs cabin</Chip>
+              )}
             </div>
           </div>
-          <div className="field field--read">
+          <div className={styles.readField}>
             <label>Account created</label>
-            <div className="field__readout">{formatDate(guest.account_created_at)}</div>
+            <div className={styles.readout}>
+              {formatDate(guest.account_created_at)}
+            </div>
           </div>
-          <div className="field field--read">
+          <div className={styles.readField}>
             <label>Submitted</label>
-            <div className="field__readout">{formatDate(guest.registration_submitted_at)}</div>
+            <div className={styles.readout}>
+              {formatDate(guest.registration_submitted_at)}
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {!reg && (
-        <div className="callout">
-          This guest hasn't started their registration yet. Use Resend on the manifest if the invite needs another nudge.
+        <div className={styles.callout}>
+          This guest hasn't started their registration yet. Use Resend on the
+          manifest if the invite needs another nudge.
         </div>
       )}
 
-      <div className="admin-card">
-        <div className="admin-card__title-row">
-          <h2 className="admin-card__title">Documents</h2>
-          <span className="chip">{documents.filter((doc) => !doc.archived_at).length} active</span>
-        </div>
-        <form className="document-upload" onSubmit={uploadDocument}>
+      <Card
+        title="Documents"
+        actions={
+          <Chip variant="neutral">
+            {documents.filter((doc) => !doc.archived_at).length} active
+          </Chip>
+        }
+      >
+        <form className={styles.documentUpload} onSubmit={uploadDocument}>
           <label>
             Category
-            <select value={docCategory} onChange={(e) => setDocCategory(e.target.value)}>
+            <select
+              value={docCategory}
+              onChange={(e) => setDocCategory(e.target.value)}
+            >
               {documentCategories.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
               ))}
             </select>
           </label>
           <label>
             Display name
-            <input value={docDisplayName} onChange={(e) => setDocDisplayName(e.target.value)} placeholder="Optional" />
+            <input
+              value={docDisplayName}
+              onChange={(e) => setDocDisplayName(e.target.value)}
+              placeholder="Optional"
+            />
           </label>
           <label>
             Notes
-            <input value={docNotes} onChange={(e) => setDocNotes(e.target.value)} placeholder="Optional" />
+            <input
+              value={docNotes}
+              onChange={(e) => setDocNotes(e.target.value)}
+              placeholder="Optional"
+            />
           </label>
           <label>
             File
@@ -209,32 +263,52 @@ export function TripGuestDetail() {
               onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
             />
           </label>
-          <button type="submit" className="secondary" disabled={uploading}>
+          <Button type="submit" variant="secondary" disabled={uploading}>
             {uploading ? "Uploading..." : "Upload"}
-          </button>
+          </Button>
         </form>
         <DocumentList documents={documents} onArchive={archiveDocument} />
-      </div>
+      </Card>
 
       {reg && (
-        <div className="admin-card">
-          <div className="admin-card__title-row">
-            <h2 className="admin-card__title">Registration</h2>
-            <span className="chip chip--active">{reg.status}</span>
-          </div>
+        <Card
+          title="Registration"
+          actions={
+            <Chip variant={statusVariant(reg.status)}>{reg.status}</Chip>
+          }
+        >
           <RegistrationSections mode="read" payload={payload} />
-        </div>
+        </Card>
       )}
 
-      <div className="admin-card">
-        <div className="admin-card__title-row">
-          <h2 className="admin-card__title">Activity</h2>
-          <span className="chip">{activity.length} events</span>
-        </div>
+      <Card
+        title="Activity"
+        actions={<Chip variant="neutral">{activity.length} events</Chip>}
+      >
         <ActivityList events={activity} />
-      </div>
+      </Card>
     </>
   );
+}
+
+// Map a guest/registration status label to a shared Chip variant.
+function statusVariant(label: string): ChipVariant {
+  switch (label) {
+    case "active":
+    case "paid":
+    case "settled":
+      return "success";
+    case "cancelled":
+    case "removed":
+      return "error";
+    case "pending":
+      return "warning";
+    case "submitted":
+    case "completed":
+      return "info";
+    default:
+      return "neutral";
+  }
 }
 
 const documentCategories = [
@@ -246,25 +320,48 @@ const documentCategories = [
   { value: "other", label: "Other" },
 ];
 
-function DocumentList({ documents, onArchive }: { documents: GuestDocument[]; onArchive: (id: string) => void }) {
-  if (documents.length === 0) return <div className="muted">No documents uploaded.</div>;
+function DocumentList({
+  documents,
+  onArchive,
+}: {
+  documents: GuestDocument[];
+  onArchive: (id: string) => void;
+}) {
+  if (documents.length === 0)
+    return <div className={styles.muted}>No documents uploaded.</div>;
   return (
-    <div className="document-list">
+    <div className={styles.list}>
       {documents.map((doc) => (
-        <div key={doc.id} className={"document-row" + (doc.archived_at ? " is-archived" : "")}>
+        <div
+          key={doc.id}
+          className={
+            doc.archived_at ? `${styles.row} ${styles.rowArchived}` : styles.row
+          }
+        >
           <div>
             <strong>{doc.display_name}</strong>
-            <div className="muted">
-              {categoryLabel(doc.category)} · {doc.original_filename} · {formatBytes(doc.size_bytes)}
-              {doc.archived_at ? ` · archived ${formatDate(doc.archived_at)}` : ""}
+            <div className={styles.muted}>
+              {categoryLabel(doc.category)} · {doc.original_filename} ·{" "}
+              {formatBytes(doc.size_bytes)}
+              {doc.archived_at
+                ? ` · archived ${formatDate(doc.archived_at)}`
+                : ""}
             </div>
-            {doc.notes && <div className="muted">{doc.notes}</div>}
+            {doc.notes && <div className={styles.muted}>{doc.notes}</div>}
           </div>
-          <div className="document-row__actions">
-            <a className="secondary" href={`${appConfig.apiBase}${doc.view_url}`} target="_blank" rel="noreferrer">View</a>
-            <a className="secondary" href={`${appConfig.apiBase}${doc.download_url}`}>Download</a>
+          <div className={styles.rowActions}>
+            <a
+              href={`${appConfig.apiBase}${doc.view_url}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View
+            </a>
+            <a href={`${appConfig.apiBase}${doc.download_url}`}>Download</a>
             {!doc.archived_at && (
-              <button type="button" className="secondary" onClick={() => onArchive(doc.id)}>Archive</button>
+              <Button variant="secondary" onClick={() => onArchive(doc.id)}>
+                Archive
+              </Button>
             )}
           </div>
         </div>
@@ -274,16 +371,17 @@ function DocumentList({ documents, onArchive }: { documents: GuestDocument[]; on
 }
 
 function ActivityList({ events }: { events: AuditEvent[] }) {
-  if (events.length === 0) return <div className="muted">No activity yet.</div>;
+  if (events.length === 0)
+    return <div className={styles.muted}>No activity yet.</div>;
   return (
-    <div className="activity-list">
+    <div className={styles.list}>
       {events.map((event) => (
-        <div key={event.id} className="activity-row">
+        <div key={event.id} className={styles.row}>
           <div>
             <strong>{actionLabel(event.action)}</strong>
-            <div className="muted">{summary(event)}</div>
+            <div className={styles.muted}>{summary(event)}</div>
           </div>
-          <div className="muted">{formatDateTime(event.created_at)}</div>
+          <div className={styles.muted}>{formatDateTime(event.created_at)}</div>
         </div>
       ))}
     </div>

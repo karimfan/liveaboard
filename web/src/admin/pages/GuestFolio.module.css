@@ -1,0 +1,121 @@
+/* GuestFolio — page-local layout. Color/typography come from semantic
+ * tokens via shared primitives; this module owns only layout the
+ * primitives don't provide. */
+
+.breadcrumb {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-sm);
+}
+
+.breadcrumb a {
+  color: var(--text-muted);
+}
+
+.breadcrumb a:hover {
+  color: var(--text-primary);
+}
+
+.error {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.callout {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+  padding: var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+  font-family: var(--font-body);
+  overflow-wrap: break-word;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--sp-lg);
+  align-items: start;
+}
+
+.tools {
+  margin-bottom: var(--sp-md);
+}
+
+.toolRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px auto;
+  gap: var(--sp-sm);
+  align-items: center;
+  margin-bottom: var(--sp-sm);
+}
+
+.toolRowWide {
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 0;
+}
+
+.summary {
+  position: sticky;
+  top: var(--sp-lg);
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.totalRowGrand {
+  font-size: var(--fs-lg);
+  color: var(--text-primary);
+}
+
+.qtyInput {
+  width: 72px;
+  padding: var(--sp-xs) var(--sp-sm);
+  text-align: right;
+}
+
+.errorInline {
+  color: var(--status-error);
+  font-size: var(--fs-sm);
+}
+
+.field {
+  display: grid;
+  gap: var(--sp-xs);
+  margin: var(--sp-sm) 0;
+}
+
+.field label {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+@media (max-width: 720px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .summary {
+    position: static;
+  }
+
+  .toolRow,
+  .toolRowWide {
+    grid-template-columns: 1fr;
+  }
+}

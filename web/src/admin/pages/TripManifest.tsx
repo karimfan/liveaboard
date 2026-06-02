@@ -1,9 +1,27 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { adminApi, type TripCabinBoard, type TripLifecycle, type TripManifest as TripManifestData } from "../api";
+import {
+  adminApi,
+  type TripCabinBoard,
+  type TripLifecycle,
+  type TripManifest as TripManifestData,
+} from "../api";
 import { useDevFlags } from "../../lib/devFlags";
 import { fakeGuestIdentity } from "../../lib/fakeData";
+import {
+  Button,
+  Card,
+  Chip,
+  type ChipVariant,
+  type Column,
+  DataTable,
+  Field,
+  PageHeader,
+  Stat,
+} from "../components";
+
+import styles from "./TripManifest.module.css";
 
 export function TripManifest() {
   const { id = "" } = useParams<{ id: string }>();
@@ -32,11 +50,19 @@ export function TripManifest() {
       const manifest = await adminApi.tripManifest(id);
       setData(manifest);
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to load manifest.");
+      setError(
+        (err as { message?: string })?.message ?? "Failed to load manifest.",
+      );
       return;
     }
-    adminApi.tripCabinBoard(id).then(setBoard).catch(() => setBoard(null));
-    adminApi.tripLifecycle(id).then(setLifecycle).catch(() => setLifecycle(null));
+    adminApi
+      .tripCabinBoard(id)
+      .then(setBoard)
+      .catch(() => setBoard(null));
+    adminApi
+      .tripLifecycle(id)
+      .then(setLifecycle)
+      .catch(() => setLifecycle(null));
   }
 
   useEffect(() => {
@@ -49,14 +75,20 @@ export function TripManifest() {
     setError(null);
     setMessage(null);
     try {
-      await adminApi.addTripGuest(id, { full_name: fullName, email, berth_id: berthId });
+      await adminApi.addTripGuest(id, {
+        full_name: fullName,
+        email,
+        berth_id: berthId,
+      });
       setFullName("");
       setEmail("");
       setBerthId("");
       setMessage("Registration invite sent.");
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to add guest.");
+      setError(
+        (err as { message?: string })?.message ?? "Failed to add guest.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -88,7 +120,9 @@ export function TripManifest() {
         });
         created++;
       }
-      setMessage(`Filled boat with ${created} test ${created === 1 ? "guest" : "guests"}.`);
+      setMessage(
+        `Filled boat with ${created} test ${created === 1 ? "guest" : "guests"}.`,
+      );
     } catch (err) {
       setError(
         (err as { message?: string })?.message ??
@@ -108,7 +142,9 @@ export function TripManifest() {
       setMessage("Registration invite resent.");
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to resend invite.");
+      setError(
+        (err as { message?: string })?.message ?? "Failed to resend invite.",
+      );
     }
   }
 
@@ -120,7 +156,9 @@ export function TripManifest() {
       setMessage("Invite revoked.");
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Failed to revoke invite.");
+      setError(
+        (err as { message?: string })?.message ?? "Failed to revoke invite.",
+      );
     }
   }
 
@@ -129,12 +167,20 @@ export function TripManifest() {
     setError(null);
     setMessage(null);
     try {
-      const acknowledged = [...new Set((lifecycle?.readiness.warnings ?? []).map((w) => w.code))];
+      const acknowledged = [
+        ...new Set((lifecycle?.readiness.warnings ?? []).map((w) => w.code)),
+      ];
       if (action === "start") {
-        await adminApi.startTrip(id, { acknowledged_warnings: acknowledged, reason: transitionReason });
+        await adminApi.startTrip(id, {
+          acknowledged_warnings: acknowledged,
+          reason: transitionReason,
+        });
         setMessage("Trip started.");
       } else if (action === "complete") {
-        await adminApi.completeTrip(id, { acknowledged_warnings: acknowledged, reason: transitionReason });
+        await adminApi.completeTrip(id, {
+          acknowledged_warnings: acknowledged,
+          reason: transitionReason,
+        });
         setMessage("Trip completed.");
       } else {
         await adminApi.cancelTrip(id, { reason: transitionReason });
@@ -143,7 +189,10 @@ export function TripManifest() {
       setTransitionReason("");
       await load();
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not update trip lifecycle.");
+      setError(
+        (err as { message?: string })?.message ??
+          "Could not update trip lifecycle.",
+      );
     } finally {
       setTransitioning(false);
     }
@@ -152,158 +201,265 @@ export function TripManifest() {
   if (!data) {
     return (
       <>
-        <div className="admin-breadcrumb"><Link to="/admin/trips">Trips</Link></div>
-        {error ? <div className="error">{error}</div> : <div className="muted">Loading...</div>}
+        <div className={styles.breadcrumb}>
+          <Link to="/admin/trips">Trips</Link>
+        </div>
+        {error ? (
+          <div className={styles.error}>{error}</div>
+        ) : (
+          <div className={styles.muted}>Loading...</div>
+        )}
       </>
     );
   }
 
+  const formDisabled =
+    submitting ||
+    lifecycle?.trip.status === "completed" ||
+    lifecycle?.trip.status === "cancelled";
+
+  const guestColumns: Column<
+    NonNullable<TripManifestData["guests"]>[number]
+  >[] = [
+    {
+      key: "guest",
+      header: "Guest",
+      cell: (g) => (
+        <Link to={`/admin/trips/${id}/guests/${g.id}`}>{g.full_name}</Link>
+      ),
+    },
+    { key: "email", header: "Email", cell: (g) => g.email },
+    {
+      key: "cabin",
+      header: "Cabin",
+      cell: (g) =>
+        g.cabin_assignment?.display_label ?? (
+          <Chip variant="warning">Needs cabin</Chip>
+        ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (g) => (
+        <Chip variant={guestStatusVariant(g.status)}>
+          {statusLabel(g.status)}
+        </Chip>
+      ),
+    },
+    {
+      key: "invite",
+      header: "Invite",
+      cell: (g) =>
+        g.invite_last_error ? (
+          <span className={styles.errorInline}>{g.invite_last_error}</span>
+        ) : (
+          (g.invite_expires_at ?? "—")
+        ),
+    },
+    {
+      key: "actions",
+      header: "",
+      cell: (g) => (
+        <div className={styles.actionsCell}>
+          <Link to={`/admin/trips/${id}/guests/${g.id}`}>Details</Link>
+          <Button variant="secondary" onClick={() => resend(g.id)}>
+            Resend
+          </Button>
+          <Button variant="quiet" onClick={() => revoke(g.id)}>
+            Revoke
+          </Button>
+          <Link to={`/admin/trips/${id}/guests/${g.id}/folio`}>Checkout</Link>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
-      <div className="admin-breadcrumb"><Link to="/admin/trips">Trips</Link></div>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Manifest</h1>
-          <div className="admin-page-subtitle">
-            {data.trip.boat_name} - {data.trip.start_date} to {data.trip.end_date} - {data.trip.itinerary}
-          </div>
-        </div>
-        <div className="header-actions">
-          {lifecycle?.trip.status === "active" && <Link className="primary" to={`/admin/trips/${id}/ledger`}>Ledger</Link>}
-          <Link className="secondary" to={`/admin/trips/${id}/dashboard`}>Dashboard</Link>
-          <Link className="secondary" to={`/admin/trips/${id}/cabins`}>Cabin board</Link>
-        </div>
+      <div className={styles.breadcrumb}>
+        <Link to="/admin/trips">Trips</Link>
       </div>
+      <PageHeader
+        title="Manifest"
+        subtitle={`${data.trip.boat_name} - ${data.trip.start_date} to ${data.trip.end_date} - ${data.trip.itinerary}`}
+        actions={
+          <>
+            {lifecycle?.trip.status === "active" && (
+              <Link to={`/admin/trips/${id}/ledger`}>
+                <Button variant="primary">Ledger</Button>
+              </Link>
+            )}
+            <Link to={`/admin/trips/${id}/dashboard`}>
+              <Button variant="secondary">Dashboard</Button>
+            </Link>
+            <Link to={`/admin/trips/${id}/cabins`}>
+              <Button variant="secondary">Cabin board</Button>
+            </Link>
+          </>
+        }
+      />
 
-      {error && <div className="error">{error}</div>}
-      {message && <div className="callout">{message}</div>}
+      {error && <div className={styles.error}>{error}</div>}
+      {message && <div className={styles.callout}>{message}</div>}
 
       {lifecycle && (
-        <div className="admin-card lifecycle-panel">
-          <div className="admin-card__title-row">
-            <h2 className="admin-card__title">Lifecycle</h2>
-            <span className={`chip chip--${lifecycle.trip.status}`}>{lifecycle.trip.status}</span>
-          </div>
-          <div className="lifecycle-issues">
+        <Card
+          title="Lifecycle"
+          actions={
+            <Chip variant={tripStatusVariant(lifecycle.trip.status)}>
+              {lifecycle.trip.status}
+            </Chip>
+          }
+        >
+          <div className={styles.lifecycleIssues}>
             {(lifecycle.readiness.blockers ?? []).map((issue, i) => (
-              <div key={`b-${i}`} className="error-inline">{issue.message}</div>
+              <div key={`b-${i}`} className={styles.errorInline}>
+                {issue.message}
+              </div>
             ))}
             {(lifecycle.readiness.warnings ?? []).map((issue, i) => (
-              <div key={`w-${i}`} className="muted">Warning: {issue.message}</div>
+              <div key={`w-${i}`} className={styles.muted}>
+                Warning: {issue.message}
+              </div>
             ))}
-            {(lifecycle.readiness.blockers ?? []).length === 0 && (lifecycle.readiness.warnings ?? []).length === 0 && (
-              <div className="muted">No lifecycle blockers or warnings.</div>
-            )}
+            {(lifecycle.readiness.blockers ?? []).length === 0 &&
+              (lifecycle.readiness.warnings ?? []).length === 0 && (
+                <div className={styles.muted}>
+                  No lifecycle blockers or warnings.
+                </div>
+              )}
           </div>
-          <div className="lifecycle-actions">
+          <div className={styles.lifecycleActions}>
             <input
+              className={styles.input}
               value={transitionReason}
               onChange={(e) => setTransitionReason(e.target.value)}
               placeholder="Reason required for warnings, override, or cancellation"
             />
             {lifecycle.trip.status === "planned" && (
               <>
-                <button type="button" className="secondary" disabled={transitioning || (lifecycle.readiness.blockers ?? []).length > 0} onClick={() => transition("start")}>Start trip</button>
-                <button type="button" className="ghost" disabled={transitioning} onClick={() => transition("cancel")}>Cancel</button>
+                <Button
+                  variant="secondary"
+                  disabled={
+                    transitioning ||
+                    (lifecycle.readiness.blockers ?? []).length > 0
+                  }
+                  onClick={() => transition("start")}
+                >
+                  Start trip
+                </Button>
+                <Button
+                  variant="quiet"
+                  disabled={transitioning}
+                  onClick={() => transition("cancel")}
+                >
+                  Cancel
+                </Button>
               </>
             )}
             {lifecycle.trip.status === "active" && (
-              <button type="button" className="secondary" disabled={transitioning} onClick={() => transition("complete")}>Complete trip</button>
+              <Button
+                variant="secondary"
+                disabled={transitioning}
+                onClick={() => transition("complete")}
+              >
+                Complete trip
+              </Button>
             )}
           </div>
-        </div>
+        </Card>
       )}
 
-      <div className="manifest-summary">
-        <div><strong>{data.summary.guest_count}</strong><span>Guests</span></div>
-        <div><strong>{data.summary.submitted_count}</strong><span>Submitted</span></div>
-        <div><strong>{data.summary.expected_count ?? "—"}</strong><span>Expected</span></div>
-        {data.summary.has_warning && <div className="manifest-warning">Above expected count</div>}
+      <div className={styles.summary}>
+        <Stat label="Guests" value={data.summary.guest_count} />
+        <Stat label="Submitted" value={data.summary.submitted_count} />
+        <Stat label="Expected" value={data.summary.expected_count ?? "—"} />
+        {data.summary.has_warning && (
+          <div className={styles.summaryWarning}>Above expected count</div>
+        )}
       </div>
 
-      <form className="admin-card manifest-add" onSubmit={addGuest}>
-        <h2 className="admin-card__title">Add guest</h2>
-        {devFlags.filesystem_email && board !== null && availableBerths(board).length > 0 && (
-          <div className="callout" style={{ marginBottom: "var(--sp-md)" }}>
-            <strong>Dev affordance:</strong>{" "}
-            <button
-              type="button"
-              className="secondary"
-              style={{ marginLeft: 8 }}
-              disabled={filling}
-              onClick={() => void fillBoat()}
-            >
-              {filling ? "Filling…" : `Fill boat with ${availableBerths(board).length} test guests`}
-            </button>
-            <span className="muted" style={{ marginLeft: 8 }}>
-              One synthetic guest per available berth — emails go to /tmp/inbox.
-            </span>
-          </div>
-        )}
-        {board !== null && availableBerths(board).length === 0 ? (
-          <div className="callout">
-            No cabin berths available yet. Set up the boat's cabin
-            layout first:{" "}
-            <Link to={`/admin/fleet/${data.trip.boat_id}/cabins`}>
-              Cabin layout for {data.trip.boat_name}
-            </Link>
-            .
-          </div>
-        ) : (
-          <div className="form-grid">
-            <div className="field">
-              <label htmlFor="guest-name">Full name</label>
-              <input id="guest-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+      <Card title="Add guest">
+        <form onSubmit={addGuest}>
+          {devFlags.filesystem_email &&
+            board !== null &&
+            availableBerths(board).length > 0 && (
+              <div className={styles.calloutInline}>
+                <strong>Dev affordance:</strong>{" "}
+                <Button
+                  variant="secondary"
+                  disabled={filling}
+                  onClick={() => void fillBoat()}
+                >
+                  {filling
+                    ? "Filling…"
+                    : `Fill boat with ${availableBerths(board).length} test guests`}
+                </Button>
+                <span className={styles.calloutNote}>
+                  One synthetic guest per available berth — emails go to
+                  /tmp/inbox.
+                </span>
+              </div>
+            )}
+          {board !== null && availableBerths(board).length === 0 ? (
+            <div className={styles.callout}>
+              No cabin berths available yet. Set up the boat's cabin layout
+              first:{" "}
+              <Link to={`/admin/fleet/${data.trip.boat_id}/cabins`}>
+                Cabin layout for {data.trip.boat_name}
+              </Link>
+              .
             </div>
-            <div className="field">
-              <label htmlFor="guest-email">Email</label>
-              <input id="guest-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          ) : (
+            <div className={styles.formGrid}>
+              <Field label="Full name" htmlFor="guest-name">
+                <input
+                  className={styles.input}
+                  id="guest-name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </Field>
+              <Field label="Email" htmlFor="guest-email">
+                <input
+                  className={styles.input}
+                  id="guest-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </Field>
+              <Field label="Cabin berth" htmlFor="guest-berth">
+                <select
+                  className={styles.input}
+                  id="guest-berth"
+                  value={berthId}
+                  onChange={(e) => setBerthId(e.target.value)}
+                  required
+                >
+                  <option value="">Select berth...</option>
+                  {availableBerths(board).map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Button variant="primary" type="submit" disabled={formDisabled}>
+                {submitting ? "Sending..." : "Send invite"}
+              </Button>
             </div>
-            <div className="field">
-              <label htmlFor="guest-berth">Cabin berth</label>
-              <select id="guest-berth" value={berthId} onChange={(e) => setBerthId(e.target.value)} required>
-                <option value="">Select berth...</option>
-                {availableBerths(board).map((b) => (
-                  <option key={b.id} value={b.id}>{b.label}</option>
-                ))}
-              </select>
-            </div>
-            <button className="primary" type="submit" disabled={submitting || lifecycle?.trip.status === "completed" || lifecycle?.trip.status === "cancelled"}>{submitting ? "Sending..." : "Send invite"}</button>
-          </div>
-        )}
-      </form>
+          )}
+        </form>
+      </Card>
 
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Guest</th>
-            <th>Email</th>
-            <th>Cabin</th>
-            <th>Status</th>
-            <th>Invite</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {(data.guests ?? []).map((g) => (
-            <tr key={g.id}>
-              <td>
-                <Link to={`/admin/trips/${id}/guests/${g.id}`}>{g.full_name}</Link>
-              </td>
-              <td>{g.email}</td>
-              <td>{g.cabin_assignment?.display_label ?? <span className="chip chip--warning">Needs cabin</span>}</td>
-              <td><span className="chip chip--active">{statusLabel(g.status)}</span></td>
-              <td>{g.invite_last_error ? <span className="error-inline">{g.invite_last_error}</span> : g.invite_expires_at ?? "—"}</td>
-              <td className="actions-cell">
-                <Link to={`/admin/trips/${id}/guests/${g.id}`}>Details</Link>
-                <button className="secondary" type="button" onClick={() => resend(g.id)}>Resend</button>
-                <button className="ghost" type="button" onClick={() => revoke(g.id)}>Revoke</button>
-                <Link to={`/admin/trips/${id}/guests/${g.id}/folio`}>Checkout</Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable
+        columns={guestColumns}
+        rows={data.guests ?? []}
+        rowKey={(g) => g.id}
+      />
     </>
   );
 }
@@ -312,7 +468,38 @@ function statusLabel(s: string): string {
   return s.replaceAll("_", " ");
 }
 
-function availableBerths(board: TripCabinBoard | null): { id: string; label: string }[] {
+function tripStatusVariant(status: string): ChipVariant {
+  switch (status) {
+    case "active":
+      return "success";
+    case "completed":
+      return "info";
+    case "cancelled":
+      return "error";
+    default:
+      return "neutral";
+  }
+}
+
+function guestStatusVariant(status: string): ChipVariant {
+  switch (status) {
+    case "submitted":
+      return "info";
+    case "pending":
+      return "warning";
+    case "cancelled":
+    case "removed":
+      return "error";
+    case "active":
+      return "success";
+    default:
+      return "neutral";
+  }
+}
+
+function availableBerths(
+  board: TripCabinBoard | null,
+): { id: string; label: string }[] {
   if (!board || !board.cabins) return [];
   return board.cabins.flatMap((c) =>
     (c.berths ?? [])

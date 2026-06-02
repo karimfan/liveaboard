@@ -10,6 +10,9 @@ import {
   type OnboardingBoatWithoutLayout,
 } from "../api";
 import { CurrencyPicker } from "../CurrencyPicker";
+import { Button, Field } from "../components";
+
+import styles from "./Onboarding.module.css";
 
 type StepKey = OnboardingStep["key"];
 
@@ -40,7 +43,10 @@ export function Onboarding() {
     try {
       setState(await adminApi.onboarding());
     } catch (e) {
-      setError((e as { message?: string })?.message ?? "Failed to load onboarding state.");
+      setError(
+        (e as { message?: string })?.message ??
+          "Failed to load onboarding state.",
+      );
     }
   }
 
@@ -135,7 +141,9 @@ export function Onboarding() {
     try {
       await adminApi.dismissOnboarding();
     } catch (e) {
-      setError((e as { message?: string })?.message ?? "Could not dismiss onboarding.");
+      setError(
+        (e as { message?: string })?.message ?? "Could not dismiss onboarding.",
+      );
       return;
     }
     navigate("/admin", { replace: true });
@@ -143,43 +151,48 @@ export function Onboarding() {
 
   if (error) {
     return (
-      <div className="onboarding">
-        <div className="error">{error}</div>
+      <div className={styles.onboarding}>
+        <div className={styles.error}>{error}</div>
       </div>
     );
   }
   if (!state) {
     return (
-      <div className="onboarding">
-        <div className="muted">Loading…</div>
+      <div className={styles.onboarding}>
+        <div className={styles.muted}>Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="onboarding">
-      <header className="onboarding__header">
+    <div className={styles.onboarding}>
+      <header className={styles.header}>
         <div>
-          <h1 className="admin-page-title">Get your organization set up</h1>
-          <div className="admin-page-subtitle">
+          <h1 className={styles.pageTitle}>Get your organization set up</h1>
+          <div className={styles.pageSubtitle}>
             Four steps. You can skip any of them and come back from the
             Overview.
           </div>
         </div>
-        <button type="button" className="ghost" onClick={() => void skipAll()}>
+        <Button variant="quiet" onClick={() => void skipAll()}>
           Skip all
-        </button>
+        </Button>
       </header>
 
       <Stepper state={state} current={stepKey} onPick={setStep} />
 
       {importJob && <ImportBanner job={importJob} />}
 
-      <section className="onboarding__step">
-        <h2>{state.steps.find((s) => s.key === stepKey)?.label}</h2>
-        <p className="muted">{STEP_INTRO[stepKey]}</p>
+      <section className={styles.step}>
+        <h2 className={styles.stepTitle}>
+          {state.steps.find((s) => s.key === stepKey)?.label}
+        </h2>
+        <p className={styles.intro}>{STEP_INTRO[stepKey]}</p>
         {stepKey === "currency" && (
-          <CurrencyStep state={state} onSaved={() => void load().then(advance)} />
+          <CurrencyStep
+            state={state}
+            onSaved={() => void load().then(advance)}
+          />
         )}
         {stepKey === "boats" && <BoatsStep state={state} />}
         {stepKey === "layouts" && (
@@ -193,18 +206,22 @@ export function Onboarding() {
         {stepKey === "directors" && <DirectorsStep />}
       </section>
 
-      <footer className="onboarding__footer">
-        <button type="button" className="ghost" onClick={advance}>
+      <footer className={styles.footer}>
+        <Button variant="quiet" onClick={advance}>
           Skip this step
-        </button>
-        <button
-          type="button"
-          className="primary"
+        </Button>
+        <Button
+          variant="primary"
           onClick={advance}
-          disabled={!state.steps.find((s) => s.key === stepKey)?.done && stepKey !== "currency"}
+          disabled={
+            !state.steps.find((s) => s.key === stepKey)?.done &&
+            stepKey !== "currency"
+          }
         >
-          {stepKey === STEP_ORDER[STEP_ORDER.length - 1] ? "Finish" : "Continue"}
-        </button>
+          {stepKey === STEP_ORDER[STEP_ORDER.length - 1]
+            ? "Finish"
+            : "Continue"}
+        </Button>
       </footer>
     </div>
   );
@@ -220,20 +237,26 @@ function Stepper({
   onPick: (k: StepKey) => void;
 }) {
   return (
-    <ol className="onboarding__stepper">
+    <ol className={styles.stepper}>
       {state.steps.map((s, i) => (
         <li
           key={s.key}
-          className={
-            "stepper__item" +
-            (s.done ? " is-done" : "") +
-            (s.key === current ? " is-current" : "")
-          }
+          className={[
+            styles.stepperItem,
+            s.done ? styles.stepperItemDone : "",
+            s.key === current ? styles.stepperItemCurrent : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
-          <button type="button" onClick={() => onPick(s.key)} className="stepper__btn">
-            <span className="stepper__num">{s.done ? "✓" : i + 1}</span>
-            <span className="stepper__label">{s.label}</span>
-            {s.hint && <span className="stepper__hint">{s.hint}</span>}
+          <button
+            type="button"
+            onClick={() => onPick(s.key)}
+            className={styles.stepperBtn}
+          >
+            <span className={styles.stepperNum}>{s.done ? "✓" : i + 1}</span>
+            <span className={styles.stepperLabel}>{s.label}</span>
+            {s.hint && <span className={styles.stepperHint}>{s.hint}</span>}
           </button>
         </li>
       ))}
@@ -243,7 +266,13 @@ function Stepper({
 
 // --- Step views ---
 
-function CurrencyStep({ state, onSaved }: { state: OnboardingState; onSaved: () => void }) {
+function CurrencyStep({
+  state,
+  onSaved,
+}: {
+  state: OnboardingState;
+  onSaved: () => void;
+}) {
   const [currency, setCurrency] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -268,36 +297,46 @@ function CurrencyStep({ state, onSaved }: { state: OnboardingState; onSaved: () 
       // Reuse the existing organization patch endpoint. Fetch the org
       // first so we don't lose its name.
       const org = await api.organization();
-      await adminApi.patchOrganization({ name: org.name, currency: currency || null });
+      await adminApi.patchOrganization({
+        name: org.name,
+        currency: currency || null,
+      });
       onSaved();
     } catch (e) {
-      setError((e as { message?: string })?.message ?? "Could not save currency.");
+      setError(
+        (e as { message?: string })?.message ?? "Could not save currency.",
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <form className="onboarding__form" onSubmit={save}>
+    <form className={styles.form} onSubmit={save}>
       {done && (
-        <div className="muted" style={{ marginBottom: "var(--sp-sm)" }}>
+        <div className={styles.muted}>
           Already set to {currentCurrency}. You can change it here or move on.
         </div>
       )}
-      <div className="field">
-        <label htmlFor="onboarding-currency">Country currency</label>
-        <CurrencyPicker
-          id="onboarding-currency"
-          value={currency}
-          onChange={setCurrency}
-          allowClear={false}
-          placeholder="Search currency…"
-        />
+      <div className={styles.formField}>
+        <Field label="Country currency" htmlFor="onboarding-currency">
+          <CurrencyPicker
+            id="onboarding-currency"
+            value={currency}
+            onChange={setCurrency}
+            allowClear={false}
+            placeholder="Search currency…"
+          />
+        </Field>
       </div>
-      {error && <div className="error">{error}</div>}
-      <button className="primary" type="submit" disabled={submitting || currency === ""}>
+      {error && <div className={styles.error}>{error}</div>}
+      <Button
+        variant="primary"
+        type="submit"
+        disabled={submitting || currency === ""}
+      >
         {submitting ? "Saving…" : "Save and continue"}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -305,23 +344,35 @@ function CurrencyStep({ state, onSaved }: { state: OnboardingState; onSaved: () 
 function BoatsStep({ state }: { state: OnboardingState }) {
   const done = state.steps.find((s) => s.key === "boats")?.done;
   return (
-    <div className="onboarding__choices">
+    <div className={styles.choices}>
       {done && (
-        <div className="muted" style={{ marginBottom: "var(--sp-sm)" }}>
+        <div className={styles.muted}>
           You already have boats in your fleet. Add more or move on.
         </div>
       )}
-      <Link to="/admin/import/liveaboard?return=onboarding/boats" className="onboarding__choice">
+      <Link
+        to="/admin/import/liveaboard?return=onboarding/boats"
+        className={styles.choice}
+      >
         <strong>Import from liveaboard.com</strong>
-        <span className="muted">Pull boat + trip data from a liveaboard.com listing URL.</span>
+        <span className={styles.choiceHint}>
+          Pull boat + trip data from a liveaboard.com listing URL.
+        </span>
       </Link>
-      <Link to="/admin/import/spreadsheet?return=onboarding/boats" className="onboarding__choice">
+      <Link
+        to="/admin/import/spreadsheet?return=onboarding/boats"
+        className={styles.choice}
+      >
         <strong>Import a spreadsheet</strong>
-        <span className="muted">Upload an Excel sheet with your boats and upcoming trips.</span>
+        <span className={styles.choiceHint}>
+          Upload an Excel sheet with your boats and upcoming trips.
+        </span>
       </Link>
-      <Link to="/admin/fleet?return=onboarding/boats" className="onboarding__choice">
+      <Link to="/admin/fleet?return=onboarding/boats" className={styles.choice}>
         <strong>Open Fleet</strong>
-        <span className="muted">Add or edit boats by hand from the Fleet page.</span>
+        <span className={styles.choiceHint}>
+          Add or edit boats by hand from the Fleet page.
+        </span>
       </Link>
     </div>
   );
@@ -334,24 +385,24 @@ function BoatsStep({ state }: { state: OnboardingState }) {
 function ImportBanner({ job }: { job: ImportJob }) {
   if (job.status === "queued" || job.status === "running") {
     return (
-      <div className="callout" style={{ marginBottom: "var(--sp-md)" }}>
+      <div className={styles.callout}>
         <strong>Import in progress.</strong> Fetching trips, ~1 request per
-        second. You can keep using the wizard — we'll surface the
-        boat in the Layouts step as soon as it lands.
+        second. You can keep using the wizard — we'll surface the boat in the
+        Layouts step as soon as it lands.
       </div>
     );
   }
   if (job.status === "succeeded") {
     return (
-      <div className="success" style={{ marginBottom: "var(--sp-md)" }}>
-        Import succeeded. Trips inserted: {job.trips_inserted ?? 0},
-        updated: {job.trips_updated ?? 0}.
+      <div className={styles.success}>
+        Import succeeded. Trips inserted: {job.trips_inserted ?? 0}, updated:{" "}
+        {job.trips_updated ?? 0}.
       </div>
     );
   }
   if (job.status === "failed") {
     return (
-      <div className="error" style={{ marginBottom: "var(--sp-md)" }}>
+      <div className={styles.error}>
         Import failed: {job.error_message ?? "unknown error"}
       </div>
     );
@@ -374,7 +425,7 @@ function LayoutsStep({
   return (
     <>
       {fromGate && (
-        <div className="callout" style={{ marginBottom: "var(--sp-md)" }}>
+        <div className={styles.callout}>
           <strong>That action needs a cabin layout first.</strong>{" "}
           {highlightBoatName
             ? `Configure ${highlightBoatName}'s cabins below, then return to what you were doing.`
@@ -382,26 +433,27 @@ function LayoutsStep({
         </div>
       )}
       {boats.length === 0 ? (
-        <div className="muted">
+        <div className={styles.muted}>
           Every boat in your fleet has a usable cabin layout. Move on or open
           Fleet to refine any layout.
         </div>
       ) : (
-        <ul className="onboarding__rows">
+        <ul className={styles.rows}>
           {boats.map((b: OnboardingBoatWithoutLayout) => (
             <li
               key={b.boat_id}
-              className={
-                "onboarding__row" +
-                (b.boat_id === highlightBoatId ? " is-highlight" : "")
-              }
+              className={[
+                styles.row,
+                b.boat_id === highlightBoatId ? styles.rowHighlight : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
             >
               <span>{b.boat_name}</span>
               <Link
-                className="secondary"
                 to={`/admin/fleet/${encodeURIComponent(b.boat_id)}/cabins?return=onboarding/layouts`}
               >
-                Set up layout →
+                <Button variant="secondary">Set up layout →</Button>
               </Link>
             </li>
           ))}
@@ -413,10 +465,13 @@ function LayoutsStep({
 
 function DirectorsStep() {
   return (
-    <div className="onboarding__choices">
-      <Link to="/admin/users?return=onboarding/directors" className="onboarding__choice">
+    <div className={styles.choices}>
+      <Link
+        to="/admin/users?return=onboarding/directors"
+        className={styles.choice}
+      >
         <strong>Open Users</strong>
-        <span className="muted">
+        <span className={styles.choiceHint}>
           Invite Cruise Directors by email. They get a registration link and
           land in their own admin chrome.
         </span>
@@ -428,13 +483,38 @@ function DirectorsStep() {
 // --- Locale → currency best-effort guess ---
 
 const LOCALE_CURRENCY: Record<string, string> = {
-  US: "USD", GB: "GBP", AU: "AUD", CA: "CAD", NZ: "NZD",
-  ID: "IDR", JP: "JPY", KR: "KRW", TH: "THB", PH: "PHP",
-  SG: "SGD", MY: "MYR", MV: "MVR", AE: "AED", SA: "SAR",
-  EG: "EGP", BH: "BHD", KW: "KWD", OM: "OMR",
-  DE: "EUR", FR: "EUR", IT: "EUR", ES: "EUR", PT: "EUR",
-  NL: "EUR", IE: "EUR", AT: "EUR", BE: "EUR", FI: "EUR",
-  GR: "EUR", LU: "EUR", MT: "EUR",
+  US: "USD",
+  GB: "GBP",
+  AU: "AUD",
+  CA: "CAD",
+  NZ: "NZD",
+  ID: "IDR",
+  JP: "JPY",
+  KR: "KRW",
+  TH: "THB",
+  PH: "PHP",
+  SG: "SGD",
+  MY: "MYR",
+  MV: "MVR",
+  AE: "AED",
+  SA: "SAR",
+  EG: "EGP",
+  BH: "BHD",
+  KW: "KWD",
+  OM: "OMR",
+  DE: "EUR",
+  FR: "EUR",
+  IT: "EUR",
+  ES: "EUR",
+  PT: "EUR",
+  NL: "EUR",
+  IE: "EUR",
+  AT: "EUR",
+  BE: "EUR",
+  FI: "EUR",
+  GR: "EUR",
+  LU: "EUR",
+  MT: "EUR",
 };
 
 function guessCurrencyFromLocale(): string | null {
