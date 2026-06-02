@@ -31,9 +31,17 @@ lint:
 	  echo "gofmt would change these files:"; echo "$$unformatted"; exit 1; \
 	fi
 	go vet ./...
-	@# Lint mode files for accidentally-committed secrets.
-	@if grep -EinH '(password|secret|api[_-]?key|token)\s*=' config/*.env >&2; then \
+	@# Lint mode files for accidentally-committed secrets. Skip comment
+	@# lines so commented-out examples (e.g. "# FOO_PASSWORD=...") don't
+	@# trip the check.
+	@if grep -EvH '^\s*#' config/*.env | grep -Ein '(password|secret|api[_-]?key|token)\s*=' >&2; then \
 	  echo "ERROR: secret-shaped key=value detected in config/*.env (commit only non-secret defaults)"; exit 1; \
+	fi
+	@# Sprint 028 — frontend style guardrail (no raw hex / font allowlist).
+	@if [ -d web/node_modules ]; then \
+	  cd web && npm run lint:styles; \
+	else \
+	  echo "skipping lint:styles (web/node_modules not installed; run 'cd web && npm install')"; \
 	fi
 
 ## fmt: Format Go code in place.
