@@ -1,5 +1,32 @@
 # Sprint 028: One UI — One Palette, Sea Buttons, Enforced
 
+**Status:** completed (2026-06-02)
+
+## Outcome
+
+Shipped on `main`:
+
+- **Sea buttons** — `--btn-sea-*` family (solid aquamarine default, sea
+  gradient, turquoise→mint) on the `Button` primitive; the old amber and
+  cyan→violet button styling is gone.
+- **One dark-sea palette across the admin surface** — all 24 admin pages
+  migrated off `app.css` global classes onto component primitives +
+  co-located CSS modules; a `.admin-main` token bridge covers the
+  remaining shared helpers. Onboarding contrast fixed.
+- **DESIGN.md trued-up** — Inter + JetBrains Mono typography, dark-sea
+  color, sea buttons, and an Enforcement section.
+- **Enforced** — Stylelint (`color-no-hex` + custom
+  `liveaboard/font-allowlist`) wired into `make lint` and a new
+  `.github/workflows/ci.yml`.
+- **ADR 0006** created; ADR 0005 amended; CLAUDE.md / CODEX.md updated.
+
+**Carried to Sprint 029:** `app.css` still serves the light public/guest
+pages (`GuestTab`, `GuestRegistration`) and the `AssignDirector` /
+`CurrencyPicker` helper classes (bridged for color); migrate those, then
+delete `app.css`. Human click-through QA of the running admin app is the
+recommended final check (this sprint was verified via build + lint +
+structural review, not a logged-in pass).
+
 ## Overview
 
 The seed: "make the UI consistent — same fonts throughout, same color

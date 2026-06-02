@@ -25,6 +25,13 @@ The cockpit is allowed to use a route-scoped immersive visual treatment. Auth pa
 - New cockpit UI code lives under `web/src/admin/cockpit/` and ships with rich Org Admin and Cruise Director fixtures.
 - The deeper run-loop page migration is deferred to Sprint 028.
 
+**Sprint 028 update:** the deferred migration is complete. All admin
+pages now share the cockpit's dark semantic-token palette (legacy
+`--c-*` no longer styles admin pages), buttons are the sea family, and
+the token/font contract is enforced by Stylelint in CI. `app.css`
+remains only for the light public/guest pages and is slated for
+deletion in Sprint 029. See [0006](0006-ui-consistency-tokens-fonts.md).
+
 ## Security
 
 `GET /api/admin/cockpit` returns bounded projections only. Every query scopes by organization; Cruise Director data scopes to assigned trips. Cockpit commands are navigation shortcuts and do not bypass existing protected mutation endpoints.

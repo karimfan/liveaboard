@@ -118,7 +118,13 @@ routes, dense operational panels, and semantic-token styling.
   rail/canvas shell renderers, or `ui_redesign_switcher`.
 - Do not add new page-level dependencies on `web/src/styles/app.css`.
 - Use semantic tokens and component/page-local CSS modules; legacy
-  `app.css` rules are compatibility only.
+  `app.css` rules are compatibility only (it now serves only the light
+  public/guest pages; admin pages are fully migrated as of Sprint 028).
+- Sprint 028: admin surface is one dark-sea palette; all buttons are sea
+  (`--btn-sea-*`; `Button` variants primary/primaryGradient/
+  primaryElectric). Stylelint enforces no raw hex (outside tokens.css/
+  themes.css) and a `var(--font-*)`/`inherit` font allowlist via
+  `make lint` and CI. Fonts: Inter + JetBrains Mono. See ADR 0006.
 - For responsive work, verify tables and compact controls do not
   overlap or resize awkwardly.
 

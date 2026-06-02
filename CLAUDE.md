@@ -56,6 +56,18 @@ the Voyage Cockpit contract in DESIGN.md and avoid new page-level
 dependencies on `web/src/styles/app.css`; use semantic tokens,
 component primitives, and page-local CSS modules instead.
 
+Sprint 028 unified the whole admin surface onto the dark-sea semantic
+palette and made all buttons sea (the `--btn-sea-*` family; `Button`
+variants `primary`/`primaryGradient`/`primaryElectric`). Rules now
+enforced by Stylelint in CI (`make lint` / `.github/workflows/ci.yml`):
+no raw hex outside `tokens.css`/`themes.css`, and `font-family` must use
+`var(--font-*)` or `inherit`. New admin pages compose the component
+primitives + a co-located `*.module.css`; do NOT read the legacy
+`--c-*` palette or add `app.css` dependencies. `app.css` is legacy,
+serving only the light public/guest pages, and is slated for deletion
+once those migrate (Sprint 029). See ADR 0006. Fonts are Inter
+(display/body) + JetBrains Mono (data); DESIGN.md is trued-up.
+
 ## Development Rules
 
 - Code must compile before committing
