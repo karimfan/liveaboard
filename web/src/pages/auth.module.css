@@ -1,0 +1,75 @@
+.authShell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-lg);
+  background: transparent;
+}
+
+.authStack {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-md);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-lg);
+  padding: var(--sp-xl);
+  box-shadow: 0 8px 32px rgba(17, 81, 74, 0.18);
+  backdrop-filter: blur(6px);
+}
+
+.authWordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.01em;
+  color: var(--c-sea-700);
+  margin: 0;
+  text-align: center;
+}
+
+.authCard {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  border: 1px solid var(--c-200);
+  border-radius: var(--r-lg);
+  padding: var(--sp-xl);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.field {
+  margin-bottom: var(--sp-md);
+}
+
+.muted {
+  color: var(--c-500);
+  font-size: var(--fs-sm);
+}
+
+.error {
+  color: var(--c-error);
+  background: var(--c-error-bg);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.callout {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+  padding: var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+  /* Body font + standard wrapping so prose breaks at word boundaries.
+     overflow-wrap keeps very long unbreakable strings (URLs/tokens)
+     contained without breaking normal words mid-letter. */
+  font-family: var(--font-body);
+  overflow-wrap: break-word;
+}

@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { api, type GuestTabResponse } from "../lib/api";
+import styles from "./GuestTab.module.css";
+
+const tripStatusChip: Record<string, string> = {
+  planned: styles.chipPlanned,
+  active: styles.chipActive,
+  completed: styles.chipCompleted,
+  cancelled: styles.chipCancelled,
+};
 
 export function GuestTab() {
   const { tripGuestId = "" } = useParams<{ tripGuestId: string }>();
@@ -14,7 +22,9 @@ export function GuestTab() {
     api
       .guestTab(tripGuestId)
       .then((d) => !cancelled && setData(d))
-      .catch((e) => !cancelled && setError(e?.message ?? "Could not load tab."));
+      .catch(
+        (e) => !cancelled && setError(e?.message ?? "Could not load tab."),
+      );
     return () => {
       cancelled = true;
     };
@@ -22,15 +32,15 @@ export function GuestTab() {
 
   if (error) {
     return (
-      <div className="guest-registration-shell">
-        <div className="error">{error}</div>
+      <div className={styles.shell}>
+        <div className={styles.error}>{error}</div>
       </div>
     );
   }
   if (!data) {
     return (
-      <div className="guest-registration-shell">
-        <div className="muted">Loading…</div>
+      <div className={styles.shell}>
+        <div className={styles.muted}>Loading…</div>
       </div>
     );
   }
@@ -38,38 +48,40 @@ export function GuestTab() {
   const t = data.trip;
 
   return (
-    <div className="guest-registration-shell">
-      <div className="guest-registration">
-        <div className="guest-registration__header">
+    <div className={styles.shell}>
+      <div className={styles.card}>
+        <div className={styles.header}>
           <div>
             <h1>My tab</h1>
-            <p className="muted">
+            <p className={styles.muted}>
               {t.boat_name} — {t.start_date} to {t.end_date} — {t.itinerary}
             </p>
           </div>
-          <span className={`chip chip--${t.status}`}>{t.status}</span>
+          <span className={`${styles.chip} ${tripStatusChip[t.status] ?? ""}`}>
+            {t.status}
+          </span>
         </div>
 
-        <div className="muted" style={{ marginBottom: "var(--sp-md)" }}>
+        <div className={styles.muted} style={{ marginBottom: "var(--sp-md)" }}>
           <Link to={`/guest/trips/${tripGuestId}/register`}>
             ← Trip registration
           </Link>
         </div>
 
         {!data.has_folio && (
-          <div className="callout">
-            No purchases recorded yet. Your tab will appear here once the
-            crew records the first item.
+          <div className={styles.callout}>
+            No purchases recorded yet. Your tab will appear here once the crew
+            records the first item.
           </div>
         )}
 
         {data.has_folio && (
           <>
-            <section className="registration-section">
-              <div className="registration-section__header">
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
                 <div>
                   <h2>Items</h2>
-                  <p className="muted">
+                  <p className={styles.muted}>
                     {data.status === "closed"
                       ? "This tab is closed and settled."
                       : "This tab is open and updates as items are added."}
@@ -77,15 +89,15 @@ export function GuestTab() {
                 </div>
               </div>
               {data.lines.length === 0 ? (
-                <p className="muted">No line items yet.</p>
+                <p className={styles.muted}>No line items yet.</p>
               ) : (
-                <table className="admin-table">
+                <table className={styles.table}>
                   <thead>
                     <tr>
                       <th>Item</th>
-                      <th className="num">Qty</th>
-                      <th className="num">Unit</th>
-                      <th className="num">Total</th>
+                      <th className={styles.num}>Qty</th>
+                      <th className={styles.num}>Unit</th>
+                      <th className={styles.num}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -94,12 +106,16 @@ export function GuestTab() {
                         <td>
                           {l.item_name}
                           {l.line_type === "crew_tip" && (
-                            <span className="muted"> · crew tip</span>
+                            <span className={styles.muted}> · crew tip</span>
                           )}
                         </td>
-                        <td className="num">{l.quantity}</td>
-                        <td className="num">{usd(l.unit_price_usd_cents)}</td>
-                        <td className="num">{usd(l.line_total_usd_cents)}</td>
+                        <td className={styles.num}>{l.quantity}</td>
+                        <td className={styles.num}>
+                          {usd(l.unit_price_usd_cents)}
+                        </td>
+                        <td className={styles.num}>
+                          {usd(l.line_total_usd_cents)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -107,29 +123,33 @@ export function GuestTab() {
               )}
             </section>
 
-            <section className="registration-section">
-              <div className="registration-section__header">
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
                 <div>
                   <h2>Totals</h2>
                 </div>
               </div>
-              <table className="admin-table">
+              <table className={styles.table}>
                 <tbody>
                   <tr>
                     <td>Subtotal</td>
-                    <td className="num">{usd(data.subtotal_usd_cents)}</td>
+                    <td className={styles.num}>
+                      {usd(data.subtotal_usd_cents)}
+                    </td>
                   </tr>
                   {data.card_fee_usd_cents > 0 && (
                     <tr>
                       <td>Card fee</td>
-                      <td className="num">{usd(data.card_fee_usd_cents)}</td>
+                      <td className={styles.num}>
+                        {usd(data.card_fee_usd_cents)}
+                      </td>
                     </tr>
                   )}
                   <tr>
                     <td>
                       <strong>Total (USD)</strong>
                     </td>
-                    <td className="num">
+                    <td className={styles.num}>
                       <strong>{usd(data.total_usd_cents)}</strong>
                     </td>
                   </tr>
@@ -137,11 +157,11 @@ export function GuestTab() {
                     <tr>
                       <td>
                         Settlement{" "}
-                        <span className="muted">
+                        <span className={styles.muted}>
                           ({data.settlement.payment_method ?? "—"})
                         </span>
                       </td>
-                      <td className="num">
+                      <td className={styles.num}>
                         {data.settlement.currency}{" "}
                         {formatMinor(
                           data.settlement.total_minor,

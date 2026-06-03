@@ -12,10 +12,13 @@ import {
   normalizeRegistrationPayload,
   type RegistrationPayload,
 } from "../lib/registration";
+import styles from "./GuestRegistration.module.css";
 
 export function GuestRegistration() {
   const { tripGuestId = "" } = useParams<{ tripGuestId: string }>();
-  const [payload, setPayload] = useState<RegistrationPayload>(emptyRegistrationPayload);
+  const [payload, setPayload] = useState<RegistrationPayload>(
+    emptyRegistrationPayload,
+  );
   const [status, setStatus] = useState<"draft" | "submitted">("draft");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,14 +32,26 @@ export function GuestRegistration() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([api.guestRegistration(tripGuestId), api.guestDocuments(tripGuestId)])
+    Promise.all([
+      api.guestRegistration(tripGuestId),
+      api.guestDocuments(tripGuestId),
+    ])
       .then(([res, docs]) => {
         if (cancelled) return;
-        setPayload(mergeRegistrationPayload(res.payload as RegistrationPayload));
+        setPayload(
+          mergeRegistrationPayload(res.payload as RegistrationPayload),
+        );
         setStatus(res.status);
         setDocuments(docs.documents);
       })
-      .catch((err) => !cancelled && setError((err as { message?: string })?.message ?? "Could not load registration."));
+      .catch(
+        (err) =>
+          !cancelled &&
+          setError(
+            (err as { message?: string })?.message ??
+              "Could not load registration.",
+          ),
+      );
     return () => {
       cancelled = true;
     };
@@ -54,11 +69,18 @@ export function GuestRegistration() {
     setError(null);
     setMessage(null);
     try {
-      const res = await api.saveGuestRegistration(tripGuestId, normalizeRegistrationPayload(payload));
+      const res = await api.saveGuestRegistration(
+        tripGuestId,
+        normalizeRegistrationPayload(payload),
+      );
       setStatus(res.status);
-      setMessage("Draft saved. You can return to this registration link later.");
+      setMessage(
+        "Draft saved. You can return to this registration link later.",
+      );
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not save draft.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not save draft.",
+      );
     } finally {
       setSaving(false);
     }
@@ -70,11 +92,19 @@ export function GuestRegistration() {
     setError(null);
     setMessage(null);
     try {
-      const res = await api.submitGuestRegistration(tripGuestId, normalizeRegistrationPayload(payload));
+      const res = await api.submitGuestRegistration(
+        tripGuestId,
+        normalizeRegistrationPayload(payload),
+      );
       setStatus(res.status);
-      setMessage(status === "submitted" ? "Changes saved." : "Registration submitted.");
+      setMessage(
+        status === "submitted" ? "Changes saved." : "Registration submitted.",
+      );
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not save registration.");
+      setError(
+        (err as { message?: string })?.message ??
+          "Could not save registration.",
+      );
     } finally {
       setSaving(false);
     }
@@ -105,7 +135,9 @@ export function GuestRegistration() {
       setDocFile(null);
       setMessage("Document uploaded.");
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not upload document.");
+      setError(
+        (err as { message?: string })?.message ?? "Could not upload document.",
+      );
     } finally {
       setUploading(false);
     }
@@ -114,52 +146,71 @@ export function GuestRegistration() {
   const alreadySubmitted = status === "submitted";
 
   return (
-    <div className="guest-registration-shell">
-      <form className="guest-registration" onSubmit={submit}>
-        <div className="guest-registration__header">
+    <div className={styles.shell}>
+      <form className={styles.card} onSubmit={submit}>
+        <div className={styles.header}>
           <div>
             <h1>Guest registration</h1>
-            <p className="muted">
+            <p className={styles.muted}>
               {alreadySubmitted
                 ? "You've submitted your registration. You can still update any details before your trip."
                 : "Save a draft any time and return later from your registration link."}
             </p>
           </div>
-          <span className="chip chip--active">{status}</span>
+          <span className={`${styles.chip} ${styles.chipActive}`}>
+            {status}
+          </span>
         </div>
-        <div className="muted" style={{ marginBottom: "var(--sp-md)" }}>
+        <div className={styles.muted} style={{ marginBottom: "var(--sp-md)" }}>
           <Link to={`/guest/trips/${tripGuestId}/tab`}>View my tab →</Link>
         </div>
-        {error && <div className="error">{error}</div>}
-        {message && <div className="callout">{message}</div>}
+        {error && <div className={styles.error}>{error}</div>}
+        {message && <div className={styles.callout}>{message}</div>}
 
         <DevFillButton onFill={(next) => setPayload(next)} />
 
         <RegistrationSections mode="edit" payload={payload} onChange={update} />
 
-        <section className="registration-section">
-          <div className="registration-section__header">
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
             <div>
               <h2>Documents</h2>
-              <p className="muted">Upload passport or travel document, dive certification, insurance, waiver, medical notes, or other trip documents. PDF, JPEG, PNG, HEIC, and HEIF are accepted up to 10 MiB.</p>
+              <p className={styles.muted}>
+                Upload passport or travel document, dive certification,
+                insurance, waiver, medical notes, or other trip documents. PDF,
+                JPEG, PNG, HEIC, and HEIF are accepted up to 10 MiB.
+              </p>
             </div>
           </div>
-          <div className="document-upload">
+          <div className={styles.documentUpload}>
             <label>
               Category
-              <select value={docCategory} onChange={(e) => setDocCategory(e.target.value)}>
+              <select
+                value={docCategory}
+                onChange={(e) => setDocCategory(e.target.value)}
+              >
                 {documentCategories.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
                 ))}
               </select>
             </label>
             <label>
               Display name
-              <input value={docDisplayName} onChange={(e) => setDocDisplayName(e.target.value)} placeholder="Optional" />
+              <input
+                value={docDisplayName}
+                onChange={(e) => setDocDisplayName(e.target.value)}
+                placeholder="Optional"
+              />
             </label>
             <label>
               Notes
-              <input value={docNotes} onChange={(e) => setDocNotes(e.target.value)} placeholder="Optional" />
+              <input
+                value={docNotes}
+                onChange={(e) => setDocNotes(e.target.value)}
+                placeholder="Optional"
+              />
             </label>
             <label>
               File
@@ -169,16 +220,26 @@ export function GuestRegistration() {
                 onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
               />
             </label>
-            <button type="button" className="secondary" disabled={uploading} onClick={uploadDocument}>
+            <button
+              type="button"
+              className="secondary"
+              disabled={uploading}
+              onClick={uploadDocument}
+            >
               {uploading ? "Uploading..." : "Upload document"}
             </button>
           </div>
           <DocumentList documents={documents} />
         </section>
 
-        <div className="guest-registration__actions">
+        <div className={styles.actions}>
           {!alreadySubmitted && (
-            <button type="button" className="secondary" onClick={saveDraft} disabled={saving}>
+            <button
+              type="button"
+              className="secondary"
+              onClick={saveDraft}
+              disabled={saving}
+            >
               Save draft
             </button>
           )}
@@ -186,8 +247,8 @@ export function GuestRegistration() {
             {saving
               ? "Saving..."
               : alreadySubmitted
-              ? "Save changes"
-              : "Submit registration"}
+                ? "Save changes"
+                : "Submit registration"}
           </button>
         </div>
       </form>
@@ -206,21 +267,34 @@ const documentCategories = [
 
 function DocumentList({ documents }: { documents: GuestDocument[] }) {
   if (documents.length === 0) {
-    return <div className="muted">No documents uploaded yet.</div>;
+    return <div className={styles.muted}>No documents uploaded yet.</div>;
   }
   return (
-    <div className="document-list">
+    <div className={styles.documentList}>
       {documents.map((doc) => (
-        <div key={doc.id} className="document-row">
+        <div key={doc.id} className={styles.documentRow}>
           <div>
             <strong>{doc.display_name}</strong>
-            <div className="muted">
-              {categoryLabel(doc.category)} · {doc.original_filename} · {formatBytes(doc.size_bytes)}
+            <div className={styles.muted}>
+              {categoryLabel(doc.category)} · {doc.original_filename} ·{" "}
+              {formatBytes(doc.size_bytes)}
             </div>
           </div>
-          <div className="document-row__actions">
-            <a className="secondary" href={`${appConfig.apiBase}${doc.view_url}`} target="_blank" rel="noreferrer">View</a>
-            <a className="secondary" href={`${appConfig.apiBase}${doc.download_url}`}>Download</a>
+          <div className={styles.documentRowActions}>
+            <a
+              className="secondary"
+              href={`${appConfig.apiBase}${doc.view_url}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View
+            </a>
+            <a
+              className="secondary"
+              href={`${appConfig.apiBase}${doc.download_url}`}
+            >
+              Download
+            </a>
           </div>
         </div>
       ))}
@@ -243,11 +317,15 @@ function formatBytes(n: number): string {
 // it replaces the registration payload in state with synthetic but
 // plausible values so a developer can submit a complete registration
 // without typing.
-function DevFillButton({ onFill }: { onFill: (p: RegistrationPayload) => void }) {
+function DevFillButton({
+  onFill,
+}: {
+  onFill: (p: RegistrationPayload) => void;
+}) {
   const flags = useDevFlags();
   if (!flags.filesystem_email) return null;
   return (
-    <div className="callout" style={{ marginBottom: "var(--sp-md)" }}>
+    <div className={styles.callout} style={{ marginBottom: "var(--sp-md)" }}>
       <strong>Dev affordance:</strong>{" "}
       <button
         type="button"
@@ -257,7 +335,7 @@ function DevFillButton({ onFill }: { onFill: (p: RegistrationPayload) => void })
       >
         Fill with test data
       </button>
-      <span className="muted" style={{ marginLeft: 8 }}>
+      <span className={styles.muted} style={{ marginLeft: 8 }}>
         Only visible because LIVEABOARD_EMAIL_TRANSPORT=filesystem.
       </span>
     </div>

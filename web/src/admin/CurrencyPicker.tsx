@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { adminApi } from "./api";
+import styles from "./CurrencyPicker.module.css";
 
 export type Currency = {
   code: string;
@@ -13,7 +14,11 @@ export type Currency = {
 let cache: Currency[] | null = null;
 let inFlight: Promise<Currency[]> | null = null;
 
-export function useCurrencies(): { currencies: Currency[]; loading: boolean; error: string | null } {
+export function useCurrencies(): {
+  currencies: Currency[];
+  loading: boolean;
+  error: string | null;
+} {
   const [currencies, setCurrencies] = useState<Currency[]>(cache ?? []);
   const [loading, setLoading] = useState(cache === null);
   const [error, setError] = useState<string | null>(null);
@@ -58,8 +63,8 @@ export function useCurrencies(): { currencies: Currency[]; loading: boolean; err
 function filterCurrencies(catalog: Currency[], query: string): Currency[] {
   const q = query.trim().toLowerCase();
   if (q === "") return catalog;
-  return catalog.filter((c) =>
-    c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q),
+  return catalog.filter(
+    (c) => c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q),
   );
 }
 
@@ -106,11 +111,11 @@ export function CurrencyPicker(props: {
   const inputValue = open
     ? query
     : selected
-    ? `${selected.code} — ${selected.name}`
-    : "";
+      ? `${selected.code} — ${selected.name}`
+      : "";
 
   return (
-    <div className="currency-picker" ref={rootRef}>
+    <div className={styles.picker} ref={rootRef}>
       <input
         id={props.id}
         type="text"
@@ -126,7 +131,7 @@ export function CurrencyPicker(props: {
       {props.allowClear && selected && (
         <button
           type="button"
-          className="currency-picker__clear"
+          className={styles.clear}
           onClick={() => props.onChange("")}
           aria-label="Clear"
         >
@@ -134,23 +139,28 @@ export function CurrencyPicker(props: {
         </button>
       )}
       {open && (
-        <div className="currency-picker__menu">
-          {loading && <div className="currency-picker__msg muted">Loading…</div>}
-          {error && <div className="currency-picker__msg error">{error}</div>}
+        <div className={styles.menu}>
+          {loading && (
+            <div className={`${styles.msg} ${styles.mutedText}`}>Loading…</div>
+          )}
+          {error && (
+            <div className={`${styles.msg} ${styles.error}`}>{error}</div>
+          )}
           {!loading && !error && filtered.length === 0 && (
-            <div className="currency-picker__msg muted">No match.</div>
+            <div className={`${styles.msg} ${styles.mutedText}`}>No match.</div>
           )}
           {filtered.map((c) => (
             <button
               key={c.code}
               type="button"
               className={
-                "currency-picker__row" + (c.code === props.value ? " is-selected" : "")
+                styles.row +
+                (c.code === props.value ? ` ${styles.isSelected}` : "")
               }
               onClick={() => commit(c)}
             >
-              <span className="currency-picker__code">{c.code}</span>
-              <span className="currency-picker__name">{c.name}</span>
+              <span className={styles.code}>{c.code}</span>
+              <span className={styles.name}>{c.name}</span>
             </button>
           ))}
         </div>
@@ -205,23 +215,23 @@ export function CurrencyMultiPicker(props: {
   }
 
   return (
-    <div className="currency-picker" ref={rootRef}>
-      <div className="currency-picker__chips">
+    <div className={styles.picker} ref={rootRef}>
+      <div className={styles.chips}>
         {props.value.map((code) => {
           const meta = currencies.find((c) => c.code === code);
           const isLocked = lockedSet.has(code);
           return (
             <span
               key={code}
-              className={"currency-chip" + (isLocked ? " is-locked" : "")}
+              className={styles.chip + (isLocked ? ` ${styles.isLocked}` : "")}
               title={isLocked ? `${code} is required` : ""}
             >
               {code}
-              {meta && <span className="muted"> — {meta.name}</span>}
+              {meta && <span className={styles.mutedText}> — {meta.name}</span>}
               {!isLocked && (
                 <button
                   type="button"
-                  className="currency-chip__x"
+                  className={styles.chipX}
                   onClick={() => remove(code)}
                   aria-label={`Remove ${code}`}
                 >
@@ -244,21 +254,25 @@ export function CurrencyMultiPicker(props: {
         autoComplete="off"
       />
       {open && (
-        <div className="currency-picker__menu">
-          {loading && <div className="currency-picker__msg muted">Loading…</div>}
-          {error && <div className="currency-picker__msg error">{error}</div>}
+        <div className={styles.menu}>
+          {loading && (
+            <div className={`${styles.msg} ${styles.mutedText}`}>Loading…</div>
+          )}
+          {error && (
+            <div className={`${styles.msg} ${styles.error}`}>{error}</div>
+          )}
           {!loading && !error && filtered.length === 0 && (
-            <div className="currency-picker__msg muted">No match.</div>
+            <div className={`${styles.msg} ${styles.mutedText}`}>No match.</div>
           )}
           {filtered.map((c) => (
             <button
               key={c.code}
               type="button"
-              className="currency-picker__row"
+              className={styles.row}
               onClick={() => add(c)}
             >
-              <span className="currency-picker__code">{c.code}</span>
-              <span className="currency-picker__name">{c.name}</span>
+              <span className={styles.code}>{c.code}</span>
+              <span className={styles.name}>{c.name}</span>
             </button>
           ))}
         </div>

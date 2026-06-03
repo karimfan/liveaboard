@@ -1,16 +1,25 @@
 /*
- * Sprint 027 — single production admin shell.
- * Legacy app.css still carries many page-level rules for unmigrated
- * pages; this file owns the shell composition and token alignment.
+ * Production admin shell + surface rules.
+ * Sprint 028 removed the legacy app.css; this file now owns the shell
+ * composition, the user menu, and the shared admin surface classes that
+ * a few pages still reference, all on semantic tokens.
  */
 
+/* Admin shell (Sprint 028 — self-contained after app.css deletion).
+ * A centered max-width block; the SpacesNav sidebar is "auto" width and
+ * the main content takes the rest. */
 .admin {
+  display: grid;
   grid-template-columns: auto 1fr;
+  min-height: 100vh;
+  max-width: var(--content-max);
+  margin: 0 auto;
   box-shadow: 0 0 100px rgba(0, 0, 0, 0.26);
 }
 
 .admin-main {
   background: var(--content-bg);
+  padding: var(--sp-xl) var(--sp-2xl);
   backdrop-filter: blur(var(--backdrop-blur));
   -webkit-backdrop-filter: blur(var(--backdrop-blur));
 }
@@ -106,18 +115,13 @@ button.ghost {
 }
 
 /* ============================================================
- * Sprint 028 — admin surface token bridge.
+ * Admin surface classes (Sprint 028).
  *
- * app.css styles the shared page surfaces (tables, stat cards,
- * tabs, chips, inputs, modals) against the light --c-* palette,
- * which is correct for the auth/guest pages that also use them
- * but wrong inside the dark cockpit shell. These overrides are
- * scoped under .admin-main so they only repaint the authenticated
- * admin surface onto semantic tokens; auth/public pages keep the
- * light app.css rules untouched. Loads after app.css, so it wins.
- *
- * This is the interim bridge for Sprint 028; pages migrating to
- * CSS modules will drop their reliance on these classes over time.
+ * Shared admin surfaces (tables, stat cards, tabs, chips, inputs,
+ * modals) styled on semantic tokens, scoped under .admin-main so they
+ * apply only to the authenticated dark admin surface. Most pages now
+ * use the component primitives + CSS modules; these remain for the few
+ * bespoke spots that still reference the shared classes.
  * ============================================================ */
 
 /* Forms */
@@ -310,4 +314,144 @@ button.ghost {
 }
 .admin-main .director-chip__x:hover {
   background: var(--accent-primary-subtle);
+}
+
+/* ============================================================
+ * User menu + sidebar trigger/sign-out (Sprint 028 — relocated
+ * from the deleted app.css; semantic tokens for the dark sidebar).
+ * ============================================================ */
+
+.user-menu-wrap {
+  position: relative;
+}
+
+.admin-sidebar__trigger {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  padding: var(--sp-sm) var(--sp-sm);
+  cursor: pointer;
+  transition:
+    background var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out);
+  font-family: inherit;
+  color: var(--text-primary);
+}
+.admin-sidebar__trigger:hover {
+  background: var(--accent-primary-subtle);
+}
+.admin-sidebar__trigger:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.admin-sidebar__trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-sidebar__trigger-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+}
+
+.admin-sidebar__chevron {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.admin-sidebar__trigger-meta {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  margin-top: var(--sp-2xs);
+}
+
+.user-menu {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-elevated);
+  padding: var(--sp-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+}
+
+.user-menu__item {
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: var(--sp-sm) var(--sp-md);
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition:
+    background var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out);
+}
+.user-menu__item:hover {
+  background: var(--accent-primary-subtle);
+  color: var(--accent-primary);
+}
+.user-menu__item:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+.user-menu__item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.user-menu__error {
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-xs);
+  margin-top: 2px;
+}
+
+.admin-sidebar__signout {
+  margin-top: var(--sp-sm);
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: var(--sp-sm) var(--sp-md);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition:
+    background var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out);
+}
+.admin-sidebar__signout:hover {
+  background: var(--accent-primary-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.admin-sidebar__signout:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.admin-sidebar__signout:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

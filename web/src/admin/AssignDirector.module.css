@@ -1,0 +1,89 @@
+/*
+ * AssignDirector module — migrated off global app.css onto co-located
+ * semantic tokens. Reproduces the post-bridge dark cockpit appearance
+ * previously composed from app.css + admin.css (.admin-main-scoped).
+ * Status chips (Unassigned) use the shared Chip component.
+ */
+
+.assign {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+  align-items: flex-start;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px var(--sp-md);
+  background: var(--accent-primary-subtle);
+  color: var(--accent-primary);
+  border-radius: var(--r-full);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.chipX {
+  background: transparent;
+  color: var(--accent-primary);
+  border: none;
+  border-radius: var(--r-full);
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: var(--fs-sm);
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chipX:hover {
+  background: var(--accent-primary-subtle);
+}
+
+.chipX:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chipsReadonly .chip {
+  background: var(--surface-panel-strong);
+  color: var(--text-primary);
+  padding: 2px var(--sp-md);
+}
+
+.error {
+  color: var(--status-error);
+  font-size: var(--fs-xs);
+  margin-top: 2px;
+}
+
+/* Inline director picker select (was the global select.select-inline). */
+.picker {
+  width: auto;
+  min-width: 140px;
+  padding: 4px 8px;
+  font-size: var(--fs-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+.picker:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+.picker:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -1px;
+  border-color: var(--accent-primary);
+}

@@ -1,0 +1,149 @@
+/*
+ * Co-located styles for GuestRegistration. Ported from the legacy
+ * global app.css guest-registration/document rules to preserve the
+ * page's existing appearance after app.css is removed. Token-only.
+ */
+
+.shell {
+  min-height: 100vh;
+  padding: var(--sp-xl) var(--sp-lg);
+}
+
+.card {
+  max-width: 980px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--r-lg);
+  padding: var(--sp-xl);
+  box-shadow: 0 8px 32px rgba(17, 81, 74, 0.18);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  align-items: flex-start;
+  margin-bottom: var(--sp-lg);
+}
+
+.header h1 {
+  margin-bottom: var(--sp-xs);
+}
+
+.muted {
+  color: var(--c-500);
+  font-size: var(--fs-sm);
+}
+
+.error {
+  color: var(--c-error);
+  background: var(--c-error-bg);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.callout {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+  padding: var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+  font-family: var(--font-body);
+  overflow-wrap: break-word;
+}
+
+.chip {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 2px var(--sp-sm);
+  border-radius: var(--r-full);
+  letter-spacing: 0.02em;
+}
+
+.chipActive {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+.section {
+  padding: var(--sp-lg) 0;
+  border-top: 1px solid var(--c-200);
+}
+
+.section h2 {
+  margin-bottom: var(--sp-md);
+  font-size: var(--fs-xl);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  align-items: flex-start;
+}
+
+.actions {
+  position: sticky;
+  bottom: var(--sp-md);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-sm);
+  padding-top: var(--sp-lg);
+}
+
+.documentUpload {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-sm);
+  align-items: end;
+  margin-bottom: var(--sp-md);
+}
+
+.documentList {
+  display: grid;
+  gap: var(--sp-sm);
+}
+
+.documentRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  align-items: center;
+  border-top: 1px solid var(--c-100);
+  padding-top: var(--sp-sm);
+}
+
+.documentRowActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-xs);
+}
+
+@media (max-width: 720px) {
+  .card {
+    padding: var(--sp-lg);
+  }
+
+  .header,
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 880px) {
+  .documentRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .documentRowActions {
+    justify-content: flex-start;
+  }
+}

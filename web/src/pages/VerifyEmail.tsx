@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { api, type ApiError } from "../lib/api";
+import styles from "./auth.module.css";
 
 type State = "verifying" | "ok" | "error";
 
@@ -35,17 +36,21 @@ export function VerifyEmail() {
   }, [token]);
 
   return (
-    <div className="auth-shell">
-      <div className="auth-stack">
-        <h1 className="auth-wordmark">Liveaboard</h1>
-        <div className="auth-card">
+    <div className={styles.authShell}>
+      <div className={styles.authStack}>
+        <h1 className={styles.authWordmark}>Liveaboard</h1>
+        <div className={styles.authCard}>
           {state === "verifying" && <h1>Verifying…</h1>}
           {state === "ok" && (
             <>
               <h1>Email verified</h1>
               <p>You can now sign in.</p>
               <p style={{ marginTop: "var(--sp-md)" }}>
-                <Link to="/login" className="primary" style={{ display: "inline-block" }}>
+                <Link
+                  to="/login"
+                  className="primary"
+                  style={{ display: "inline-block" }}
+                >
                   Continue to sign in
                 </Link>
               </p>
@@ -54,10 +59,13 @@ export function VerifyEmail() {
           {state === "error" && (
             <>
               <h1>Verification failed</h1>
-              <p className="error" style={{ marginBottom: "var(--sp-md)" }}>
+              <p
+                className={styles.error}
+                style={{ marginBottom: "var(--sp-md)" }}
+              >
                 {message}
               </p>
-              <p className="muted">
+              <p className={styles.muted}>
                 <Link to="/login">Back to sign in</Link>
               </p>
             </>

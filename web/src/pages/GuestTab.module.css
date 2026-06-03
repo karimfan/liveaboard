@@ -1,0 +1,157 @@
+/*
+ * Co-located styles for GuestTab. Ported from the legacy global
+ * app.css guest/admin-table rules to preserve the page's existing
+ * appearance after app.css is removed. Token-only.
+ */
+
+.shell {
+  min-height: 100vh;
+  padding: var(--sp-xl) var(--sp-lg);
+}
+
+.card {
+  max-width: 980px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--r-lg);
+  padding: var(--sp-xl);
+  box-shadow: 0 8px 32px rgba(17, 81, 74, 0.18);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  align-items: flex-start;
+  margin-bottom: var(--sp-lg);
+}
+
+.header h1 {
+  margin-bottom: var(--sp-xs);
+}
+
+.muted {
+  color: var(--c-500);
+  font-size: var(--fs-sm);
+}
+
+.error {
+  color: var(--c-error);
+  background: var(--c-error-bg);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.callout {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+  padding: var(--sp-md);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-md);
+  font-family: var(--font-body);
+  overflow-wrap: break-word;
+}
+
+.section {
+  padding: var(--sp-lg) 0;
+  border-top: 1px solid var(--c-200);
+}
+
+.section h2 {
+  margin-bottom: var(--sp-md);
+  font-size: var(--fs-xl);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  align-items: flex-start;
+}
+
+.chip {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 2px var(--sp-sm);
+  border-radius: var(--r-full);
+  letter-spacing: 0.02em;
+}
+
+.chipPlanned {
+  background: var(--c-100);
+  color: var(--c-700);
+}
+
+.chipActive {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+.chipCompleted {
+  background: var(--c-100);
+  color: var(--c-700);
+}
+
+.chipCancelled {
+  background: var(--c-error-bg);
+  color: var(--c-error);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  background: white;
+  border: 1px solid var(--c-200);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.table thead {
+  background: var(--c-50);
+}
+
+.table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-500);
+  padding: var(--sp-sm) var(--sp-md);
+  border-bottom: 1px solid var(--c-200);
+}
+
+.table td {
+  padding: var(--sp-md);
+  border-bottom: 1px solid var(--c-100);
+  color: var(--c-900);
+  height: 48px;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .card {
+    padding: var(--sp-lg);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
-import { adminApi, type AdminUser, type Trip, type TripDirectorsView } from "./api";
+import {
+  adminApi,
+  type AdminUser,
+  type Trip,
+  type TripDirectorsView,
+} from "./api";
+import { Chip } from "./components";
+import styles from "./AssignDirector.module.css";
 import type { ApiError } from "../lib/api";
 
 // Sprint 013 — multi-director assignment. Each trip can carry any
@@ -69,12 +76,12 @@ export function AssignDirector({
   // Read-only view for non-admins.
   if (!canEdit) {
     if (trip.cruise_director_names.length === 0) {
-      return <span className="chip chip--warn">Unassigned</span>;
+      return <Chip variant="warning">Unassigned</Chip>;
     }
     return (
-      <div className="director-chips director-chips--readonly">
+      <div className={`${styles.chips} ${styles.chipsReadonly}`}>
         {trip.cruise_director_names.map((n, i) => (
-          <span key={i} className="director-chip">
+          <span key={i} className={styles.chip}>
             {n}
           </span>
         ))}
@@ -86,7 +93,11 @@ export function AssignDirector({
   const available = directors.filter((d) => !assignedIDs.has(d.id));
 
   function applyResult(res: TripDirectorsView) {
-    onChanged(res.trip_id, res.cruise_director_user_ids, res.cruise_director_names);
+    onChanged(
+      res.trip_id,
+      res.cruise_director_user_ids,
+      res.cruise_director_names,
+    );
   }
 
   async function add(e: ChangeEvent<HTMLSelectElement>) {
@@ -122,16 +133,16 @@ export function AssignDirector({
   }
 
   return (
-    <div className="director-assign">
-      <div className="director-chips">
+    <div className={styles.assign}>
+      <div className={styles.chips}>
         {trip.cruise_director_user_ids.map((id, i) => {
           const name = trip.cruise_director_names[i] ?? id;
           return (
-            <span key={id} className="director-chip">
+            <span key={id} className={styles.chip}>
               {name}
               <button
                 type="button"
-                className="director-chip__x"
+                className={styles.chipX}
                 aria-label={`Remove ${name}`}
                 onClick={() => remove(id)}
                 disabled={submitting}
@@ -142,13 +153,13 @@ export function AssignDirector({
           );
         })}
         {trip.cruise_director_user_ids.length === 0 && (
-          <span className="chip chip--warn">Unassigned</span>
+          <Chip variant="warning">Unassigned</Chip>
         )}
       </div>
       {available.length > 0 && (
         <select
           ref={pickerRef}
-          className="select-inline director-assign__picker"
+          className={styles.picker}
           defaultValue=""
           onChange={add}
           disabled={submitting}
@@ -162,11 +173,7 @@ export function AssignDirector({
           ))}
         </select>
       )}
-      {error && (
-        <div style={{ color: "var(--c-error)", fontSize: 12, marginTop: 2 }}>
-          {error}
-        </div>
-      )}
+      {error && <div className={styles.error}>{error}</div>}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 
 import { api, type ApiError } from "../lib/api";
+import styles from "./auth.module.css";
 
 export function Signup() {
   const [email, setEmail] = useState("");
@@ -34,16 +35,16 @@ export function Signup() {
 
   if (done) {
     return (
-      <div className="auth-shell">
-        <div className="auth-stack">
-          <h1 className="auth-wordmark">Liveaboard</h1>
-          <div className="auth-card">
+      <div className={styles.authShell}>
+        <div className={styles.authStack}>
+          <h1 className={styles.authWordmark}>Liveaboard</h1>
+          <div className={styles.authCard}>
             <h1>Check your inbox</h1>
             <p>
               We've sent a verification link to <strong>{email}</strong>. Click
               it to activate your account, then sign in.
             </p>
-            <p className="muted">
+            <p className={styles.muted}>
               <Link to="/login">Back to sign in</Link>
             </p>
           </div>
@@ -53,13 +54,13 @@ export function Signup() {
   }
 
   return (
-    <div className="auth-shell">
-      <div className="auth-stack">
-        <h1 className="auth-wordmark">Liveaboard</h1>
-        <form className="auth-card" onSubmit={onSubmit}>
+    <div className={styles.authShell}>
+      <div className={styles.authStack}>
+        <h1 className={styles.authWordmark}>Liveaboard</h1>
+        <form className={styles.authCard} onSubmit={onSubmit}>
           <h1>Create an organization</h1>
-          {error && <div className="error">{error}</div>}
-          <div className="field">
+          {error && <div className={styles.error}>{error}</div>}
+          <div className={styles.field}>
             <label htmlFor="orgName">Organization name</label>
             <input
               id="orgName"
@@ -70,7 +71,7 @@ export function Signup() {
               required
             />
           </div>
-          <div className="field">
+          <div className={styles.field}>
             <label htmlFor="fullName">Your full name</label>
             <input
               id="fullName"
@@ -81,7 +82,7 @@ export function Signup() {
               required
             />
           </div>
-          <div className="field">
+          <div className={styles.field}>
             <label htmlFor="email">Email</label>
             <input
               id="email"
@@ -92,7 +93,7 @@ export function Signup() {
               required
             />
           </div>
-          <div className="field">
+          <div className={styles.field}>
             <label htmlFor="password">Password</label>
             <input
               id="password"
@@ -103,14 +104,19 @@ export function Signup() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+            <p className={styles.muted} style={{ fontSize: 12, marginTop: 6 }}>
               At least 8 characters with upper, lower, and a digit.
             </p>
           </div>
-          <button className="primary" type="submit" disabled={submitting} style={{ width: "100%" }}>
+          <button
+            className="primary"
+            type="submit"
+            disabled={submitting}
+            style={{ width: "100%" }}
+          >
             {submitting ? "Creating…" : "Create organization"}
           </button>
-          <p className="muted" style={{ marginTop: "var(--sp-md)" }}>
+          <p className={styles.muted} style={{ marginTop: "var(--sp-md)" }}>
             Have an account? <Link to="/login">Sign in</Link>
           </p>
         </form>

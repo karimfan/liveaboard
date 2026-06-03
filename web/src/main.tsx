@@ -6,13 +6,11 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 //   tokens.css   — semantic token contract + sea palette tokens
 //   themes.css   — production cockpit token bindings
 //   motion.css   — reduced-motion-safe ambient rules
-//   app.css      — temporary legacy chrome for unmigrated pages
-//   admin.css    — production admin shell overrides
-//   base.css     — body composite + focus defaults
+//   admin.css    — admin shell + surface rules
+//   base.css     — global element defaults + body composite (loads last)
 import "./styles/tokens.css";
 import "./styles/themes.css";
 import "./styles/motion.css";
-import "./styles/app.css";
 import "./styles/admin.css";
 import "./styles/base.css";
 
@@ -64,9 +62,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/invitations/:token/accept" element={<AcceptInvitation />} />
+        <Route
+          path="/invitations/:token/accept"
+          element={<AcceptInvitation />}
+        />
         <Route path="/guest/invitations/:token" element={<GuestInvitation />} />
-        <Route path="/guest/trips/:tripGuestId/register" element={<GuestRegistration />} />
+        <Route
+          path="/guest/trips/:tripGuestId/register"
+          element={<GuestRegistration />}
+        />
         <Route path="/guest/trips/:tripGuestId/tab" element={<GuestTab />} />
 
         {/* Root redirects to the admin chrome — that's the only authenticated
@@ -89,31 +93,57 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="trips/:id/dashboard" element={<TripDashboard />} />
           <Route path="trips/:id/ledger" element={<TripConsumptionLedger />} />
           <Route path="trips/:id/cabins" element={<TripCabins />} />
-          <Route path="trips/:id/guests/:guestId" element={<TripGuestDetail />} />
-          <Route path="trips/:id/guests/:guestId/folio" element={<GuestFolio />} />
+          <Route
+            path="trips/:id/guests/:guestId"
+            element={<TripGuestDetail />}
+          />
+          <Route
+            path="trips/:id/guests/:guestId/folio"
+            element={<GuestFolio />}
+          />
           <Route path="account" element={<Account />} />
           <Route path="audit" element={<AuditEvents />} />
 
           {/* Org-admin-only routes — RequireAdmin redirects directors to /admin */}
           <Route
             path="organization"
-            element={<RequireAdmin><Organization /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <Organization />
+              </RequireAdmin>
+            }
           />
           <Route
             path="organization/payments"
-            element={<RequireAdmin><OrganizationPayments /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <OrganizationPayments />
+              </RequireAdmin>
+            }
           />
           <Route
             path="organization/pricing"
-            element={<RequireAdmin><OrganizationPricing /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <OrganizationPricing />
+              </RequireAdmin>
+            }
           />
           <Route
             path="fleet"
-            element={<RequireAdmin><Fleet /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <Fleet />
+              </RequireAdmin>
+            }
           />
           <Route
             path="fleet/:id"
-            element={<RequireAdmin><BoatDetail /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <BoatDetail />
+              </RequireAdmin>
+            }
           >
             <Route index element={<BoatTrips />} />
             <Route path="cabins" element={<BoatCabins />} />
@@ -122,31 +152,59 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           </Route>
           <Route
             path="inventory"
-            element={<RequireAdmin><Inventory /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <Inventory />
+              </RequireAdmin>
+            }
           />
           <Route
             path="users"
-            element={<RequireAdmin><Users /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <Users />
+              </RequireAdmin>
+            }
           />
           <Route
             path="reports"
-            element={<RequireAdmin><Reports /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <Reports />
+              </RequireAdmin>
+            }
           />
           <Route
             path="onboarding"
-            element={<RequireAdmin><Onboarding /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <Onboarding />
+              </RequireAdmin>
+            }
           />
           <Route
             path="import"
-            element={<RequireAdmin><Import /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <Import />
+              </RequireAdmin>
+            }
           />
           <Route
             path="import/liveaboard"
-            element={<RequireAdmin><ImportLiveaboard /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <ImportLiveaboard />
+              </RequireAdmin>
+            }
           />
           <Route
             path="import/spreadsheet"
-            element={<RequireAdmin><ImportSpreadsheet /></RequireAdmin>}
+            element={
+              <RequireAdmin>
+                <ImportSpreadsheet />
+              </RequireAdmin>
+            }
           />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

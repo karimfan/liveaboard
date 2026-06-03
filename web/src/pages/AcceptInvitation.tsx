@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { api, type ApiError, type InvitationLookup } from "../lib/api";
+import styles from "./auth.module.css";
 
 export function AcceptInvitation() {
   const navigate = useNavigate();
@@ -53,13 +54,13 @@ export function AcceptInvitation() {
 
   if (lookupErr) {
     return (
-      <div className="auth-shell">
-        <div className="auth-stack">
-          <h1 className="auth-wordmark">Liveaboard</h1>
-          <div className="auth-card">
+      <div className={styles.authShell}>
+        <div className={styles.authStack}>
+          <h1 className={styles.authWordmark}>Liveaboard</h1>
+          <div className={styles.authCard}>
             <h1>Invitation not valid</h1>
-            <p className="error">{lookupErr}</p>
-            <p className="muted">
+            <p className={styles.error}>{lookupErr}</p>
+            <p className={styles.muted}>
               <Link to="/login">Back to sign in</Link>
             </p>
           </div>
@@ -70,10 +71,10 @@ export function AcceptInvitation() {
 
   if (!invitation) {
     return (
-      <div className="auth-shell">
-        <div className="auth-stack">
-          <h1 className="auth-wordmark">Liveaboard</h1>
-          <div className="auth-card">
+      <div className={styles.authShell}>
+        <div className={styles.authStack}>
+          <h1 className={styles.authWordmark}>Liveaboard</h1>
+          <div className={styles.authCard}>
             <h1>Loading…</h1>
           </div>
         </div>
@@ -82,22 +83,23 @@ export function AcceptInvitation() {
   }
 
   return (
-    <div className="auth-shell">
-      <div className="auth-stack">
-        <h1 className="auth-wordmark">Liveaboard</h1>
-        <form className="auth-card" onSubmit={onSubmit}>
+    <div className={styles.authShell}>
+      <div className={styles.authStack}>
+        <h1 className={styles.authWordmark}>Liveaboard</h1>
+        <form className={styles.authCard} onSubmit={onSubmit}>
           <h1>Hi {invitation.full_name}.</h1>
-          <p className="muted" style={{ marginBottom: "var(--sp-md)" }}>
-            You've been invited to <strong>{invitation.organization_name}</strong>{" "}
-            as a {invitation.role.replace("_", " ")}. Set a password to finish
+          <p className={styles.muted} style={{ marginBottom: "var(--sp-md)" }}>
+            You've been invited to{" "}
+            <strong>{invitation.organization_name}</strong> as a{" "}
+            {invitation.role.replace("_", " ")}. Set a password to finish
             joining. You can update your details from your account page later.
           </p>
-          {error && <div className="error">{error}</div>}
-          <div className="field">
+          {error && <div className={styles.error}>{error}</div>}
+          <div className={styles.field}>
             <label htmlFor="email">Email</label>
             <input id="email" type="email" value={invitation.email} disabled />
           </div>
-          <div className="field">
+          <div className={styles.field}>
             <label htmlFor="password">Password</label>
             <input
               id="password"
@@ -110,7 +112,12 @@ export function AcceptInvitation() {
               required
             />
           </div>
-          <button className="primary" type="submit" disabled={submitting} style={{ width: "100%" }}>
+          <button
+            className="primary"
+            type="submit"
+            disabled={submitting}
+            style={{ width: "100%" }}
+          >
             {submitting ? "Joining…" : "Accept invitation"}
           </button>
         </form>

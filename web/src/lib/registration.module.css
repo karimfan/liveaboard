@@ -1,0 +1,66 @@
+/*
+ * Co-located styles for the shared RegistrationSections helper.
+ * Ported from the legacy global app.css form/field rules to
+ * preserve the existing appearance after app.css is removed.
+ * Token-only.
+ */
+
+.section {
+  padding: var(--sp-lg) 0;
+  border-top: 1px solid var(--c-200);
+}
+
+.section h2 {
+  margin-bottom: var(--sp-md);
+  font-size: var(--fs-xl);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-md);
+  align-items: end;
+}
+
+.field {
+  margin-bottom: var(--sp-md);
+}
+
+.fieldRead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldRead label {
+  font-size: var(--fs-xs);
+  color: var(--c-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fieldReadout {
+  color: var(--c-900);
+  font-size: var(--fs-sm);
+  min-height: 1.4em;
+}
+
+.fieldReadoutBlock {
+  white-space: pre-wrap;
+}
+
+.fieldFull {
+  grid-column: 1 / -1;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin: 0 0 var(--sp-md);
+  color: var(--c-700);
+}
+
+.checkRow input {
+  width: auto;
+}
